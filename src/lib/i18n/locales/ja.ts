@@ -1,0 +1,319 @@
+import type { Translations } from "./en";
+
+export const ja: Translations = {
+  // ─── App-wide ──────────────────────────────────────────────────────────────
+  app: {
+    name: "PhotoShare",
+    tagline: "PhotoShare 経由で共有",
+  },
+
+  // ─── Shared across multiple components ─────────────────────────────────────
+  common: {
+    cancel: "キャンセル",
+    close: "閉じる",
+    optional: "任意",
+    delete: "削除",
+    deleting: "削除中…",
+    download: "ダウンロード",
+    downloadPreparing: "準備中…",
+    noPhotosYet: "写真がありません",
+    photoCount: (n: number) => `${n} 枚`,
+    close_aria: "閉じる",
+  },
+
+  // ─── Navigation ────────────────────────────────────────────────────────────
+  nav: {
+    signOut: "サインアウト",
+    backToDashboard: "ダッシュボードに戻る",
+  },
+
+  // ─── Auth pages ────────────────────────────────────────────────────────────
+  auth: {
+    login: {
+      title: "ようこそ",
+      subtitle: "カメラマンアカウントにサインインしてください。",
+      registeredBanner: "アカウントが作成されました！サインインできます。",
+      error: "メールアドレスまたはパスワードが正しくありません。",
+      emailLabel: "メールアドレス",
+      emailPlaceholder: "taro@example.com",
+      passwordLabel: "パスワード",
+      passwordPlaceholder: "········",
+      submit: "サインイン",
+      submitting: "サインイン中…",
+      noAccount: "アカウントをお持ちでないですか？",
+      createOne: "作成する",
+    },
+    register: {
+      title: "アカウントを作成",
+      subtitle: "クライアントと写真を共有しましょう。",
+      nameLabel: "氏名",
+      namePlaceholder: "山田 太郎",
+      emailLabel: "メールアドレス",
+      emailPlaceholder: "taro@example.com",
+      passwordLabel: "パスワード",
+      passwordPlaceholder: "8文字以上",
+      submit: "アカウントを作成",
+      submitting: "作成中…",
+      hasAccount: "すでにアカウントをお持ちですか？",
+      signIn: "サインイン",
+    },
+  },
+
+  // ─── Dashboard ─────────────────────────────────────────────────────────────
+  dashboard: {
+    welcome: (name: string) => `おかえりなさい、${name} 👋`,
+    subtitle: "ギャラリーの概要です。",
+    stats: {
+      events: "イベント",
+      photos: "写真",
+      storage: "ストレージ",
+      storageDetail: (used: string, limit: string) => `${used} / ${limit}`,
+      storagePercent: (pct: number) => `${pct}% 使用中`,
+      atEventLimit: "イベント上限に達しました — アップグレードして追加してください。",
+    },
+    events: {
+      sectionTitle: "あなたのイベント",
+      empty: "イベントがありません",
+      emptySubtitle: "最初のイベントを作成して、クライアントと写真を共有しましょう。",
+    },
+    upgrade: {
+      eventLimitTitle: "イベント数の上限に達しました",
+      eventLimitBody: "無料プランは3イベントまでです。Proプラン（25件）またはStudioプラン（無制限）にアップグレードしてください。",
+      zipTitle: "ZIPダウンロードは有料機能です",
+      zipBody: "クライアントがギャラリー全体をZIPでダウンロードできるようにするには、ProまたはStudioにアップグレードしてください。",
+      cta: "料金プランを見る",
+    },
+    createEvent: {
+      trigger: "＋ 新しいイベント",
+      triggerDisabledTitle: "プランをアップグレードしてイベントを追加してください",
+      modalTitle: "新しいイベントを作成",
+      nameLabel: "イベント名",
+      namePlaceholder: "例：田中家 結婚式",
+      dateLabel: "イベント日",
+      descriptionLabel: "説明",
+      descriptionPlaceholder: "このイベントについての短いメモ…",
+      submit: "イベントを作成",
+      submitting: "作成中…",
+      successToast: "イベントが作成されました！",
+    },
+  },
+
+  // ─── Event page ────────────────────────────────────────────────────────────
+  eventPage: {
+    backAriaLabel: "ダッシュボードに戻る",
+    uploadButton: "写真をアップロード",
+    shareButton: "イベントを共有",
+    noPhotosSubtitle: "上の「写真をアップロード」からこのイベントに写真を追加してください。",
+  },
+
+  // ─── Upload modal ──────────────────────────────────────────────────────────
+  uploadModal: {
+    title: "写真をアップロード",
+    dropzonePrompt: "ここに写真をドロップ、または",
+    dropzoneBrowse: "ファイルを選択",
+    dropzoneHint: "JPG・PNG・WEBP · 1枚最大 50 MB",
+    dropzoneDragActive: "ドロップして写真を追加…",
+    statusDone: "完了",
+    statusFailed: "失敗",
+    summaryNoFiles: "ファイルが選択されていません",
+    summaryReady: (n: number) => `${n} ファイル 準備完了`,
+    summaryUploading: (done: number, total: number) => `アップロード中… ${done} / ${total}`,
+    summarySettled: (done: number, failed: number) =>
+      `${done} 件アップロード完了${failed > 0 ? `、${failed} 件失敗` : ""}`,
+    submit: (n: number | string) => `${n} 件アップロード`,
+    submitting: "アップロード中…",
+  },
+
+  // ─── Share modal ───────────────────────────────────────────────────────────
+  shareModal: {
+    title: "イベントを共有",
+    createSectionTitle: "新しいリンクを作成",
+    linkCreatedMessage: "リンクが作成されました！クライアントにこの URL を共有してください：",
+    passwordLabel: "パスワード",
+    passwordPlaceholder: "4文字以上",
+    confirmLabel: "パスワードを確認",
+    confirmPlaceholder: "パスワードを再入力",
+    expiryLabel: "有効期限",
+    expiryHint: "（任意 — 空白のままにすると期限なし）",
+    generateButton: "リンクを生成",
+    generating: "リンクを生成中…",
+    activeLinksTitle: "有効なリンク",
+    errorPasswordMismatch: "パスワードが一致しません。",
+    errorPasswordTooShort: "パスワードは4文字以上にしてください。",
+    linkCreatedOn: (date: string) => `作成日：${date}`,
+    linkExpires: (date: string) => `有効期限：${date}`,
+    linkExpired: (date: string) => `期限切れ：${date}`,
+    expiredBadge: "期限切れ",
+    revokeAriaLabel: "リンクを無効化",
+    copyButton: "コピー",
+    copiedButton: "コピーしました！",
+  },
+
+  // ─── Cover photo ───────────────────────────────────────────────────────────
+  coverPhoto: {
+    altText: "イベントカバー",
+    noCover: "カバー写真がありません",
+    addButton: "カバー写真を追加",
+    changeButton: "カバーを変更",
+    uploading: "カバーをアップロード中…",
+    errorInvalidFile: "画像ファイルを選択してください。",
+  },
+
+  // ─── Photo grid (dashboard event page) ────────────────────────────────────
+  photoGrid: {
+    emptySubtitle: "上の「写真をアップロード」からこのイベントに写真を追加してください。",
+    deleteAriaLabel: "写真を削除",
+    deleteConfirmTitle: "この写真を削除しますか？",
+    deleteConfirmSubtitle: "この操作は元に戻せません。",
+    deletingButton: "削除中…",
+    previewAriaLabel: (filename: string) => `${filename} をプレビュー`,
+  },
+
+  // ─── Lightbox (shared by dashboard + public gallery) ──────────────────────
+  lightbox: {
+    counter: (current: number, total: number) => `${current} / ${total}`,
+    closeAriaLabel: "プレビューを閉じる",
+    prevAriaLabel: "前の写真",
+    nextAriaLabel: "次の写真",
+    hint: "← → で移動 · Esc で閉じる",
+  },
+
+  // ─── User menu ─────────────────────────────────────────────────────────────
+  userMenu: {
+    language: "言語",
+    billing: "請求・プラン",
+    changePassword: "パスワード変更",
+    changePasswordModal: {
+      title: "パスワード変更",
+      currentLabel: "現在のパスワード",
+      currentPlaceholder: "········",
+      newLabel: "新しいパスワード",
+      newPlaceholder: "8文字以上",
+      confirmLabel: "新しいパスワードを確認",
+      confirmPlaceholder: "新しいパスワードを再入力",
+      submit: "パスワードを更新",
+      submitting: "更新中\u2026",
+      success: "パスワードが更新されました。",
+      errorCurrent: "現在のパスワードが正しくありません。",
+      errorTooShort: "新しいパスワードは8文字以上にしてください。",
+      errorMismatch: "パスワードが一致しません。",
+    },
+  },
+
+  // ─── Profile page ──────────────────────────────────────────────────────────
+  profile: {
+    title: "プロフィール",
+    saved: "保存しました！",
+    saving: "保存中…",
+    personalInfo: {
+      title: "個人情報",
+      nameLabel: "氏名",
+      namePlaceholder: "お名前",
+      emailLabel: "メールアドレス",
+      emailNote: "メールアドレスは変更できません。",
+      saveButton: "変更を保存",
+      passwordTitle: "パスワード変更",
+    },
+    studio: {
+      title: "スタジオブランディング",
+      logoLabel: "スタジオロゴ",
+      logoUpload: "ロゴをアップロード",
+      logoChange: "ロゴを変更",
+      logoUploading: "アップロード中…",
+      logoHint: "PNG・JPG · 推奨サイズ 400×400px",
+      logoInvalidFile: "画像ファイルを選択してください。",
+      studioNameLabel: "スタジオ名",
+      studioNamePlaceholder: "例：スミス フォトグラフィー",
+      taglineLabel: "キャッチコピー",
+      taglinePlaceholder: "心に残る瞬間を切り取ります",
+      websiteLabel: "ウェブサイト",
+      websitePlaceholder: "https://yoursite.com",
+      phoneLabel: "電話番号",
+      phonePlaceholder: "03-0000-0000",
+      addressLabel: "住所",
+      addressPlaceholder: "市区町村",
+      brandColorLabel: "ブランドカラー",
+      saveButton: "ブランディングを保存",
+    },
+    watermark: {
+      title: "透かし設定",
+      enabledLabel: "ダウンロード写真に透かしを追加",
+      enabledHint: "個別ダウンロードまたはZIPダウンロード時に適用されます。ProまたはStudioプランのみ。",
+      positionLabel: "位置",
+      positions: {
+        BOTTOM_RIGHT:  "右下",
+        BOTTOM_LEFT:   "左下",
+        BOTTOM_CENTER: "中央下",
+      },
+      opacityLabel: "不透明度",
+      opacityValue: (v: number) => `${v}%`,
+      previewLabel: "プレビュー",
+      previewAlt: "透かしプレビュー",
+      saveButton: "透かし設定を保存",
+    },
+  },
+
+  // ─── Billing page ──────────────────────────────────────────────────────────
+  billing: {
+    title: "請求・プラン",
+    planSection: "現在のプラン",
+    nextBillingLabel: "次回請求日",
+    noBilling: "次回請求なし",
+    statusLabel: "ステータス",
+    status: {
+      active: "有効",
+      trialing: "トライアル中",
+      past_due: "支払い遅延",
+      canceled: "キャンセル済み",
+      incomplete: "未完了",
+    },
+    manageButton: "請求を管理する",
+    managingButton: "ポータルを開いています…",
+    upgradeButton: "プランをアップグレード",
+    freePlanNote: "現在、無料プランをご利用中です。アップグレードして、より多くのイベントとストレージをご利用ください。",
+    canceledNote: "サブスクリプションはキャンセルされており、更新されません。",
+    usageSection: "今期の使用状況",
+    eventsUsed: (used: number, limit: string) => `${limit}件中 ${used}件使用中`,
+    storageUsed: (used: string, limit: string) => `${limit}中 ${used}使用中`,
+  },
+
+  // ─── Pricing page ──────────────────────────────────────────────────────────
+  pricing: {
+    title: "シンプルで明確な料金体系",
+    subtitle: "無料で始めて、必要に応じてアップグレードできます。",
+    monthly: "/ 月",
+    currentPlan: "現在のプラン",
+    getStarted: "無料で始める",
+    upgrade: (plan: string) => `${plan}にアップグレード`,
+    mostPopular: "人気No.1",
+    plans: {
+      free:   { name: "Free",   price: "$0",  description: "写真家として始めたばかりの方に。" },
+      pro:    { name: "Pro",    price: "$19", description: "クライアントが増えてきたスタジオに。" },
+      studio: { name: "Studio", price: "$49", description: "大量案件をこなすプロフェッショナルに。" },
+    },
+    features: {
+      events:       (n: string) => `${n} イベント`,
+      storage:      (n: string) => `${n} ストレージ`,
+      galleries:    "パスワード保護ギャラリー",
+      expiry:       "カスタムリンク有効期限",
+      zipDownload:  "クライアント向けZIPダウンロード",
+      support:      "優先サポート",
+      manager:      "専任アカウントマネージャー",
+    },
+  },
+
+  // ─── Public share page ─────────────────────────────────────────────────────
+  sharePage: {
+    passwordSubtitle: "パスワードを入力してギャラリーを表示してください",
+    passwordLabel: "パスワード",
+    passwordPlaceholder: "パスワードを入力",
+    passwordSubmit: "ギャラリーを見る",
+    passwordVerifying: "確認中…",
+    expiredTitle: "リンクの有効期限が切れています",
+    expiredMessage: (eventName: string) =>
+      `「${eventName}」の共有リンクの有効期限が切れています。カメラマンに新しいリンクを依頼してください。`,
+    noPhotos: "写真がありません",
+    downloadAll: "すべてダウンロード（ZIP）",
+    downloadAllPreparing: "ZIP を準備中…",
+  },
+};

@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum PlanTier {
+  FREE
+  PRO
+  STUDIO
+}
+
+enum WatermarkPosition {
+  BOTTOM_RIGHT
+  BOTTOM_LEFT
+  BOTTOM_CENTER
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  storageUsedBytes BigInt         @default(0)
+  storageLimit     BigInt         @default(1073741824) // 1 GB
+  events           Event[]
+  subscription     Subscription?
+  studioProfile    StudioProfile?
+}
+
+model StudioProfile {
+  id          String   @id @default(cuid())
+  studioName  String
+  logoS3Key   String?
+  tagline     String?
+  website     String?
+  phone       String?
+  address     String?
+  brandColor         String?           // hex string e.g. "#3b82f6"
+  watermarkEnabled   Boolean           @default(true)
+  watermarkPosition  WatermarkPosition @default(BOTTOM_RIGHT)
+  watermarkOpacity   Int               @default(55) // 10–80 (%)
+  createdAt          DateTime          @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id            String      @id @default(cuid())
+  name          String
+  date          DateTime
+  description   String?
+  coverPhotoKey String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos        Photo[]
+  sharedLinks   SharedLink[]
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  s3Key     String
+  filename  String
+  size      Int
+  createdAt DateTime @default(now())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model SharedLink {
+  id           String    @id @default(cuid())
+  slug         String    @unique
+  passwordHash String
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+  eventId      String
+  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  stripeCustomerId     String    @unique
+  stripeSubscriptionId String?   @unique
+  stripePriceId        String?
+  planTier             PlanTier  @default(FREE)
+  status               String    @default("active")
+  currentPeriodEnd     DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  userId               String    @unique
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,319 @@
+export const en = {
+  // ─── App-wide ──────────────────────────────────────────────────────────────
+  app: {
+    name: "PhotoShare",
+    tagline: "Shared via PhotoShare",
+  },
+
+  // ─── Shared across multiple components ─────────────────────────────────────
+  common: {
+    cancel: "Cancel",
+    close: "Close",
+    optional: "optional",
+    delete: "Delete",
+    deleting: "Deleting\u2026",
+    download: "Download",
+    downloadPreparing: "Preparing\u2026",
+    noPhotosYet: "No photos yet",
+    photoCount: (n: number) => `${n} photo${n !== 1 ? "s" : ""}`,
+    close_aria: "Close",
+  },
+
+  // ─── Navigation ────────────────────────────────────────────────────────────
+  nav: {
+    signOut: "Sign out",
+    backToDashboard: "Back to dashboard",
+  },
+
+  // ─── Auth pages ────────────────────────────────────────────────────────────
+  auth: {
+    login: {
+      title: "Welcome",
+      subtitle: "Sign in to your photographer account.",
+      registeredBanner: "Account created! You can now sign in.",
+      error: "Invalid email or password.",
+      emailLabel: "Email address",
+      emailPlaceholder: "jane@example.com",
+      passwordLabel: "Password",
+      passwordPlaceholder: "\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7\u00b7",
+      submit: "Sign in",
+      submitting: "Signing in\u2026",
+      noAccount: "Don\u2019t have an account?",
+      createOne: "Create one",
+    },
+    register: {
+      title: "Create your account",
+      subtitle: "Start sharing your photography with clients.",
+      nameLabel: "Full name",
+      namePlaceholder: "Jane Smith",
+      emailLabel: "Email address",
+      emailPlaceholder: "jane@example.com",
+      passwordLabel: "Password",
+      passwordPlaceholder: "At least 8 characters",
+      submit: "Create account",
+      submitting: "Creating account\u2026",
+      hasAccount: "Already have an account?",
+      signIn: "Sign in",
+    },
+  },
+
+  // ─── Dashboard ─────────────────────────────────────────────────────────────
+  dashboard: {
+    welcome: (name: string) => `Welcome back, ${name} \uD83D\uDC4B`,
+    subtitle: "Here\u2019s an overview of your galleries.",
+    stats: {
+      events: "Events",
+      photos: "Photos",
+      storage: "Storage",
+      storageDetail: (used: string, limit: string) => `${used} / ${limit}`,
+      storagePercent: (pct: number) => `${pct}% used`,
+      atEventLimit: "Event limit reached \u2014 upgrade to add more.",
+    },
+    events: {
+      sectionTitle: "Your Events",
+      empty: "No events yet",
+      emptySubtitle: "Create your first event to start sharing photos with clients.",
+    },
+    upgrade: {
+      eventLimitTitle: "You've reached your event limit",
+      eventLimitBody: "Free plan includes 3 events. Upgrade to Pro (25 events) or Studio (unlimited) to keep growing.",
+      zipTitle: "ZIP download is a Pro feature",
+      zipBody: "Upgrade to Pro or Studio to let your clients download the full gallery as a ZIP file.",
+      cta: "View pricing",
+    },
+    createEvent: {
+      trigger: "+ New Event",
+      triggerDisabledTitle: "Upgrade your plan to create more events",
+      modalTitle: "Create New Event",
+      nameLabel: "Event title",
+      namePlaceholder: "e.g. Smith Wedding",
+      dateLabel: "Event date",
+      descriptionLabel: "Description",
+      descriptionPlaceholder: "A short note about this event\u2026",
+      submit: "Create Event",
+      submitting: "Creating\u2026",
+      successToast: "Event created successfully!",
+    },
+  },
+
+  // ─── Event page ────────────────────────────────────────────────────────────
+  eventPage: {
+    backAriaLabel: "Back to dashboard",
+    uploadButton: "Upload Photos",
+    shareButton: "Share Event",
+    noPhotosSubtitle: "Hit \u201cUpload Photos\u201d above to add photos to this event.",
+  },
+
+  // ─── Upload modal ──────────────────────────────────────────────────────────
+  uploadModal: {
+    title: "Upload Photos",
+    dropzonePrompt: "Drop photos here, or",
+    dropzoneBrowse: "browse",
+    dropzoneHint: "JPG, PNG, WEBP \u00b7 max 50 MB each",
+    dropzoneDragActive: "Drop to add photos\u2026",
+    statusDone: "Done",
+    statusFailed: "Failed",
+    summaryNoFiles: "No files selected",
+    summaryReady: (n: number) => `${n} file${n !== 1 ? "s" : ""} ready`,
+    summaryUploading: (done: number, total: number) => `Uploading\u2026 ${done} / ${total}`,
+    summarySettled: (done: number, failed: number) =>
+      `${done} uploaded${failed > 0 ? `, ${failed} failed` : ""}`,
+    submit: (n: number | string) => `Upload ${n}`,
+    submitting: "Uploading\u2026",
+  },
+
+  // ─── Share modal ───────────────────────────────────────────────────────────
+  shareModal: {
+    title: "Share Event",
+    createSectionTitle: "Create new link",
+    linkCreatedMessage: "Link created! Share this URL with your client:",
+    passwordLabel: "Password",
+    passwordPlaceholder: "min. 4 characters",
+    confirmLabel: "Confirm password",
+    confirmPlaceholder: "repeat password",
+    expiryLabel: "Expiry date",
+    expiryHint: "(optional \u2014 leave blank for no expiry)",
+    generateButton: "Generate link",
+    generating: "Generating link\u2026",
+    activeLinksTitle: "Active links",
+    errorPasswordMismatch: "Passwords do not match.",
+    errorPasswordTooShort: "Password must be at least 4 characters.",
+    linkCreatedOn: (date: string) => `Created ${date}`,
+    linkExpires: (date: string) => `Expires ${date}`,
+    linkExpired: (date: string) => `Expired ${date}`,
+    expiredBadge: "Expired",
+    revokeAriaLabel: "Revoke link",
+    copyButton: "Copy",
+    copiedButton: "Copied!",
+  },
+
+  // ─── Cover photo ───────────────────────────────────────────────────────────
+  coverPhoto: {
+    altText: "Event cover",
+    noCover: "No cover photo",
+    addButton: "Add cover photo",
+    changeButton: "Change cover",
+    uploading: "Uploading cover\u2026",
+    errorInvalidFile: "Please select an image file.",
+  },
+
+  // ─── Photo grid (dashboard event page) ────────────────────────────────────
+  photoGrid: {
+    emptySubtitle: "Hit \u201cUpload Photos\u201d above to add photos to this event.",
+    deleteAriaLabel: "Delete photo",
+    deleteConfirmTitle: "Delete this photo?",
+    deleteConfirmSubtitle: "This cannot be undone.",
+    deletingButton: "Deleting\u2026",
+    previewAriaLabel: (filename: string) => `Preview ${filename}`,
+  },
+
+  // ─── Lightbox (shared by dashboard + public gallery) ──────────────────────
+  lightbox: {
+    counter: (current: number, total: number) => `${current} / ${total}`,
+    closeAriaLabel: "Close preview",
+    prevAriaLabel: "Previous photo",
+    nextAriaLabel: "Next photo",
+    hint: "\u2190 \u2192 to navigate \u00b7 Esc to close",
+  },
+
+  // ─── User menu ─────────────────────────────────────────────────────────────
+  userMenu: {
+    language: "Language",
+    billing: "Billing & Plan",
+    changePassword: "Change password",
+    changePasswordModal: {
+      title: "Change password",
+      currentLabel: "Current password",
+      currentPlaceholder: "········",
+      newLabel: "New password",
+      newPlaceholder: "At least 8 characters",
+      confirmLabel: "Confirm new password",
+      confirmPlaceholder: "Repeat new password",
+      submit: "Update password",
+      submitting: "Updating\u2026",
+      success: "Password updated successfully.",
+      errorCurrent: "Current password is incorrect.",
+      errorTooShort: "New password must be at least 8 characters.",
+      errorMismatch: "Passwords do not match.",
+    },
+  },
+
+  // ─── Profile page ──────────────────────────────────────────────────────────
+  profile: {
+    title: "Profile",
+    saved: "Saved!",
+    saving: "Saving\u2026",
+    personalInfo: {
+      title: "Personal Info",
+      nameLabel: "Full name",
+      namePlaceholder: "Your name",
+      emailLabel: "Email address",
+      emailNote: "Email cannot be changed.",
+      saveButton: "Save changes",
+      passwordTitle: "Change Password",
+    },
+    studio: {
+      title: "Studio Branding",
+      logoLabel: "Studio logo",
+      logoUpload: "Upload logo",
+      logoChange: "Change logo",
+      logoUploading: "Uploading\u2026",
+      logoHint: "PNG, JPG \u00b7 Recommended 400\u00d7400px",
+      logoInvalidFile: "Please select an image file.",
+      studioNameLabel: "Studio name",
+      studioNamePlaceholder: "e.g. Smith Photography",
+      taglineLabel: "Tagline",
+      taglinePlaceholder: "Capturing moments that last forever",
+      websiteLabel: "Website",
+      websitePlaceholder: "https://yoursite.com",
+      phoneLabel: "Phone",
+      phonePlaceholder: "+1 (555) 000-0000",
+      addressLabel: "Address",
+      addressPlaceholder: "City, State",
+      brandColorLabel: "Brand color",
+      saveButton: "Save branding",
+    },
+    watermark: {
+      title: "Watermark Settings",
+      enabledLabel: "Add watermark to downloaded photos",
+      enabledHint: "Applied when customers download individual photos or a ZIP. Only available on Pro & Studio plans.",
+      positionLabel: "Position",
+      positions: {
+        BOTTOM_RIGHT:  "Bottom right",
+        BOTTOM_LEFT:   "Bottom left",
+        BOTTOM_CENTER: "Bottom center",
+      },
+      opacityLabel: "Opacity",
+      opacityValue: (v: number) => `${v}%`,
+      previewLabel: "Preview",
+      previewAlt: "Watermark preview",
+      saveButton: "Save watermark settings",
+    },
+  },
+
+  // ─── Billing page ──────────────────────────────────────────────────────────
+  billing: {
+    title: "Billing & Plan",
+    planSection: "Current Plan",
+    nextBillingLabel: "Next billing date",
+    noBilling: "No upcoming charges",
+    statusLabel: "Status",
+    status: {
+      active: "Active",
+      trialing: "Trial",
+      past_due: "Past due",
+      canceled: "Canceled",
+      incomplete: "Incomplete",
+    },
+    manageButton: "Manage billing",
+    managingButton: "Opening portal\u2026",
+    upgradeButton: "Upgrade plan",
+    freePlanNote: "You\u2019re on the Free plan. Upgrade to unlock more events and storage.",
+    canceledNote: "Your subscription has been canceled and will not renew.",
+    usageSection: "Usage this period",
+    eventsUsed: (used: number, limit: string) => `${used} of ${limit} events`,
+    storageUsed: (used: string, limit: string) => `${used} of ${limit}`,
+  },
+
+  // ─── Pricing page ──────────────────────────────────────────────────────────
+  pricing: {
+    title: "Simple, transparent pricing",
+    subtitle: "Start free. Upgrade when you need more events or storage.",
+    monthly: "/ mo",
+    currentPlan: "Current plan",
+    getStarted: "Get started free",
+    upgrade: (plan: string) => `Upgrade to ${plan}`,
+    mostPopular: "Most popular",
+    plans: {
+      free:   { name: "Free",   price: "$0",  description: "For photographers just getting started." },
+      pro:    { name: "Pro",    price: "$19", description: "For growing studios with more clients." },
+      studio: { name: "Studio", price: "$49", description: "For high-volume professionals." },
+    },
+    features: {
+      events:       (n: string) => `${n} events`,
+      storage:      (n: string) => `${n} storage`,
+      galleries:    "Password-protected galleries",
+      expiry:       "Custom link expiry",
+      zipDownload:  "ZIP download for clients",
+      support:      "Priority support",
+      manager:      "Dedicated account manager",
+    },
+  },
+
+  // ─── Public share page ─────────────────────────────────────────────────────
+  sharePage: {
+    passwordSubtitle: "Enter the password to view this gallery",
+    passwordLabel: "Password",
+    passwordPlaceholder: "Enter password",
+    passwordSubmit: "View Gallery",
+    passwordVerifying: "Verifying\u2026",
+    expiredTitle: "Link expired",
+    expiredMessage: (eventName: string) =>
+      `The shared link for ${eventName} has expired. Ask the photographer for a new link.`,
+    noPhotos: "No photos yet",
+    downloadAll: "Download All (ZIP)",
+    downloadAllPreparing: "Preparing ZIP…",
+  },
+};
+
+export type Translations = typeof en;
