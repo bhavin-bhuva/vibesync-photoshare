@@ -21,6 +21,23 @@ enum WatermarkPosition {
   BOTTOM_CENTER
 }
 
+enum SelectionStatus {
+  PENDING
+  REVIEWED
+  DELIVERED
+}
+
+enum UserRole {
+  PHOTOGRAPHER
+  SUPER_ADMIN
+}
+
+enum SharedLinkAccessType {
+  PASSWORD
+  PIN
+  NONE
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -30,11 +47,18 @@ model User {
   name          String?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  role             UserRole       @default(PHOTOGRAPHER)
+  isSuspended      Boolean        @default(false)
+  suspendedAt      DateTime?
+  suspendedReason  String?
+  lastLoginAt      DateTime?
+  lastLoginIp      String?
   storageUsedBytes BigInt         @default(0)
   storageLimit     BigInt         @default(1073741824) // 1 GB
-  events           Event[]
-  subscription     Subscription?
-  studioProfile    StudioProfile?
+  events              Event[]
+  subscription        Subscription?
+  studioProfile       StudioProfile?
+  adminActivityLogs   AdminActivityLog[]
 }
 
 model StudioProfile {
@@ -56,37 +80,64 @@ model StudioProfile {
 }
 
 model Event {
-  id            String      @id @default(cuid())
-  name          String
-  date          DateTime
-  description   String?
-  coverPhotoKey String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  userId        String
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  photos        Photo[]
-  sharedLinks   SharedLink[]
+  id                String      @id @default(cuid())
+  name              String
+  date              DateTime
+  description       String?
+  coverPhotoKey     String?
+  hasNewSelections  Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photos            Photo[]
+  sharedLinks       SharedLink[]
 }
 
 model Photo {
-  id        String   @id @default(cuid())
-  s3Key     String
-  filename  String
-  size      Int
-  createdAt DateTime @default(now())
-  eventId   String
-  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id              String          @id @default(cuid())
+  s3Key           String
+  filename        String
+  size            Int
+  createdAt       DateTime        @default(now())
+  eventId         String
+  event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  selectedPhotos  SelectedPhoto[]
 }
 
 model SharedLink {
-  id           String    @id @default(cuid())
-  slug         String    @unique
-  passwordHash String
-  expiresAt    DateTime?
-  createdAt    DateTime  @default(now())
-  eventId      String
-  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  id             String               @id @default(cuid())
+  slug           String               @unique
+  accessType     SharedLinkAccessType @default(PASSWORD)
+  passwordHash   String?              // set when accessType = PASSWORD
+  pin            String?              // bcrypt-hashed 4-digit PIN; set when accessType = PIN
+  pinPlain       String?              // plain-text PIN stored for photographer recovery
+  expiresAt      DateTime?
+  createdAt      DateTime             @default(now())
+  eventId        String
+  event          Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  photoSelections PhotoSelection[]
+}
+
+model PhotoSelection {
+  id             String          @id @default(cuid())
+  createdAt      DateTime        @default(now())
+  customerName   String
+  customerEmail  String?
+  customerNote   String?
+  status         SelectionStatus @default(PENDING)
+  sharedLinkId   String
+  sharedLink     SharedLink      @relation(fields: [sharedLinkId], references: [id], onDelete: Cascade)
+  selectedPhotos SelectedPhoto[]
+}
+
+model SelectedPhoto {
+  id               String         @id @default(cuid())
+  note             String?
+  photoSelectionId String
+  photoSelection   PhotoSelection @relation(fields: [photoSelectionId], references: [id], onDelete: Cascade)
+  photoId          String
+  photo            Photo          @relation(fields: [photoId], references: [id], onDelete: Cascade)
 }
 
 model Subscription {
@@ -101,4 +152,32 @@ model Subscription {
   updatedAt            DateTime  @updatedAt
   userId               String    @unique
   user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PlatformSettings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model GalleryAccessAttempt {
+  id          String   @id @default(cuid())
+  slug        String
+  ipAddress   String
+  attemptedAt DateTime @default(now())
+
+  @@index([slug, attemptedAt])
+}
+
+model AdminActivityLog {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  action     String   // e.g. "SUSPENDED_USER", "DELETED_EVENT", "CHANGED_PLAN"
+  targetType String   // e.g. "USER", "EVENT", "PHOTO"
+  targetId   String
+  metadata   Json?
+  ipAddress  String?
+  adminId    String
+  admin      User     @relation(fields: [adminId], references: [id], onDelete: Restrict)
 }

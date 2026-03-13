@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { verifyShareToken } from "@/lib/share-token";
-import { getCloudfrontSignedUrl } from "@/lib/cloudfront";
+import { getCloudfrontSignedUrl, getCloudfrontPreviewUrl } from "@/lib/cloudfront";
 import { PasswordForm } from "./PasswordForm";
+import { PinForm } from "./PinForm";
 import { Gallery } from "./Gallery";
 import { getServerT } from "@/lib/i18n/server";
 import type { Translations } from "@/lib/i18n";
@@ -23,17 +24,6 @@ function formatBytes(bytes: number) {
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(0)} KB`;
   if (bytes < 1024 ** 3) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
   return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
-}
-
-/**
- * Returns "white" or "black" — whichever contrasts better against the given
- * hex background color, using the W3C perceived-luminance formula.
- */
-function contrastColor(hex: string): "white" | "black" {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? "black" : "white";
 }
 
 // ─── Expired state ────────────────────────────────────────────────────────────
@@ -70,7 +60,9 @@ export default async function SharePage({
       event: {
         include: {
           photos: { orderBy: { createdAt: "desc" } },
-          user: { include: { subscription: true, studioProfile: true } },
+          user: {
+            include: { subscription: true, studioProfile: true },
+          },
         },
       },
     },
@@ -78,42 +70,91 @@ export default async function SharePage({
 
   if (!link) notFound();
 
+  // Suspended photographer — show generic unavailable page, no details
+  if (link.event.user.isSuspended) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 dark:bg-zinc-900">
+        <div className="max-w-sm text-center">
+          <p className="text-4xl">🔒</p>
+          <h1 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            This gallery is no longer available
+          </h1>
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            This gallery is no longer accessible. Please contact the photographer directly.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (link.expiresAt && new Date() > link.expiresAt) {
     return <ExpiredPage eventName={link.event.name} t={t} />;
   }
 
-  // Check the signed access cookie set after password verification
+  // ── Access check ───────────────────────────────────────────────────────────
+
   const cookieStore = await cookies();
   const token = cookieStore.get(`share_${slug}`)?.value;
   const hasAccess = token ? verifyShareToken(slug, token) : false;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const accessType = ((link as any).accessType as string ?? "PASSWORD") as "PASSWORD" | "PIN" | "NONE";
+
+  // Studio profile — needed for both the PIN gate and the gallery hero
+  const sp = link.event.user.studioProfile;
+
+  // Logo URL — computed early so PinForm can show studio branding before auth
+  const logoUrl = sp?.logoS3Key ? await getCloudfrontSignedUrl(sp.logoS3Key) : null;
+
   if (!hasAccess) {
+    // NONE: redirect to the grant route handler which sets the cookie
+    // and redirects back here, so the user sees the gallery directly.
+    if (accessType === "NONE") {
+      redirect(`/api/share-grant/${slug}`);
+    }
+
+    // PIN: dedicated OTP entry screen
+    if (accessType === "PIN") {
+      return (
+        <PinForm
+          slug={slug}
+          eventName={link.event.name}
+          studioName={sp?.studioName ?? null}
+          logoUrl={logoUrl}
+        />
+      );
+    }
+
+    // PASSWORD: classic password form
     return <PasswordForm slug={slug} eventName={link.event.name} />;
   }
 
-  // ── Authenticated gallery view ────────────────────────────────────────────
+  // ── Authenticated gallery view ─────────────────────────────────────────────
 
   const { event } = link;
   const photographerPlan = event.user.subscription?.planTier ?? "FREE";
   const zipAllowed = photographerPlan !== "FREE";
   const totalSize = event.photos.reduce((s, p) => s + p.size, 0);
 
-  const photos = event.photos.map((photo) => ({
-    id: photo.id,
-    filename: photo.filename,
-    size: photo.size,
-    signedUrl: getCloudfrontSignedUrl(photo.s3Key),
-  }));
+  const [photos, coverUrl] = await Promise.all([
+    Promise.all(
+      event.photos.map(async (photo) => ({
+        id: photo.id,
+        filename: photo.filename,
+        size: photo.size,
+        thumbnailUrl: await getCloudfrontPreviewUrl(photo.s3Key, 800),
+        signedUrl:    await getCloudfrontPreviewUrl(photo.s3Key, 1920),
+      }))
+    ),
+    event.coverPhotoKey ? getCloudfrontSignedUrl(event.coverPhotoKey) : null,
+  ]);
+  // logoUrl already computed above — reused here
 
-  // ── Studio branding ──────────────────────────────────────────────────────
-  const sp = event.user.studioProfile;
-  const logoUrl      = sp?.logoS3Key      ? getCloudfrontSignedUrl(sp.logoS3Key)      : null;
-  const coverUrl     = event.coverPhotoKey ? getCloudfrontSignedUrl(event.coverPhotoKey) : null;
-  const brandColor   = sp?.brandColor ?? null;
+  const brandColor = sp?.brandColor ?? null;
 
   // Background precedence: cover photo > brand color > dark gradient fallback
   const heroBg = coverUrl
-    ? undefined                           // image handled via <img>
+    ? undefined
     : brandColor
     ? { backgroundColor: brandColor }
     : undefined;
@@ -135,11 +176,10 @@ export default async function SharePage({
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : !brandColor && (
-          /* Neutral dark gradient when neither cover nor brand color is set */
           <div className="absolute inset-0 bg-gradient-to-br from-zinc-700 to-zinc-900" />
         )}
 
-        {/* Scrim — ensures glass card is readable over any background */}
+        {/* Scrim */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10" />
 
         {/* ── Glassmorphism info card ── */}
@@ -201,7 +241,7 @@ export default async function SharePage({
 
       {/* Gallery */}
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <Gallery photos={photos} slug={slug} zipAllowed={zipAllowed} />
+        <Gallery photos={photos} slug={slug} sharedLinkId={link.id} zipAllowed={zipAllowed} />
       </main>
 
       <footer className="border-t border-zinc-200 py-6 text-center dark:border-zinc-700">

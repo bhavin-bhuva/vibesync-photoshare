@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -29,10 +29,18 @@ function LoginForm() {
     });
 
     if (result?.error) {
-      setError(t.auth.login.error);
+      // NextAuth propagates the exact message thrown in authorize() when
+      // redirect:false is used — suspension errors are not "CredentialsSignin"
+      setError(
+        result.error === "CredentialsSignin"
+          ? t.auth.login.error
+          : result.error
+      );
       setPending(false);
     } else {
-      router.push("/dashboard");
+      const session = await getSession();
+      const dest = session?.user?.role === "SUPER_ADMIN" ? "/admin" : "/dashboard";
+      router.push(dest);
       router.refresh();
     }
   }

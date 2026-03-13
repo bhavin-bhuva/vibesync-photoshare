@@ -5,6 +5,7 @@ export const ja: Translations = {
   app: {
     name: "PhotoShare",
     tagline: "PhotoShare 経由で共有",
+    accessDenied: "アクセスが拒否されました。このページを表示する権限がありません。",
   },
 
   // ─── Shared across multiple components ─────────────────────────────────────
@@ -25,6 +26,9 @@ export const ja: Translations = {
   nav: {
     signOut: "サインアウト",
     backToDashboard: "ダッシュボードに戻る",
+    dashboard: "ダッシュボード",
+    signIn: "サインイン",
+    getStarted: "無料で始める",
   },
 
   // ─── Auth pages ────────────────────────────────────────────────────────────
@@ -83,6 +87,10 @@ export const ja: Translations = {
       zipBody: "クライアントがギャラリー全体をZIPでダウンロードできるようにするには、ProまたはStudioにアップグレードしてください。",
       cta: "料金プランを見る",
     },
+    newSelectionsBanner: "新しい写真セレクションが届いています — 今すぐ確認してください。",
+    newSelectionsButton: "セレクションを見る",
+    newSelectionsBadge: "新しいセレクション",
+    planBadge: (name: string) => `${name} プラン`,
     createEvent: {
       trigger: "＋ 新しいイベント",
       triggerDisabledTitle: "プランをアップグレードしてイベントを追加してください",
@@ -103,7 +111,9 @@ export const ja: Translations = {
     backAriaLabel: "ダッシュボードに戻る",
     uploadButton: "写真をアップロード",
     shareButton: "イベントを共有",
+    selectionsButton: "セレクション",
     noPhotosSubtitle: "上の「写真をアップロード」からこのイベントに写真を追加してください。",
+    loadMore: "さらに写真を読み込む",
   },
 
   // ─── Upload modal ──────────────────────────────────────────────────────────
@@ -147,6 +157,21 @@ export const ja: Translations = {
     revokeAriaLabel: "リンクを無効化",
     copyButton: "コピー",
     copiedButton: "コピーしました！",
+    linkCreatedPinMessage: "このPINをクライアントと共有してください：",
+    errorPinInvalid: "PINは4桁の数字（0〜9）にしてください。",
+    accessTypeLabel: "アクセス保護",
+    accessNone: "保護なし",
+    accessPin: "PIN",
+    accessPassword: "パスワード",
+    pinLabel: "4桁のPIN",
+    pinRefreshAriaLabel: "ランダムなPINを生成",
+    pinCopyAriaLabel: "PINをコピー",
+    noProtectionWarning: "リンクを持っている人は誰でもこのギャラリーを表示できます。",
+    accessBadgeNone: "公開",
+    accessBadgePin: "PIN保護",
+    accessBadgePassword: "パスワード保護",
+    pinRevealAriaLabel: "PINを表示",
+    pinHideAriaLabel: "PINを非表示",
   },
 
   // ─── Cover photo ───────────────────────────────────────────────────────────
@@ -167,6 +192,8 @@ export const ja: Translations = {
     deleteConfirmSubtitle: "この操作は元に戻せません。",
     deletingButton: "削除中…",
     previewAriaLabel: (filename: string) => `${filename} をプレビュー`,
+    loadingMore: "さらに読み込み中\u2026",
+    allPhotosLoaded: (n: number) => `${n} 枚の写真をすべて表示しました`,
   },
 
   // ─── Lightbox (shared by dashboard + public gallery) ──────────────────────
@@ -253,6 +280,45 @@ export const ja: Translations = {
     },
   },
 
+  // ─── Client selections (photographer view) ────────────────────────────────
+  selections: {
+    title: "クライアント セレクション",
+    backAriaLabel: "イベントに戻る",
+    pendingBadge: (n: number) => `${n} 件 未確認`,
+    emptyTitle: "セレクションはまだありません",
+    emptySubtitle: "クライアントは共有ギャラリーからお気に入りの写真を選択できます。",
+    statusPending: "未確認",
+    statusReviewed: "確認済み",
+    statusDelivered: "納品済み",
+    downloadZip: "ZIPダウンロード",
+    clientNoteLabel: "クライアントからのメモ",
+  },
+
+  // ─── Gallery (public share page) ──────────────────────────────────────────
+  gallery: {
+    modeView: "閲覧",
+    modeSelect: "写真を選択",
+    selectAriaLabel: (selected: boolean, filename: string) =>
+      `${filename} を${selected ? "選択解除" : "選択"}`,
+    downloadAriaLabel: (filename: string) => `${filename} をダウンロード`,
+    clearSelection: "選択をクリア",
+    noPhotosSelected: "写真が選択されていません",
+    photosSelected: (n: number) => `${n} 枚選択中`,
+    nameLabel: "お名前",
+    namePlaceholder: "山田 太郎",
+    emailLabel: "メールアドレス",
+    emailPlaceholder: "taro@example.com",
+    noteLabel: "カメラマンへのメモ",
+    notePlaceholder: "自然な笑顔のショットを多めに…",
+    submitButton: "セレクションを送信",
+    submitting: "送信中…",
+    errorNoName: "お名前を入力してください。",
+    errorNoPhotos: "写真を1枚以上選択してください。",
+    thankYouTitle: "セレクションが送信されました！",
+    thankYouSubtitle: "カメラマンより近日中にご連絡いたします。",
+    browseGallery: "ギャラリーに戻る",
+  },
+
   // ─── Billing page ──────────────────────────────────────────────────────────
   billing: {
     title: "請求・プラン",
@@ -273,6 +339,8 @@ export const ja: Translations = {
     freePlanNote: "現在、無料プランをご利用中です。アップグレードして、より多くのイベントとストレージをご利用ください。",
     canceledNote: "サブスクリプションはキャンセルされており、更新されません。",
     usageSection: "今期の使用状況",
+    eventsLabel: "イベント",
+    storageLabel: "ストレージ",
     eventsUsed: (used: number, limit: string) => `${limit}件中 ${used}件使用中`,
     storageUsed: (used: string, limit: string) => `${limit}中 ${used}使用中`,
   },
@@ -286,6 +354,7 @@ export const ja: Translations = {
     getStarted: "無料で始める",
     upgrade: (plan: string) => `${plan}にアップグレード`,
     mostPopular: "人気No.1",
+    trialNote: "有料プランはすべて14日間の無料トライアル付き。いつでもキャンセル可能。",
     plans: {
       free:   { name: "Free",   price: "$0",  description: "写真家として始めたばかりの方に。" },
       pro:    { name: "Pro",    price: "$19", description: "クライアントが増えてきたスタジオに。" },
@@ -302,6 +371,32 @@ export const ja: Translations = {
     },
   },
 
+  // ─── Admin panel ───────────────────────────────────────────────────────────
+  admin: {
+    panelLabel: "管理パネル",
+    nav: {
+      dashboard:     "ダッシュボード",
+      photographers: "フォトグラファー",
+      events:        "イベント",
+      storage:       "ストレージ",
+      subscriptions: "サブスクリプション",
+      activityLog:   "アクティビティログ",
+      settings:      "設定",
+    },
+    topBar: {
+      searchPlaceholder: "検索…",
+    },
+    pageTitles: {
+      "/admin":                 "ダッシュボード",
+      "/admin/photographers":   "フォトグラファー",
+      "/admin/events":          "イベント",
+      "/admin/storage":         "ストレージ",
+      "/admin/subscriptions":   "サブスクリプション",
+      "/admin/activity":        "アクティビティログ",
+      "/admin/settings":        "設定",
+    } as Record<string, string>,
+  },
+
   // ─── Public share page ─────────────────────────────────────────────────────
   sharePage: {
     passwordSubtitle: "パスワードを入力してギャラリーを表示してください",
@@ -309,6 +404,11 @@ export const ja: Translations = {
     passwordPlaceholder: "パスワードを入力",
     passwordSubmit: "ギャラリーを見る",
     passwordVerifying: "確認中…",
+    pinSubtitle: "4桁のPINを入力してギャラリーを表示してください",
+    pinLabel: "PIN",
+    incorrectPin: "PINが正しくありません。",
+    tooManyAttempts: (minutes: number) => `試行回数が多すぎます。${minutes}分後にもう一度お試しください。`,
+    tooManyAttemptsCountdown: (countdown: string) => `試行回数が多すぎます。${countdown}後にもう一度お試しください。`,
     expiredTitle: "リンクの有効期限が切れています",
     expiredMessage: (eventName: string) =>
       `「${eventName}」の共有リンクの有効期限が切れています。カメラマンに新しいリンクを依頼してください。`,

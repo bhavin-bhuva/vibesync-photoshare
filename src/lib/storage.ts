@@ -1,11 +1,10 @@
 import { db } from "@/lib/db";
-import { PlanTier } from "@/generated/prisma/client";
 
-export const PLAN_STORAGE_LIMITS: Record<PlanTier, bigint> = {
+export const PLAN_STORAGE_LIMITS = {
   FREE: BigInt(1073741824),        // 1 GB
-  PRO: BigInt(107374182400),       // 100 GB
+  PRO: BigInt(53687091200),        // 50 GB
   STUDIO: BigInt(536870912000),    // 500 GB
-};
+} as const;
 
 export async function getStorageUsed(userId: string): Promise<bigint> {
   const user = await db.user.findUniqueOrThrow({
@@ -19,17 +18,19 @@ export async function checkStorageLimit(
   userId: string,
   incomingFileBytes: number
 ): Promise<{ allowed: boolean; used: bigint; limit: bigint; percentUsed: number }> {
-  const user = await db.user.findUniqueOrThrow({
-    where: { id: userId },
-    select: {
-      storageUsedBytes: true,
-      subscription: { select: { planTier: true } },
-    },
-  });
+  const [user, sizeAgg] = await Promise.all([
+    db.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { storageLimit: true },
+    }),
+    db.photo.aggregate({
+      where: { event: { userId } },
+      _sum: { size: true },
+    }),
+  ]);
 
-  const tier = user.subscription?.planTier ?? PlanTier.FREE;
-  const limit = PLAN_STORAGE_LIMITS[tier];
-  const used = user.storageUsedBytes;
+  const limit = user.storageLimit;
+  const used = BigInt(sizeAgg._sum.size ?? 0);
   const incoming = BigInt(incomingFileBytes);
   const allowed = used + incoming <= limit;
   const percentUsed = limit > 0n ? Number((used * 10000n) / limit) / 100 : 100;

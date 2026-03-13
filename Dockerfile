@@ -11,7 +11,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 EXPOSE 3000
 # migrate + generate + dev server; DATABASE_URL injected by docker-compose
-CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma generate && npm run dev"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx prisma generate && npx prisma db seed && npm run dev"]
 
 # ── Stage 3: production build ──────────────────────────────────────────────────
 FROM node:20-alpine AS builder

@@ -19,7 +19,7 @@ export default async function ProfilePage() {
   if (!user) redirect("/login");
 
   const sp = user.studioProfile;
-  const logoUrl = sp?.logoS3Key ? getCloudfrontSignedUrl(sp.logoS3Key) : null;
+  const logoUrl = sp?.logoS3Key ? await getCloudfrontSignedUrl(sp.logoS3Key) : null;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">

@@ -3,6 +3,7 @@ export const en = {
   app: {
     name: "PhotoShare",
     tagline: "Shared via PhotoShare",
+    accessDenied: "Access denied. You don\u2019t have permission to view that page.",
   },
 
   // ─── Shared across multiple components ─────────────────────────────────────
@@ -23,6 +24,9 @@ export const en = {
   nav: {
     signOut: "Sign out",
     backToDashboard: "Back to dashboard",
+    dashboard: "Dashboard",
+    signIn: "Sign in",
+    getStarted: "Get started",
   },
 
   // ─── Auth pages ────────────────────────────────────────────────────────────
@@ -81,6 +85,10 @@ export const en = {
       zipBody: "Upgrade to Pro or Studio to let your clients download the full gallery as a ZIP file.",
       cta: "View pricing",
     },
+    newSelectionsBanner: "You have new photo selections waiting \u2014 review them now.",
+    newSelectionsButton: "View selections",
+    newSelectionsBadge: "New Selections",
+    planBadge: (name: string) => `${name} plan`,
     createEvent: {
       trigger: "+ New Event",
       triggerDisabledTitle: "Upgrade your plan to create more events",
@@ -101,7 +109,9 @@ export const en = {
     backAriaLabel: "Back to dashboard",
     uploadButton: "Upload Photos",
     shareButton: "Share Event",
+    selectionsButton: "Selections",
     noPhotosSubtitle: "Hit \u201cUpload Photos\u201d above to add photos to this event.",
+    loadMore: "Load more photos",
   },
 
   // ─── Upload modal ──────────────────────────────────────────────────────────
@@ -127,6 +137,7 @@ export const en = {
     title: "Share Event",
     createSectionTitle: "Create new link",
     linkCreatedMessage: "Link created! Share this URL with your client:",
+    linkCreatedPinMessage: "Share this PIN with your client:",
     passwordLabel: "Password",
     passwordPlaceholder: "min. 4 characters",
     confirmLabel: "Confirm password",
@@ -138,6 +149,7 @@ export const en = {
     activeLinksTitle: "Active links",
     errorPasswordMismatch: "Passwords do not match.",
     errorPasswordTooShort: "Password must be at least 4 characters.",
+    errorPinInvalid: "PIN must be exactly 4 digits (0\u20139).",
     linkCreatedOn: (date: string) => `Created ${date}`,
     linkExpires: (date: string) => `Expires ${date}`,
     linkExpired: (date: string) => `Expired ${date}`,
@@ -145,6 +157,19 @@ export const en = {
     revokeAriaLabel: "Revoke link",
     copyButton: "Copy",
     copiedButton: "Copied!",
+    accessTypeLabel: "Access protection",
+    accessNone: "No protection",
+    accessPin: "PIN",
+    accessPassword: "Password",
+    pinLabel: "4-digit PIN",
+    pinRefreshAriaLabel: "Generate random PIN",
+    pinCopyAriaLabel: "Copy PIN",
+    noProtectionWarning: "Anyone with the link can view this gallery.",
+    accessBadgeNone: "Public",
+    accessBadgePin: "PIN Protected",
+    accessBadgePassword: "Password Protected",
+    pinRevealAriaLabel: "Reveal PIN",
+    pinHideAriaLabel: "Hide PIN",
   },
 
   // ─── Cover photo ───────────────────────────────────────────────────────────
@@ -165,6 +190,8 @@ export const en = {
     deleteConfirmSubtitle: "This cannot be undone.",
     deletingButton: "Deleting\u2026",
     previewAriaLabel: (filename: string) => `Preview ${filename}`,
+    loadingMore: "Loading more\u2026",
+    allPhotosLoaded: (n: number) => `All ${n} photos loaded`,
   },
 
   // ─── Lightbox (shared by dashboard + public gallery) ──────────────────────
@@ -251,6 +278,45 @@ export const en = {
     },
   },
 
+  // ─── Client selections (photographer view) ────────────────────────────────
+  selections: {
+    title: "Client Selections",
+    backAriaLabel: "Back to event",
+    pendingBadge: (n: number) => `${n} pending`,
+    emptyTitle: "No selections yet",
+    emptySubtitle: "Clients can select their favourite photos from the shared gallery.",
+    statusPending: "Pending",
+    statusReviewed: "Reviewed",
+    statusDelivered: "Delivered",
+    downloadZip: "Download ZIP",
+    clientNoteLabel: "Note from client",
+  },
+
+  // ─── Gallery (public share page) ──────────────────────────────────────────
+  gallery: {
+    modeView: "View",
+    modeSelect: "Select Photos",
+    selectAriaLabel: (selected: boolean, filename: string) =>
+      `${selected ? "Deselect" : "Select"} ${filename}`,
+    downloadAriaLabel: (filename: string) => `Download ${filename}`,
+    clearSelection: "Clear selection",
+    noPhotosSelected: "No photos selected",
+    photosSelected: (n: number) => `${n} photo${n !== 1 ? "s" : ""} selected`,
+    nameLabel: "Your name",
+    namePlaceholder: "Jane Smith",
+    emailLabel: "Email",
+    emailPlaceholder: "jane@example.com",
+    noteLabel: "Note to photographer",
+    notePlaceholder: "Please keep the candid shots\u2026",
+    submitButton: "Submit Selection",
+    submitting: "Submitting\u2026",
+    errorNoName: "Please enter your name.",
+    errorNoPhotos: "Please select at least one photo.",
+    thankYouTitle: "Your selections have been submitted!",
+    thankYouSubtitle: "The photographer will be in touch soon.",
+    browseGallery: "Browse gallery",
+  },
+
   // ─── Billing page ──────────────────────────────────────────────────────────
   billing: {
     title: "Billing & Plan",
@@ -271,8 +337,36 @@ export const en = {
     freePlanNote: "You\u2019re on the Free plan. Upgrade to unlock more events and storage.",
     canceledNote: "Your subscription has been canceled and will not renew.",
     usageSection: "Usage this period",
+    eventsLabel: "Events",
+    storageLabel: "Storage",
     eventsUsed: (used: number, limit: string) => `${used} of ${limit} events`,
     storageUsed: (used: string, limit: string) => `${used} of ${limit}`,
+  },
+
+  // ─── Admin panel ───────────────────────────────────────────────────────────
+  admin: {
+    panelLabel: "Admin Panel",
+    nav: {
+      dashboard:     "Dashboard",
+      photographers: "Photographers",
+      events:        "Events",
+      storage:       "Storage",
+      subscriptions: "Subscriptions",
+      activityLog:   "Activity Log",
+      settings:      "Settings",
+    },
+    topBar: {
+      searchPlaceholder: "Search anything\u2026",
+    },
+    pageTitles: {
+      "/admin":                   "Dashboard",
+      "/admin/photographers":     "Photographers",
+      "/admin/events":            "Events",
+      "/admin/storage":           "Storage",
+      "/admin/subscriptions":     "Subscriptions",
+      "/admin/activity":          "Activity Log",
+      "/admin/settings":          "Settings",
+    } as Record<string, string>,
   },
 
   // ─── Pricing page ──────────────────────────────────────────────────────────
@@ -284,6 +378,7 @@ export const en = {
     getStarted: "Get started free",
     upgrade: (plan: string) => `Upgrade to ${plan}`,
     mostPopular: "Most popular",
+    trialNote: "All paid plans include a 14-day free trial. Cancel anytime.",
     plans: {
       free:   { name: "Free",   price: "$0",  description: "For photographers just getting started." },
       pro:    { name: "Pro",    price: "$19", description: "For growing studios with more clients." },
@@ -307,6 +402,11 @@ export const en = {
     passwordPlaceholder: "Enter password",
     passwordSubmit: "View Gallery",
     passwordVerifying: "Verifying\u2026",
+    pinSubtitle: "Enter the 4-digit PIN to view this gallery",
+    pinLabel: "PIN",
+    incorrectPin: "Incorrect PIN.",
+    tooManyAttempts: (minutes: number) => `Too many attempts. Try again in ${minutes} minute${minutes !== 1 ? "s" : ""}.`,
+    tooManyAttemptsCountdown: (countdown: string) => `Too many attempts. Try again in ${countdown}.`,
     expiredTitle: "Link expired",
     expiredMessage: (eventName: string) =>
       `The shared link for ${eventName} has expired. Ask the photographer for a new link.`,

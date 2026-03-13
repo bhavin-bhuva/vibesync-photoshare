@@ -6,9 +6,9 @@ import Link from "next/link";
 import { getServerT } from "@/lib/i18n/server";
 import { PhotoGrid } from "./PhotoGrid";
 import { UploadModal } from "./UploadModal";
-import { ShareModal } from "./ShareModal";
+import { ShareModal, type SharedLinkRow } from "./ShareModal";
 import { CoverPhotoUpload } from "./CoverPhotoUpload";
-import { getCloudfrontSignedUrl } from "@/lib/cloudfront";
+import { getCloudfrontSignedUrl, getCloudfrontPreviewUrl } from "@/lib/cloudfront";
 
 function formatDate(date: Date) {
   return date.toLocaleDateString("en-US", {
@@ -24,39 +24,60 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
 }
 
+const PAGE_SIZE = 50;
+
 export default async function EventPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ cursor?: string }>;
 }) {
-  const { id } = await params;
+  const [{ id }, { cursor }] = await Promise.all([params, searchParams]);
   const [t, session] = await Promise.all([getServerT(), getServerSession(authOptions)]);
   if (!session) redirect("/login");
 
-  const event = await db.event.findUnique({
-    where: { id },
-    include: {
-      photos: { orderBy: { createdAt: "desc" } },
-      sharedLinks: {
-        orderBy: { createdAt: "desc" },
-        select: { id: true, slug: true, expiresAt: true, createdAt: true },
+  const [event, pendingSelectionsCount, photos, totalSizeAgg] = await Promise.all([
+    db.event.findUnique({
+      where: { id },
+      include: {
+        sharedLinks: {
+          orderBy: { createdAt: "desc" },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          select: { id: true, slug: true, expiresAt: true, createdAt: true, accessType: true } as any,
+        },
+        _count: { select: { photos: true } },
       },
-      _count: { select: { photos: true } },
-    },
-  });
+    }),
+    db.photoSelection.count({
+      where: { status: "PENDING", sharedLink: { eventId: id } },
+    }),
+    db.photo.findMany({
+      where: { eventId: id },
+      orderBy: { createdAt: "desc" },
+      take: PAGE_SIZE,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+    }),
+    db.photo.aggregate({
+      where: { eventId: id },
+      _sum: { size: true },
+    }),
+  ]);
 
   if (!event || event.userId !== session.user.id) notFound();
 
-  const totalSizeBytes = event.photos.reduce((s, p) => s + p.size, 0);
+  const nextCursor = photos.length === PAGE_SIZE ? photos[photos.length - 1].id : null;
+  const totalSizeBytes = totalSizeAgg._sum.size ?? 0;
 
-  const photosWithUrls = event.photos.map((photo) => ({
-    ...photo,
-    signedUrl: getCloudfrontSignedUrl(photo.s3Key),
-  }));
-
-  const coverSignedUrl = event.coverPhotoKey
-    ? getCloudfrontSignedUrl(event.coverPhotoKey)
-    : null;
+  const [photosWithUrls, coverSignedUrl] = await Promise.all([
+    Promise.all(
+      photos.map(async (photo) => ({
+        ...photo,
+        thumbnailUrl: await getCloudfrontPreviewUrl(photo.s3Key, 800),
+      }))
+    ),
+    event.coverPhotoKey ? getCloudfrontSignedUrl(event.coverPhotoKey) : null,
+  ]);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
@@ -104,11 +125,26 @@ export default async function EventPage({
 
             {/* Action buttons */}
             <div className="flex shrink-0 items-center gap-2">
+              <Link
+                href={`/dashboard/events/${id}/selections`}
+                className="relative flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                </svg>
+                {t.eventPage.selectionsButton}
+                {pendingSelectionsCount > 0 && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {pendingSelectionsCount}
+                  </span>
+                )}
+              </Link>
+
               <UploadModal eventId={id} />
 
               <ShareModal
                 eventId={id}
-                initialLinks={event.sharedLinks}
+                initialLinks={event.sharedLinks as unknown as SharedLinkRow[]}
               />
             </div>
           </div>
@@ -128,6 +164,17 @@ export default async function EventPage({
       {/* ── Main content ── */}
       <main className="mx-auto max-w-6xl px-6 py-8">
         <PhotoGrid photos={photosWithUrls} />
+
+        {nextCursor && (
+          <div className="mt-8 flex justify-center">
+            <Link
+              href={`/dashboard/events/${id}?cursor=${nextCursor}`}
+              className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+            >
+              {t.eventPage.loadMore}
+            </Link>
+          </div>
+        )}
       </main>
     </div>
   );

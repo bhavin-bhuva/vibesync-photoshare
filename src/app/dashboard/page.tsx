@@ -4,20 +4,16 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import type { PlanTier } from "@/generated/prisma/client";
 import { CreateEventModal } from "./CreateEventModal";
+import { AccessDeniedToast } from "./AccessDeniedToast";
 import { UserMenu } from "./UserMenu";
 import { StorageBanner } from "./StorageBanner";
 import { getCloudfrontSignedUrl } from "@/lib/cloudfront";
 import Link from "next/link";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import { checkStorageLimit, formatBytes } from "@/lib/storage";
+import { getEventLimits } from "@/lib/platform-settings";
 
 // ─── Plan config ──────────────────────────────────────────────────────────────
-
-const PLAN_EVENT_LIMIT: Record<PlanTier, number | null> = {
-  FREE:   3,
-  PRO:    25,
-  STUDIO: null, // unlimited
-};
 
 const PLAN_BADGE: Record<PlanTier, { label: string; className: string }> = {
   FREE:   { label: "Free",   className: "bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300" },
@@ -47,7 +43,12 @@ function placeholderGradient(name: string) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   const [t, locale, session] = await Promise.all([
     getServerT(),
     getServerLocale(),
@@ -55,24 +56,34 @@ export default async function DashboardPage() {
   ]);
   if (!session) redirect("/login");
 
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      subscription: true,
-      events: {
-        orderBy: { date: "desc" },
-        include: {
-          _count: { select: { photos: true } },
+  const [user, eventLimits] = await Promise.all([
+    db.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        subscription: true,
+        events: {
+          orderBy: { date: "desc" },
+          include: {
+            _count: { select: { photos: true } },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            sharedLinks: { select: { accessType: true, expiresAt: true } as any },
+          },
         },
       },
-    },
-  });
+    }),
+    getEventLimits(),
+  ]);
 
   if (!user) redirect("/login");
 
   const plan = user.subscription?.planTier ?? "FREE";
   const badge = PLAN_BADGE[plan];
-  const eventLimit = PLAN_EVENT_LIMIT[plan];
+  const planEventLimit: Record<PlanTier, number | null> = {
+    FREE:   eventLimits.FREE,
+    PRO:    eventLimits.PRO,
+    STUDIO: null,
+  };
+  const eventLimit = planEventLimit[plan];
 
   const { used: storageUsed, limit: storageLimit, percentUsed: storagePercent } =
     await checkStorageLimit(session.user.id, 0);
@@ -80,8 +91,15 @@ export default async function DashboardPage() {
   const events = user.events;
   const atEventLimit = eventLimit !== null && events.length >= eventLimit;
 
+  const coverUrls = new Map(
+    await Promise.all(
+      events.map(async (e) => [e.id, e.coverPhotoKey ? await getCloudfrontSignedUrl(e.coverPhotoKey) : null] as const)
+    )
+  );
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+      {error === "access_denied" && <AccessDeniedToast />}
       {/* ── Header ── */}
       <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
@@ -101,6 +119,29 @@ export default async function DashboardPage() {
         {/* ── Storage warning banner ── */}
         {storagePercent > 90 && <StorageBanner />}
 
+        {/* ── New selections banner ── */}
+        {events.some((e) => e.hasNewSelections) && (() => {
+          const first = events.find((e) => e.hasNewSelections)!;
+          return (
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-800 dark:bg-blue-950/40">
+              <div className="flex items-center gap-3">
+                <svg className="h-5 w-5 shrink-0 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10 2a6 6 0 0 0-6 6v3.586l-.707.707A1 1 0 0 0 4 14h12a1 1 0 0 0 .707-1.707L16 11.586V8a6 6 0 0 0-6-6ZM10 18a3 3 0 0 1-3-3h6a3 3 0 0 1-3 3Z" />
+                </svg>
+                <p className="text-sm text-blue-800 dark:text-blue-300">
+                  {t.dashboard.newSelectionsBanner}
+                </p>
+              </div>
+              <Link
+                href={`/dashboard/events/${first.id}/selections`}
+                className="shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+              >
+                {t.dashboard.newSelectionsButton}
+              </Link>
+            </div>
+          );
+        })()}
+
         {/* ── Welcome + plan badge ── */}
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -114,7 +155,7 @@ export default async function DashboardPage() {
           <span
             className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${badge.className}`}
           >
-            {badge.label} plan
+            {t.dashboard.planBadge(badge.label)}
           </span>
         </div>
 
@@ -195,9 +236,7 @@ export default async function DashboardPage() {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {events.map((event) => {
-                const coverUrl = event.coverPhotoKey
-                  ? getCloudfrontSignedUrl(event.coverPhotoKey)
-                  : null;
+                const coverUrl = coverUrls.get(event.id) ?? null;
                 return (
                   <Link
                     key={event.id}
@@ -232,6 +271,14 @@ export default async function DashboardPage() {
                         </svg>
                         {t.common.photoCount(event._count.photos)}
                       </span>
+
+                      {/* New selections badge */}
+                      {event.hasNewSelections && (
+                        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                          {t.dashboard.newSelectionsBadge}
+                        </span>
+                      )}
                     </div>
 
                     {/* Info */}
@@ -242,6 +289,39 @@ export default async function DashboardPage() {
                       <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
                         {formatDate(event.date)}
                       </p>
+                      {/* Protection badges — distinct types among non-expired links */}
+                      {(() => {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const links = (event as any).sharedLinks as Array<{ accessType: string; expiresAt: Date | null }> ?? [];
+                        const activeTypes = [...new Set(
+                          links
+                            .filter((l) => !l.expiresAt || new Date() <= new Date(l.expiresAt))
+                            .map((l) => l.accessType)
+                        )];
+                        if (activeTypes.length === 0) return null;
+                        return (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {activeTypes.map((type) => (
+                              <span
+                                key={type}
+                                className={
+                                  type === "NONE"
+                                    ? "rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400"
+                                    : type === "PIN"
+                                    ? "rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                    : "rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                }
+                              >
+                                {type === "NONE"
+                                  ? t.shareModal.accessBadgeNone
+                                  : type === "PIN"
+                                  ? t.shareModal.accessBadgePin
+                                  : t.shareModal.accessBadgePassword}
+                              </span>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </Link>
                 );

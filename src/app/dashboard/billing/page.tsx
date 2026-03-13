@@ -193,7 +193,7 @@ export default async function BillingPage() {
             {/* Events */}
             <div>
               <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="font-medium text-zinc-700 dark:text-zinc-300">Events</span>
+                <span className="font-medium text-zinc-700 dark:text-zinc-300">{t.billing.eventsLabel}</span>
                 <span className="text-zinc-500 dark:text-zinc-400">
                   {t.billing.eventsUsed(eventCount, PLAN_EVENT_LIMIT[plan])}
                 </span>
@@ -215,7 +215,7 @@ export default async function BillingPage() {
             {/* Storage */}
             <div>
               <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="font-medium text-zinc-700 dark:text-zinc-300">Storage</span>
+                <span className="font-medium text-zinc-700 dark:text-zinc-300">{t.billing.storageLabel}</span>
                 <span className="text-zinc-500 dark:text-zinc-400">
                   {t.billing.storageUsed(formatBytes(storageUsed), PLAN_STORAGE_LABEL[plan])}
                 </span>

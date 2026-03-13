@@ -104,18 +104,18 @@ export default async function PricingPage() {
                 href="/dashboard"
                 className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
-                Dashboard
+                {t.nav.dashboard}
               </Link>
             ) : (
               <>
                 <Link href="/login" className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50">
-                  Sign in
+                  {t.nav.signIn}
                 </Link>
                 <Link
                   href="/register"
                   className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
                 >
-                  Get started
+                  {t.nav.getStarted}
                 </Link>
               </>
             )}
@@ -246,7 +246,7 @@ export default async function PricingPage() {
 
         {/* Guarantee note */}
         <p className="mt-10 text-center text-sm text-zinc-400 dark:text-zinc-500">
-          All paid plans include a 14-day free trial. Cancel anytime.
+          {t.pricing.trialNote}
         </p>
       </div>
     </div>

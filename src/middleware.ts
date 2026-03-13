@@ -10,24 +10,33 @@ export async function middleware(request: NextRequest) {
 
   // Root → redirect based on auth state
   if (pathname === "/") {
-    return NextResponse.redirect(new URL(token ? "/dashboard" : "/login", request.url));
+    const dest = !token ? "/login" : token.role === "SUPER_ADMIN" ? "/admin" : "/dashboard";
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
-  // Logged-in user hitting an auth page → send to dashboard
+  // Logged-in user hitting an auth page → send to their home
   if (token && authRoutes.includes(pathname)) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const dest = token.role === "SUPER_ADMIN" ? "/admin" : "/dashboard";
+    return NextResponse.redirect(new URL(dest, request.url));
   }
 
   // Unauthenticated user hitting a protected page → send to login
-  if (!token && pathname.startsWith("/dashboard")) {
+  if (!token && (pathname.startsWith("/dashboard") || pathname.startsWith("/admin"))) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // Logged-in but not SUPER_ADMIN hitting an admin route → send to dashboard
+  if (token && pathname.startsWith("/admin") && token.role !== "SUPER_ADMIN") {
+    const dashboardUrl = new URL("/dashboard", request.url);
+    dashboardUrl.searchParams.set("error", "access_denied");
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/login", "/register"],
+  matcher: ["/", "/dashboard/:path*", "/admin/:path*", "/login", "/register"],
 };

@@ -59,7 +59,7 @@ export function CoverPhotoUpload({
 
     try {
       // 1. Get presigned PUT URL
-      const presigned = await getPresignedCoverUploadUrl(eventId, file.name, file.type);
+      const presigned = await getPresignedCoverUploadUrl(eventId, file.name, file.type, file.size);
       if ("error" in presigned) throw new Error(presigned.error);
 
       // 2. PUT to S3

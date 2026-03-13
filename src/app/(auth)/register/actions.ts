@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { isSignupsEnabled } from "@/lib/platform-settings";
 
 type FormState = { error: string } | null;
 
@@ -13,6 +14,10 @@ export async function registerAction(
   const name = (formData.get("name") as string)?.trim();
   const email = (formData.get("email") as string)?.trim().toLowerCase();
   const password = formData.get("password") as string;
+
+  if (!(await isSignupsEnabled())) {
+    return { error: "New registrations are currently disabled." };
+  }
 
   if (!name || !email || !password) {
     return { error: "All fields are required." };

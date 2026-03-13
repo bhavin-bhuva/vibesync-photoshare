@@ -6,14 +6,14 @@ const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const db = new PrismaClient({ adapter });
 
 async function main() {
-  const passwordHash = await bcrypt.hash("test123", 12);
+  const photographerHash = await bcrypt.hash("test123", 12);
 
   const user = await db.user.upsert({
     where: { email: "test@photo.com" },
     update: {},
     create: {
       email: "test@photo.com",
-      passwordHash,
+      passwordHash: photographerHash,
       name: "Test Photographer",
       subscription: {
         create: {
@@ -28,6 +28,21 @@ async function main() {
 
   console.log(`Seeded user: ${user.email} (id: ${user.id})`);
   console.log(`Plan: ${user.subscription?.planTier}`);
+
+  const adminHash = await bcrypt.hash("Admin@123456", 12);
+
+  const admin = await db.user.upsert({
+    where: { email: "admin@photoshare.com" },
+    update: {},
+    create: {
+      email: "admin@photoshare.com",
+      passwordHash: adminHash,
+      name: "Super Admin",
+      role: "SUPER_ADMIN",
+    },
+  });
+
+  console.log(`Seeded admin: ${admin.email} (id: ${admin.id})`);
 }
 
 main()

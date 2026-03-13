@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useDropzone, type FileRejection } from "react-dropzone";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getPresignedUploadUrl } from "@/lib/s3";
 import { savePhotoRecord, getStorageStatus } from "./actions";
@@ -105,6 +106,7 @@ function StatusIcon({ status }: { status: FileStatus }) {
 
 export function UploadModal({ eventId }: { eventId: string }) {
   const t = useT();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [files, setFiles] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -242,8 +244,10 @@ export function UploadModal({ eventId }: { eventId: string }) {
       abortRef.current?.abort();
       setUploading(false);
     }
+    const hadUploads = files.some((f) => f.status === "done");
     setOpen(false);
     setFiles([]);
+    if (hadUploads) router.refresh();
   }
 
   // Close on Escape

@@ -1,15 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { Photo } from "@/generated/prisma/client";
-import { deletePhotoAction } from "./actions";
+import { deletePhotoAction, getPhotoLightboxUrl } from "./actions";
 import { useT } from "@/lib/i18n";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type PhotoWithUrl = Photo & { signedUrl: string | null };
+export type PhotoWithUrl = Photo & {
+  thumbnailUrl: string | null; // grid cards — resized preview (~800 px)
+  // lightbox URL is fetched lazily on demand — not pre-signed at page load
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -86,11 +89,15 @@ function Lightbox({
   index,
   onClose,
   onGo,
+  signedUrl,
+  isLoadingUrl,
 }: {
   photos: PhotoWithUrl[];
   index: number;
   onClose: () => void;
   onGo: (i: number) => void;
+  signedUrl: string | null;
+  isLoadingUrl: boolean;
 }) {
   const t = useT();
   const photo = photos[index];
@@ -161,11 +168,20 @@ function Lightbox({
         </button>
 
         <div className="flex max-h-full max-w-full items-center justify-center px-16 py-2">
-          {photo.signedUrl ? (
+          {isLoadingUrl ? (
+            <svg
+              className="h-10 w-10 animate-spin text-white/40"
+              viewBox="0 0 24 24"
+              fill="none"
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4l3-3-3-3v4a8 8 0 1 0 8 8h-4l3 3 3-3h-4a8 8 0 0 1-8 8A8 8 0 0 1 4 12Z" />
+            </svg>
+          ) : signedUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={photo.id}
-              src={photo.signedUrl}
+              src={signedUrl}
               alt={photo.filename}
               className="max-h-[calc(100vh-10rem)] max-w-full rounded-lg object-contain shadow-2xl"
               draggable={false}
@@ -313,10 +329,10 @@ function PhotoCard({
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onOpen(); }}
         aria-label={t.photoGrid.previewAriaLabel(photo.filename)}
       >
-        {photo.signedUrl ? (
+        {photo.thumbnailUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={photo.signedUrl}
+            src={photo.thumbnailUrl}
             alt={photo.filename}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
             loading="lazy"
@@ -402,46 +418,170 @@ function PhotoCard({
 
 // ─── Grid ─────────────────────────────────────────────────────────────────────
 
+const BATCH_SIZE = 24;
+
 export function PhotoGrid({ photos: initial }: { photos: PhotoWithUrl[] }) {
-  const [photos, setPhotos] = useState(initial);
+  // allPhotos = full ordered list (rendered + pending).
+  // visibleCount = how many cards are currently in the DOM.
+  // renderedPhotos is derived so it never diverges from the two source values.
+  const [allPhotos, setAllPhotos] = useState(initial);
+  const [visibleCount, setVisibleCount] = useState(() => Math.min(BATCH_SIZE, initial.length));
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [lightboxUrlLoading, setLightboxUrlLoading] = useState(false);
+  // Cache signed URLs so navigating back to an already-opened photo is instant.
+  const lightboxUrlCache = useRef(new Map<string, string>());
+  // Track which photo id is the "current" pending fetch to discard stale responses.
+  const pendingFetchId = useRef<string | null>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const t = useT();
+
+  const renderedPhotos = allPhotos.slice(0, visibleCount);
+  const hasMore = visibleCount < allPhotos.length;
+
+  // Sync new photos arriving from the server (e.g. after router.refresh() post-upload).
+  // New photos are prepended and visibleCount is bumped so they appear immediately,
+  // without waiting for the IntersectionObserver to fire.
+  useEffect(() => {
+    setAllPhotos((prev) => {
+      const prevIds = new Set(prev.map((p) => p.id));
+      const incoming = initial.filter((p) => !prevIds.has(p.id));
+      if (incoming.length === 0) return prev;
+      setVisibleCount((c) => c + incoming.length);
+      return [...incoming, ...prev];
+    });
+  }, [initial]);
+
+  // Append the next batch when the sentinel div scrolls into (or near) the viewport.
+  // The effect re-runs whenever hasMore or the total count changes, which naturally
+  // re-attaches the observer after each batch load.
+  useEffect(() => {
+    if (!hasMore) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((c) => Math.min(c + BATCH_SIZE, allPhotos.length));
+        }
+      },
+      { rootMargin: "300px" }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, allPhotos.length]);
+
+  async function openLightbox(index: number) {
+    const photo = renderedPhotos[index];
+    setLightboxIndex(index);
+
+    const cached = lightboxUrlCache.current.get(photo.id);
+    if (cached) {
+      setLightboxUrl(cached);
+      setLightboxUrlLoading(false);
+      pendingFetchId.current = null;
+      return;
+    }
+
+    setLightboxUrl(null);
+    setLightboxUrlLoading(true);
+    pendingFetchId.current = photo.id;
+
+    const result = await getPhotoLightboxUrl(photo.id);
+
+    // Discard if the user has already navigated to a different photo.
+    if (pendingFetchId.current !== photo.id) return;
+
+    if ("url" in result && result.url) {
+      lightboxUrlCache.current.set(photo.id, result.url);
+      setLightboxUrl(result.url);
+    }
+    setLightboxUrlLoading(false);
+    pendingFetchId.current = null;
+  }
+
+  function closeLightbox() {
+    setLightboxIndex(null);
+    setLightboxUrl(null);
+    setLightboxUrlLoading(false);
+    pendingFetchId.current = null;
+  }
 
   function handleDeleted(id: string) {
-    // Capture index before mutating state — used to adjust the lightbox position
-    const deletedAt = photos.findIndex((p) => p.id === id);
-    setPhotos((prev) => prev.filter((p) => p.id !== id));
-    setLightboxIndex((idx) => {
-      if (idx === null) return null;
-      if (deletedAt === idx) return null;   // deleted photo was open → close
-      if (deletedAt < idx) return idx - 1; // deleted before current → shift
-      return idx;
-    });
+    // Determine position in the full list and whether it was a rendered card.
+    const deletedAt = allPhotos.findIndex((p) => p.id === id);
+    const wasRendered = deletedAt !== -1 && deletedAt < visibleCount;
+
+    setAllPhotos((prev) => prev.filter((p) => p.id !== id));
+
+    if (wasRendered) {
+      // Keep visibleCount in sync: one fewer rendered card.
+      setVisibleCount((c) => c - 1);
+      setLightboxIndex((idx) => {
+        if (idx === null) return null;
+        if (deletedAt === idx) {
+          // The open photo was deleted — reset lightbox URL state too.
+          setLightboxUrl(null);
+          setLightboxUrlLoading(false);
+          pendingFetchId.current = null;
+          return null;
+        }
+        if (deletedAt < idx) return idx - 1; // deleted before current → shift
+        return idx;
+      });
+    }
+
     router.refresh();
   }
 
-  if (photos.length === 0) return <EmptyState />;
+  if (allPhotos.length === 0) return <EmptyState />;
 
   return (
     <>
-      <div style={{ columns: "3 240px", gap: "14px" }}>
-        {photos.map((photo, i) => (
+      <div style={{ columns: "4 200px", gap: "14px" }}>
+        {renderedPhotos.map((photo, i) => (
           <div key={photo.id} style={{ breakInside: "avoid", marginBottom: 14 }}>
             <PhotoCard
               photo={photo}
               onDeleted={handleDeleted}
-              onOpen={() => setLightboxIndex(i)}
+              onOpen={() => openLightbox(i)}
             />
           </div>
         ))}
       </div>
 
+      {/* ── Progressive-load footer ── */}
+      {hasMore ? (
+        // Sentinel: IntersectionObserver target. Also serves as the loading indicator
+        // so the user sees feedback while the next batch is being appended.
+        <div
+          ref={sentinelRef}
+          className="mt-6 flex items-center justify-center gap-2 py-4 text-sm text-zinc-400 dark:text-zinc-500"
+        >
+          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4l3-3-3-3v4a8 8 0 1 0 8 8h-4l3 3 3-3h-4a8 8 0 0 1-8 8A8 8 0 0 1 4 12Z" />
+          </svg>
+          {t.photoGrid.loadingMore}
+        </div>
+      ) : allPhotos.length > BATCH_SIZE ? (
+        // Only show the completion message when we actually had multiple batches.
+        <p className="mt-6 py-4 text-center text-sm text-zinc-400 dark:text-zinc-500">
+          {t.photoGrid.allPhotosLoaded(allPhotos.length)}
+        </p>
+      ) : null}
+
       {lightboxIndex !== null && (
         <Lightbox
-          photos={photos}
+          photos={renderedPhotos}
           index={lightboxIndex}
-          onClose={() => setLightboxIndex(null)}
-          onGo={setLightboxIndex}
+          onClose={closeLightbox}
+          onGo={openLightbox}
+          signedUrl={lightboxUrl}
+          isLoadingUrl={lightboxUrlLoading}
         />
       )}
     </>

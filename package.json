@@ -7,17 +7,20 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "storage:sync": "tsx scripts/sync-storage.ts"
+    "storage:sync": "tsx scripts/sync-storage.ts",
+    "links:migrate": "tsx scripts/migrate-shared-links.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1005.0",
+    "@aws-sdk/client-ses": "^3.1006.0",
     "@aws-sdk/cloudfront-signer": "^3.1005.0",
     "@aws-sdk/s3-request-presigner": "^3.1005.0",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.4.2",
+    "@react-email/components": "^1.0.8",
     "@types/archiver": "^7.0.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.18.0",
@@ -31,6 +34,8 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-dropzone": "^15.0.0",
+    "react-email": "^5.2.9",
+    "recharts": "^3.8.0",
     "sharp": "^0.34.5",
     "stripe": "^20.4.1",
     "zod": "^4.3.6"
