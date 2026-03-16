@@ -73,7 +73,11 @@ export default async function EventPage({
     Promise.all(
       photos.map(async (photo) => ({
         ...photo,
-        thumbnailUrl: await getCloudfrontPreviewUrl(photo.s3Key, 800),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        thumbnailUrl: (photo as any).thumbS3Key
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ? await getCloudfrontSignedUrl((photo as any).thumbS3Key)
+          : await getCloudfrontPreviewUrl(photo.s3Key, 800), // fallback for pre-existing photos
       }))
     ),
     event.coverPhotoKey ? getCloudfrontSignedUrl(event.coverPhotoKey) : null,

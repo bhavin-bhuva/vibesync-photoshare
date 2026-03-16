@@ -142,8 +142,12 @@ export default async function SharePage({
         id: photo.id,
         filename: photo.filename,
         size: photo.size,
-        thumbnailUrl: await getCloudfrontPreviewUrl(photo.s3Key, 800),
-        signedUrl:    await getCloudfrontPreviewUrl(photo.s3Key, 1920),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        thumbnailUrl: (photo as any).thumbS3Key
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ? await getCloudfrontSignedUrl((photo as any).thumbS3Key)
+          : await getCloudfrontPreviewUrl(photo.s3Key, 800), // fallback for pre-existing photos
+        signedUrl: await getCloudfrontPreviewUrl(photo.s3Key, 1920),
       }))
     ),
     event.coverPhotoKey ? getCloudfrontSignedUrl(event.coverPhotoKey) : null,

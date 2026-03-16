@@ -97,6 +97,7 @@ model Event {
 model Photo {
   id              String          @id @default(cuid())
   s3Key           String
+  thumbS3Key      String?
   filename        String
   size            Int
   createdAt       DateTime        @default(now())

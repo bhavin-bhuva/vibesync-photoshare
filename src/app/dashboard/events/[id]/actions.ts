@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { deleteS3Object } from "@/lib/s3";
 import { checkStorageLimit } from "@/lib/storage";
 import { getCloudfrontPreviewUrl } from "@/lib/cloudfront";
+import { createThumbnail } from "@/lib/thumbnail";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 
@@ -51,9 +52,19 @@ export async function savePhotoRecord(
   });
   if (!event) return { error: "Event not found." };
 
+  // Generate thumbnail before the DB write so we can store the key atomically.
+  // Best-effort: a failure here doesn't block the photo from being saved.
+  let thumbS3Key: string | null = null;
+  try {
+    thumbS3Key = await createThumbnail(s3Key);
+  } catch (err) {
+    console.error("[savePhotoRecord] Thumbnail generation failed:", (err as Error).message);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await db.$transaction([
-    db.photo.create({
-      data: { eventId, s3Key, filename, size },
+    (db.photo.create as any)({
+      data: { eventId, s3Key, thumbS3Key, filename, size },
     }),
     db.user.update({
       where: { id: session.user.id },
@@ -82,6 +93,11 @@ export async function deletePhotoAction(
   // Delete from S3 first — if this fails we don't remove the DB record
   const s3Result = await deleteS3Object(photo.s3Key);
   if (s3Result.error) return { error: s3Result.error };
+
+  // Best-effort thumbnail cleanup — orphaned thumb is acceptable if this fails
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const thumbKey = (photo as any).thumbS3Key as string | null;
+  if (thumbKey) await deleteS3Object(thumbKey).catch(() => undefined);
 
   await db.$transaction([
     db.photo.delete({ where: { id: photoId } }),
