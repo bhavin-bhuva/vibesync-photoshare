@@ -60,17 +60,15 @@ function BtnRow({ onCancel, onConfirm, label, cls, pending }: {
 
 // ─── Modals ───────────────────────────────────────────────────────────────────
 
-function ChangePlanModal({ userId, currentPlan, onClose, onDone }: {
-  userId: string; currentPlan: "FREE" | "PRO" | "STUDIO"; onClose: () => void; onDone: () => void;
+function ChangePlanModal({ userId, currentPlan, planOptions, onClose, onDone }: {
+  userId: string; currentPlan: "FREE" | "PRO" | "STUDIO";
+  planOptions: { value: "FREE" | "PRO" | "STUDIO"; label: string; desc: string }[];
+  onClose: () => void; onDone: () => void;
 }) {
   const [selected, setSelected] = useState<"FREE" | "PRO" | "STUDIO">(currentPlan);
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
-  const plans = [
-    { value: "FREE"   as const, label: "Free",   desc: "3 events · 1 GB" },
-    { value: "PRO"    as const, label: "Pro",     desc: "25 events · 50 GB" },
-    { value: "STUDIO" as const, label: "Studio",  desc: "Unlimited · 500 GB" },
-  ];
+  const plans = planOptions;
   return (
     <ModalShell title="Change Plan" onClose={onClose}>
       {error && <ErrMsg msg={error} />}
@@ -265,11 +263,12 @@ function DeleteModal({ userId, userName, onClose, onDone }: {
 
 type ModalType = "changePlan" | "suspend" | "unsuspend" | "resetPassword" | "delete" | null;
 
-export function DangerZone({ userId, userName, isSuspended, currentPlan }: {
+export function DangerZone({ userId, userName, isSuspended, currentPlan, planOptions }: {
   userId: string;
   userName: string;
   isSuspended: boolean;
   currentPlan: "FREE" | "PRO" | "STUDIO";
+  planOptions: { value: "FREE" | "PRO" | "STUDIO"; label: string; desc: string }[];
 }) {
   const router = useRouter();
   const [modal, setModal] = useState<ModalType>(null);
@@ -341,7 +340,7 @@ export function DangerZone({ userId, userName, isSuspended, currentPlan }: {
       </section>
 
       {modal === "changePlan" && (
-        <ChangePlanModal userId={userId} currentPlan={currentPlan} onClose={() => setModal(null)} onDone={onDone} />
+        <ChangePlanModal userId={userId} currentPlan={currentPlan} planOptions={planOptions} onClose={() => setModal(null)} onDone={onDone} />
       )}
       {modal === "suspend" && (
         <SuspendModal userId={userId} userName={userName} onClose={() => setModal(null)} onDone={onDone} />

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { getEventLimits } from "@/lib/platform-settings";
+import { formatStorageSize } from "@/lib/storage";
 import { EventsSection, type EventRow } from "./EventsSection";
 import { DangerZone } from "./DangerZone";
 import { ImpersonateButton } from "./ImpersonateButton";
@@ -63,32 +65,56 @@ export default async function PhotographerDetailPage({
 }) {
   const { userId } = await params;
 
-  const user = await db.user.findUnique({
-    where: { id: userId, role: "PHOTOGRAPHER" },
-    include: {
-      subscription: true,
-      studioProfile: { select: { studioName: true } },
-      events: {
-        orderBy: { date: "desc" },
-        include: {
-          _count: { select: { photos: true, sharedLinks: true } },
-          sharedLinks: {
-            orderBy: { createdAt: "desc" },
-            select: {
-              id: true,
-              slug: true,
-              createdAt: true,
-              expiresAt: true,
-              _count: { select: { photoSelections: true } },
-              event: { select: { name: true } },
+  const [user, dbPlans, eventLimits, freePlans] = await Promise.all([
+    db.user.findUnique({
+      where: { id: userId, role: "PHOTOGRAPHER" },
+      include: {
+        subscription: true,
+        studioProfile: { select: { studioName: true } },
+        events: {
+          orderBy: { date: "desc" },
+          include: {
+            _count: { select: { photos: true, sharedLinks: true } },
+            sharedLinks: {
+              orderBy: { createdAt: "desc" },
+              select: {
+                id: true,
+                slug: true,
+                createdAt: true,
+                expiresAt: true,
+                _count: { select: { photoSelections: true } },
+                event: { select: { name: true } },
+              },
             },
           },
         },
       },
-    },
-  });
+    }),
+    db.stripePlan.findMany({ where: { isActive: true, tier: { not: "FREE" } }, select: { tier: true, price: true, storageBytes: true, maxEvents: true }, orderBy: { sortOrder: "asc" } }),
+    getEventLimits(),
+    db.stripePlan.findMany({ where: { tier: "FREE", isActive: true }, select: { storageBytes: true }, take: 1 }),
+  ]);
 
   if (!user) notFound();
+
+  const freeStorageLabel = freePlans[0]
+    ? formatStorageSize(freePlans[0].storageBytes)
+    : formatStorageSize(BigInt(1073741824));
+  const seenTiers = new Set<string>();
+  const planOptions: { value: "FREE" | "PRO" | "STUDIO"; label: string; desc: string }[] = [
+    { value: "FREE", label: "Free", desc: `${eventLimits.FREE} events · ${freeStorageLabel}` },
+    ...dbPlans
+      .filter((p) => { if (seenTiers.has(p.tier)) return false; seenTiers.add(p.tier); return true; })
+      .map((p) => ({
+        value: p.tier as "FREE" | "PRO" | "STUDIO",
+        label: p.tier === "PRO" ? "Pro" : "Studio",
+        desc: [
+          p.price && Number(p.price) > 0 ? `$${Number(p.price).toFixed(0)}/mo` : null,
+          p.maxEvents != null ? `${p.maxEvents} events` : "Unlimited",
+          formatStorageSize(p.storageBytes),
+        ].filter(Boolean).join(" · "),
+      })),
+  ];
 
   // ── Aggregate stats ──────────────────────────────────────────────────────
   const totalEvents     = user.events.length;
@@ -274,6 +300,7 @@ export default async function PhotographerDetailPage({
         userName={user.name ?? user.email}
         isSuspended={user.isSuspended}
         currentPlan={plan}
+        planOptions={planOptions}
       />
     </div>
   );

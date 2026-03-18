@@ -4,16 +4,11 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { getEventLimits } from "@/lib/platform-settings";
 import type { PlanTier } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
 
 export type CreateEventState = { error: string } | { success: true } | null;
-
-const EVENT_LIMITS: Record<PlanTier, number | null> = {
-  FREE: 3,
-  PRO: 25,
-  STUDIO: null,
-};
 
 export async function createEventAction(
   _prev: CreateEventState,
@@ -39,7 +34,13 @@ export async function createEventAction(
   if (!user) return { error: "User not found." };
 
   const plan = user.subscription?.planTier ?? "FREE";
-  const limit = EVENT_LIMITS[plan];
+  const eventLimits = await getEventLimits();
+  const limitMap: Record<PlanTier, number | null> = {
+    FREE: eventLimits.FREE,
+    PRO: eventLimits.PRO,
+    STUDIO: null,
+  };
+  const limit = limitMap[plan];
   if (limit !== null && user._count.events >= limit) {
     return {
       error: `Your ${plan} plan allows up to ${limit} events. Upgrade to add more.`,

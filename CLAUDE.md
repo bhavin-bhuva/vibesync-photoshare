@@ -10,6 +10,14 @@ npm run build    # Build for production
 npm run lint     # Run ESLint
 ```
 
+All commands run inside Docker — prefix with `docker compose exec -T app`:
+```bash
+docker compose exec -T app npm run lint
+docker compose exec -T app npx prisma migrate dev --name <name>
+docker compose exec -T app npx prisma db seed
+docker compose exec -T app npx prisma studio   # GUI on port 5555
+```
+
 No test runner is configured.
 
 ## Architecture
@@ -102,7 +110,13 @@ src/
 - Dynamic strings are typed functions: `welcome: (name: string) => \`Welcome back, ${name}\``
 
 **Plan gating**
-- `Subscription.planTier`: `FREE` (3 events, 1 GB) | `PRO` (25 events, 50 GB) | `STUDIO` (unlimited, 500 GB)
+- `Subscription.planTier`: `FREE` | `PRO` | `STUDIO` — **all limits are DB-driven, never hardcoded**
+- Plan prices, storage limits, and event limits come from the `StripePlan` table (admin-managed at `/admin/plans`)
+- Event limits come from `getEventLimits()` in `src/lib/platform-settings.ts` (reads `PlatformSettings` DB table)
+- Storage helpers: `getStorageLimitForTier(tier)` and `formatStorageSize(bytes)` in `src/lib/storage.ts`
+- No plans are seeded by default — create them from `/admin/plans` before testing Stripe flows
+- BigInt storage values cannot be passed to client components — serialize with `.toString()` or use `formatStorageSize()` server-side
+- Client modals that display plan options (`ChangePlanModal`, `ManualOverridePanel`) receive `planOptions` as a serializable prop from their parent server page
 - Check `atEventLimit` before showing the create-event button; storage bar shown on dashboard
 - ZIP download and watermarking are PRO/STUDIO only; FREE users see an upgrade prompt
 - Stripe checkout at `/pricing`; Billing Portal button on `/dashboard/billing`

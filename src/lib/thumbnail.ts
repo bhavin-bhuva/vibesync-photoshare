@@ -41,6 +41,7 @@ export async function createThumbnail(s3Key: string): Promise<string> {
   const original = Buffer.concat(chunks);
 
   const thumbnail = await sharp(original)
+    .rotate()                                        // apply EXIF orientation, then strip the tag
     .resize({ width: 800, withoutEnlargement: true })
     .jpeg({ quality: 80, progressive: true })
     .toBuffer();

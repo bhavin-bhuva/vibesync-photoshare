@@ -1,262 +1,396 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import { useDropzone, type FileRejection } from "react-dropzone";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getPresignedUploadUrl } from "@/lib/s3";
-import { savePhotoRecord, getStorageStatus } from "./actions";
+import { useUploadQueue } from "@/hooks/useUploadQueue";
+import { getUploadManager } from "@/lib/uploadManager";
+import { networkMonitor } from "@/lib/networkMonitor";
+import { updateQueueItem, type QueueItem } from "@/lib/uploadQueue";
+import { getStorageStatus } from "./actions";
 import { useT } from "@/lib/i18n";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type FileStatus = "pending" | "uploading" | "done" | "error";
-
-interface UploadFile {
-  id: string;
-  file: File;
-  status: FileStatus;
-  progress: number; // 0–100
-  error?: string;
-  exceedsLimit?: boolean;
-}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACCEPTED_TYPES = {
   "image/jpeg": [".jpg", ".jpeg"],
-  "image/png": [".png"],
+  "image/png":  [".png"],
   "image/webp": [".webp"],
 };
 const MAX_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
-const MAX_CONCURRENT = 3;
+
+/** How long the "back online" green banner stays visible. */
+const ONLINE_BANNER_DURATION_MS = 3_000;
+
+/** Drop speed samples older than this when computing rolling average. */
+const SPEED_WINDOW_MS = 8_000;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatBytes(bytes: number) {
+function formatBytes(bytes: number): string {
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 }
 
-function uid() {
-  return Math.random().toString(36).slice(2);
+function formatSpeed(bytesPerSec: number): string {
+  if (bytesPerSec < 1024 ** 2) return `${(bytesPerSec / 1024).toFixed(0)} KB/s`;
+  return `${(bytesPerSec / 1024 ** 2).toFixed(1)} MB/s`;
 }
 
-/** PUT a file to S3 via XHR so we get upload progress events. */
-function xhrUpload(
-  url: string,
-  file: File,
-  onProgress: (pct: number) => void,
-  signal: AbortSignal
-): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-
-    signal.addEventListener("abort", () => {
-      xhr.abort();
-      reject(new DOMException("Upload aborted", "AbortError"));
-    });
-
-    xhr.upload.addEventListener("progress", (e) => {
-      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-    });
-
-    xhr.addEventListener("load", () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else reject(new Error(`S3 responded ${xhr.status}`));
-    });
-
-    xhr.addEventListener("error", () => reject(new Error("Network error during upload")));
-    xhr.addEventListener("abort", () => reject(new DOMException("Upload aborted", "AbortError")));
-
-    xhr.open("PUT", url);
-    xhr.setRequestHeader("Content-Type", file.type);
-    xhr.send(file);
-  });
+function formatEta(seconds: number): string {
+  if (seconds < 60) return `~${Math.ceil(seconds)}s`;
+  return `~${Math.ceil(seconds / 60)} min`;
 }
 
-// ─── Status icons ─────────────────────────────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
-function StatusIcon({ status }: { status: FileStatus }) {
-  if (status === "uploading")
-    return (
-      <svg className="h-4 w-4 animate-spin text-blue-500" viewBox="0 0 24 24" fill="none">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4l3-3-3-3v4a8 8 0 1 0 8 8h-4l3 3 3-3h-4a8 8 0 0 1-8 8A8 8 0 0 1 4 12Z" />
-      </svg>
-    );
-  if (status === "done")
-    return (
-      <svg className="h-4 w-4 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
-      </svg>
-    );
-  if (status === "error")
-    return (
-      <svg className="h-4 w-4 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-      </svg>
-    );
-  // pending
-  return <div className="h-4 w-4 rounded-full border-2 border-zinc-300 dark:border-zinc-600" />;
+function SpinnerIcon() {
+  return (
+    <svg className="h-4 w-4 shrink-0 animate-spin text-blue-500" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4l3-3-3-3v4a8 8 0 1 0 8 8h-4l3 3 3-3h-4a8 8 0 0 1-8 8A8 8 0 0 1 4 12Z" />
+    </svg>
+  );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+function CheckIcon() {
+  return (
+    <svg className="h-4 w-4 shrink-0 text-emerald-500" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function ErrorIcon() {
+  return (
+    <svg className="h-4 w-4 shrink-0 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-1.5 0v-4.5A.75.75 0 0 1 10 5Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function PauseIcon() {
+  return (
+    <svg className="h-4 w-4 shrink-0 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M2 10a8 8 0 1 1 16 0 8 8 0 0 1-16 0Zm5-2.25A.75.75 0 0 1 7.75 7h.5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-.75.75h-.5A.75.75 0 0 1 7 12.25v-4.5Zm4 0a.75.75 0 0 1 .75-.75h.5a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-.75.75h-.5a.75.75 0 0 1-.75-.75v-4.5Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function QueuedDot() {
+  return <div className="h-4 w-4 shrink-0 rounded-full border-2 border-zinc-300 dark:border-zinc-600" />;
+}
+
+// ─── Section ──────────────────────────────────────────────────────────────────
+
+function Section({
+  title,
+  count,
+  collapsed,
+  onToggle,
+  action,
+  children,
+}: {
+  title: string;
+  count: number;
+  collapsed: boolean;
+  onToggle: () => void;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  if (count === 0) return null;
+  return (
+    <div className="rounded-xl border border-zinc-200 dark:border-zinc-700">
+      <div className="flex cursor-pointer items-center justify-between px-4 py-2.5" onClick={onToggle}>
+        <span className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          {title}{" "}
+          <span className="ml-1 font-normal normal-case text-zinc-400">({count})</span>
+        </span>
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          {action}
+          <svg
+            className={`h-4 w-4 text-zinc-400 transition-transform ${collapsed ? "" : "rotate-180"}`}
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+          </svg>
+        </div>
+      </div>
+      {!collapsed && (
+        <ul className="divide-y divide-zinc-100 dark:divide-zinc-700/50">
+          {children}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// ─── Per-file rows ────────────────────────────────────────────────────────────
+
+function UploadingRow({ item }: { item: QueueItem }) {
+  const totalChunks = Math.ceil(item.size / item.chunkSize);
+  const activeChunk = Math.min(item.completedParts.length + 1, totalChunks);
+
+  return (
+    <li className="px-4 py-2.5">
+      <div className="flex items-center gap-3">
+        <SpinnerIcon />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            {item.filename}
+          </p>
+          <p className="text-xs text-zinc-400">
+            {formatBytes(item.size)} · Chunk {activeChunk} of {totalChunks}
+          </p>
+        </div>
+        <span className="shrink-0 tabular-nums text-xs text-zinc-400">{item.progress}%</span>
+      </div>
+      <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-600">
+        <div
+          className="h-full rounded-full bg-blue-500 transition-all duration-150"
+          style={{ width: `${item.progress}%` }}
+        />
+      </div>
+    </li>
+  );
+}
+
+function QueuedRow({ item }: { item: QueueItem }) {
+  const isPaused = item.status === "PAUSED";
+  return (
+    <li className="flex items-center gap-3 px-4 py-2.5">
+      {isPaused ? <PauseIcon /> : <QueuedDot />}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
+          {item.filename}
+        </p>
+        <p className="text-xs text-zinc-400">{formatBytes(item.size)}</p>
+      </div>
+      {isPaused && (
+        <span className="shrink-0 text-xs text-amber-500">Paused</span>
+      )}
+    </li>
+  );
+}
+
+function FailedRow({
+  item,
+  onRetry,
+}: {
+  item: QueueItem;
+  onRetry: (id: string) => void;
+}) {
+  return (
+    <li className="px-4 py-2.5">
+      <div className="flex items-center gap-3">
+        <ErrorIcon />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            {item.filename}
+          </p>
+          {item.lastError && (
+            <p className="truncate text-xs text-red-400">{item.lastError}</p>
+          )}
+        </div>
+        <button
+          onClick={() => onRetry(item.id)}
+          className="shrink-0 rounded-md border border-zinc-300 px-2 py-0.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700"
+        >
+          Retry
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function CompletedRow({ item }: { item: QueueItem }) {
+  return (
+    <li className="flex items-center gap-3 px-4 py-2.5">
+      <CheckIcon />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
+          {item.filename}
+        </p>
+        <p className="text-xs text-zinc-400">{formatBytes(item.size)}</p>
+      </div>
+    </li>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export function UploadModal({ eventId }: { eventId: string }) {
   const t = useT();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [files, setFiles] = useState<UploadFile[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
+  const queue = useUploadQueue(eventId);
 
-  // Storage state: null = loading, number = bytes available, -1 = error fetching
-  const [availableBytes, setAvailableBytes] = useState<number | null>(null);
+  const [open, setOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
+  const [showOnlineBanner, setShowOnlineBanner] = useState(false);
+  const onlineBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Storage status
   const [storageFull, setStorageFull] = useState(false);
 
-  // Fetch storage status on modal open
+  // Collapsible sections: key → collapsed boolean
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const toggleSection = (key: string) =>
+    setCollapsed((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  // Speed tracking
+  const speedSamplesRef = useRef<{ bytes: number; ts: number }[]>([]);
+  const lastUploadedBytesRef = useRef(0);
+  const [speedBytesPerSec, setSpeedBytesPerSec] = useState(0);
+
+  // For triggering router.refresh() when photos complete
+  const prevDoneCountRef = useRef(0);
+
+  // ── Auto-start the manager on page load (not just on modal open) ─────────────
+  // This is what resumes any pending/paused uploads left over from a previous session.
+  useEffect(() => {
+    getUploadManager(eventId).start().catch(console.error);
+  }, [eventId]);
+
+  // ── Network status ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    setIsOnline(networkMonitor.isOnline);
+
+    return networkMonitor.onStatusChange((online) => {
+      setIsOnline(online);
+
+      if (online) {
+        setShowOnlineBanner(true);
+        if (onlineBannerTimerRef.current) clearTimeout(onlineBannerTimerRef.current);
+        onlineBannerTimerRef.current = setTimeout(() => {
+          setShowOnlineBanner(false);
+          onlineBannerTimerRef.current = null;
+        }, ONLINE_BANNER_DURATION_MS);
+      } else {
+        setShowOnlineBanner(false);
+        if (onlineBannerTimerRef.current) {
+          clearTimeout(onlineBannerTimerRef.current);
+          onlineBannerTimerRef.current = null;
+        }
+      }
+    });
+  }, []);
+
+  // ── Fetch storage status when modal opens ────────────────────────────────────
   useEffect(() => {
     if (!open) return;
-    setAvailableBytes(null);
     setStorageFull(false);
     getStorageStatus().then((res) => {
-      if ("error" in res) { setAvailableBytes(-1); return; }
-      setStorageFull(res.percentUsed >= 100);
-      setAvailableBytes(res.availableBytes);
+      if (!("error" in res)) setStorageFull(res.percentUsed >= 100);
     });
   }, [open]);
 
-  const uploadableFiles = files.filter((f) => !f.exceedsLimit);
-  const exceededFiles   = files.filter((f) => f.exceedsLimit);
-  const doneCount  = uploadableFiles.filter((f) => f.status === "done").length;
-  const errorCount = uploadableFiles.filter((f) => f.status === "error").length;
-  const allSettled = uploadableFiles.length > 0 &&
-    uploadableFiles.every((f) => f.status === "done" || f.status === "error");
+  // ── Rolling speed calculation ────────────────────────────────────────────────
+  useEffect(() => {
+    const currentBytes = queue.uploadedBytes;
+    const prevBytes = lastUploadedBytesRef.current;
 
-  // ── Dropzone ──
+    if (queue.uploading.length === 0) {
+      // Nothing uploading — reset so speed shows 0 when idle
+      speedSamplesRef.current = [];
+      lastUploadedBytesRef.current = currentBytes;
+      setSpeedBytesPerSec(0);
+      return;
+    }
+
+    if (currentBytes > prevBytes) {
+      const now = Date.now();
+      speedSamplesRef.current.push({ bytes: currentBytes - prevBytes, ts: now });
+      lastUploadedBytesRef.current = currentBytes;
+
+      // Drop old samples outside the window
+      speedSamplesRef.current = speedSamplesRef.current.filter(
+        (s) => now - s.ts < SPEED_WINDOW_MS
+      );
+
+      const samples = speedSamplesRef.current;
+      if (samples.length >= 2) {
+        const totalBytes = samples.reduce((s, x) => s + x.bytes, 0);
+        const windowMs = samples[samples.length - 1].ts - samples[0].ts;
+        setSpeedBytesPerSec(windowMs > 0 ? (totalBytes / windowMs) * 1_000 : 0);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queue.uploadedBytes, queue.uploading.length]);
+
+  // ── Refresh photo grid when uploads complete ──────────────────────────────────
+  useEffect(() => {
+    if (queue.done.length > prevDoneCountRef.current) {
+      router.refresh();
+    }
+    prevDoneCountRef.current = queue.done.length;
+  }, [queue.done.length, router]);
+
+  // ── ETA ──────────────────────────────────────────────────────────────────────
+  const remainingBytes = queue.totalBytes - queue.uploadedBytes;
+  const etaSeconds = speedBytesPerSec > 0 ? remainingBytes / speedBytesPerSec : 0;
+
+  // ── Dropzone ─────────────────────────────────────────────────────────────────
   const onDrop = useCallback(
-    (accepted: File[], rejected: FileRejection[]) => {
-      setFiles((prev) => {
-        // Bytes already committed by pending (non-exceeded) files in the queue
-        const alreadyQueued = prev
-          .filter((f) => f.status === "pending" && !f.exceedsLimit)
-          .reduce((s, f) => s + f.file.size, 0);
-
-        // available may still be loading (null) or errored (-1); treat both as unlimited
-        // so we don't incorrectly block files before the fetch resolves.
-        const budget = availableBytes !== null && availableBytes >= 0
-          ? availableBytes - alreadyQueued
-          : Infinity;
-
-        let running = 0;
-        const newFiles: UploadFile[] = accepted.map((file) => {
-          running += file.size;
-          return {
-            id: uid(),
-            file,
-            status: "pending",
-            progress: 0,
-            exceedsLimit: running > budget,
-          };
-        });
-
-        const errored: UploadFile[] = rejected.map(({ file, errors }: FileRejection) => ({
-          id: uid(),
-          file,
-          status: "error",
-          progress: 0,
-          error: errors[0]?.message ?? "Rejected",
-        }));
-
-        return [...prev, ...newFiles, ...errored];
-      });
+    async (accepted: File[], _rejected: FileRejection[]) => {
+      if (accepted.length === 0) return;
+      await queue.addFiles(accepted);
+      getUploadManager(eventId).processQueue();
     },
-    [availableBytes]
+    [eventId, queue]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: ACCEPTED_TYPES,
     maxSize: MAX_SIZE_BYTES,
-    disabled: uploading || storageFull,
+    disabled: storageFull,
   });
 
-  // ── Upload queue ──
-  function updateFile(id: string, patch: Partial<UploadFile>) {
-    setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
-  }
+  // ── Retry handlers ────────────────────────────────────────────────────────────
+  const handleRetryAll = useCallback(() => {
+    getUploadManager(eventId).retryFailed();
+  }, [eventId]);
 
-  async function uploadOne(item: UploadFile, signal: AbortSignal) {
-    updateFile(item.id, { status: "uploading", progress: 0 });
+  const handleRetryItem = useCallback(
+    async (id: string) => {
+      await updateQueueItem(id, { status: "PENDING", lastError: null });
+      getUploadManager(eventId).processQueue();
+    },
+    [eventId]
+  );
 
-    // 1. Get presigned URL from server
-    const result = await getPresignedUploadUrl(eventId, item.file.name, item.file.type, item.file.size);
-    if ("error" in result) {
-      updateFile(item.id, { status: "error", error: result.error });
-      return;
-    }
-
-    // 2. PUT directly to S3
-    try {
-      await xhrUpload(result.url, item.file, (pct) => updateFile(item.id, { progress: pct }), signal);
-    } catch (err) {
-      if ((err as DOMException).name === "AbortError") return;
-      updateFile(item.id, { status: "error", error: (err as Error).message });
-      return;
-    }
-
-    // 3. Save Photo record to DB
-    const save = await savePhotoRecord(eventId, result.key, item.file.name, item.file.size);
-    if (save.error) {
-      updateFile(item.id, { status: "error", error: save.error });
-      return;
-    }
-
-    updateFile(item.id, { status: "done", progress: 100 });
-  }
-
-  async function startUploads() {
-    const pending = files.filter((f) => f.status === "pending" && !f.exceedsLimit);
-    if (pending.length === 0) return;
-
-    const ac = new AbortController();
-    abortRef.current = ac;
-    setUploading(true);
-
-    // Process in sliding window of MAX_CONCURRENT
-    let i = 0;
-    async function next(): Promise<void> {
-      if (i >= pending.length) return;
-      const item = pending[i++];
-      await uploadOne(item, ac.signal);
-      return next();
-    }
-    await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT, pending.length) }, next));
-
-    abortRef.current = null;
-    setUploading(false);
-  }
-
+  // ── Close ─────────────────────────────────────────────────────────────────────
   function handleClose() {
-    if (uploading) {
-      abortRef.current?.abort();
-      setUploading(false);
-    }
-    const hadUploads = files.some((f) => f.status === "done");
     setOpen(false);
-    setFiles([]);
-    if (hadUploads) router.refresh();
   }
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, uploading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Derived lists ─────────────────────────────────────────────────────────────
+  // PAUSED items are displayed in the "Queued" section alongside PENDING
+  const queuedItems = queue.items.filter(
+    (i) => i.status === "PENDING" || i.status === "PAUSED"
+  );
+  const isActive =
+    queue.uploading.length > 0 || queuedItems.length > 0;
+
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <>
@@ -272,165 +406,224 @@ export function UploadModal({ eventId }: { eventId: string }) {
         {t.eventPage.uploadButton}
       </button>
 
-      {/* Modal — portalled to document.body to escape the header's backdrop-blur stacking context */}
-      {open && createPortal(
-        <div className="fixed inset-0 z-40 overflow-y-auto">
-          {/* Backdrop */}
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+      {/* Modal — portalled to escape the header's backdrop-blur stacking context */}
+      {open &&
+        createPortal(
+          <div className="fixed inset-0 z-40 overflow-y-auto">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={handleClose}
+            />
 
-          {/* Centering wrapper — min-h-full ensures short modals stay centred */}
-          <div className="flex min-h-full items-center justify-center p-4">
-          {/* Card */}
-          <div className="relative z-50 flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl dark:bg-zinc-800" style={{ maxHeight: "90vh" }}>
-
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-700">
-              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                {t.uploadModal.title}
-              </h2>
-              <button
-                onClick={handleClose}
-                className="rounded-lg p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
-                aria-label={t.common.close_aria}
+            {/* Centering wrapper */}
+            <div className="flex min-h-full items-center justify-center p-4">
+              {/* Card */}
+              <div
+                className="relative z-50 flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl dark:bg-zinc-800"
+                style={{ maxHeight: "90vh" }}
               >
-                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-4 overflow-y-auto p-6">
-              {/* Dropzone */}
-              <div className="relative">
-                <div
-                  {...getRootProps()}
-                  className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 transition-colors ${
-                    isDragActive
-                      ? "border-zinc-500 bg-zinc-50 dark:border-zinc-400 dark:bg-zinc-700"
-                      : "border-zinc-300 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-600 dark:hover:border-zinc-500 dark:hover:bg-zinc-700"
-                  } ${uploading || storageFull ? "pointer-events-none opacity-50" : ""}`}
-                >
-                  <input {...getInputProps()} />
-                  <svg className="mb-3 h-10 w-10 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
-                  </svg>
-                  {isDragActive ? (
-                    <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.uploadModal.dropzoneDragActive}</p>
-                  ) : (
-                    <>
-                      <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        {t.uploadModal.dropzonePrompt} <span className="text-zinc-900 underline dark:text-zinc-50">{t.uploadModal.dropzoneBrowse}</span>
-                      </p>
-                      <p className="mt-1 text-xs text-zinc-400">{t.uploadModal.dropzoneHint}</p>
-                    </>
-                  )}
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-700">
+                  <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                    {t.uploadModal.title}
+                  </h2>
+                  <button
+                    onClick={handleClose}
+                    className="rounded-lg p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                    aria-label={t.common.close_aria}
+                  >
+                    <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                    </svg>
+                  </button>
                 </div>
 
-                {/* Storage-full overlay */}
-                {storageFull && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-xl bg-zinc-900/80 text-center">
-                    <p className="text-sm font-medium text-white">
-                      Storage full &mdash; upgrade to continue uploading
-                    </p>
-                    <Link
-                      href="/pricing"
-                      className="rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-100"
-                    >
-                      Upgrade plan
-                    </Link>
-                  </div>
-                )}
-              </div>
+                <div className="flex flex-col gap-4 overflow-y-auto p-6">
 
-              {/* File list */}
-              {files.length > 0 && (
-                <ul className="space-y-2">
-                  {files.map((item) => (
-                    <li key={item.id} className={`rounded-lg px-3 py-2.5 ${item.exceedsLimit ? "bg-red-50 dark:bg-red-950/30" : "bg-zinc-50 dark:bg-zinc-700"}`}>
-                      <div className="flex items-center gap-3">
-                        <StatusIcon status={item.status} />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
-                            {item.file.name}
-                          </p>
-                          <p className="text-xs text-zinc-400">{formatBytes(item.file.size)}</p>
-                        </div>
-                        {item.exceedsLimit && (
-                          <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-600 dark:bg-red-900/50 dark:text-red-400">
-                            Exceeds storage limit
-                          </span>
-                        )}
-                        {!item.exceedsLimit && item.status === "done" && (
-                          <span className="shrink-0 text-xs text-emerald-600 dark:text-emerald-400">{t.uploadModal.statusDone}</span>
-                        )}
-                        {!item.exceedsLimit && item.status === "error" && (
-                          <span className="shrink-0 text-xs text-red-500" title={item.error}>{t.uploadModal.statusFailed}</span>
-                        )}
-                        {!item.exceedsLimit && item.status === "uploading" && (
-                          <span className="shrink-0 text-xs tabular-nums text-zinc-400">{item.progress}%</span>
+                  {/* Network banners */}
+                  {!isOnline && (
+                    <div className="flex items-center gap-2 rounded-lg bg-red-50 px-4 py-2.5 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-400">
+                      <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                      </svg>
+                      No internet — uploads paused automatically
+                    </div>
+                  )}
+                  {isOnline && showOnlineBanner && (
+                    <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2.5 text-sm text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                      <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
+                      </svg>
+                      Back online — resuming uploads
+                    </div>
+                  )}
+
+                  {/* Overall progress */}
+                  {queue.totalCount > 0 && (
+                    <div>
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                          {queue.completedCount} / {queue.totalCount} photos uploaded
+                        </span>
+                        {isActive && (
+                          <div className="flex items-center gap-2 text-xs text-zinc-400">
+                            {speedBytesPerSec > 0 && (
+                              <span>{formatSpeed(speedBytesPerSec)}</span>
+                            )}
+                            {etaSeconds > 0 && (
+                              <span>{formatEta(etaSeconds)}</span>
+                            )}
+                          </div>
                         )}
                       </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-600">
+                        <div
+                          className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                          style={{ width: `${queue.overallProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
 
-                      {/* Progress bar — visible while uploading */}
-                      {(item.status === "uploading" || (item.status === "pending" && uploading)) && (
-                        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-600">
-                          <div
-                            className="h-full rounded-full bg-blue-500 transition-all duration-150"
-                            style={{ width: `${item.progress}%` }}
-                          />
-                        </div>
+                  {/* Dropzone */}
+                  <div className="relative">
+                    <div
+                      {...getRootProps()}
+                      className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 transition-colors ${
+                        isDragActive
+                          ? "border-zinc-500 bg-zinc-50 dark:border-zinc-400 dark:bg-zinc-700"
+                          : "border-zinc-300 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-600 dark:hover:border-zinc-500 dark:hover:bg-zinc-700"
+                      } ${storageFull ? "pointer-events-none opacity-50" : ""}`}
+                    >
+                      <input {...getInputProps()} />
+                      <svg
+                        className="mb-3 h-10 w-10 text-zinc-400"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                      </svg>
+                      {isDragActive ? (
+                        <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          {t.uploadModal.dropzoneDragActive}
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            {t.uploadModal.dropzonePrompt}{" "}
+                            <span className="text-zinc-900 underline dark:text-zinc-50">
+                              {t.uploadModal.dropzoneBrowse}
+                            </span>
+                          </p>
+                          <p className="mt-1 text-xs text-zinc-400">
+                            {t.uploadModal.dropzoneHint}
+                          </p>
+                        </>
                       )}
+                    </div>
 
-                      {/* Error message */}
-                      {item.status === "error" && item.error && (
-                        <p className="mt-1 text-xs text-red-500">{item.error}</p>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+                    {/* Storage-full overlay */}
+                    {storageFull && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 rounded-xl bg-zinc-900/80 text-center">
+                        <p className="text-sm font-medium text-white">
+                          Storage full &mdash; upgrade to continue uploading
+                        </p>
+                        <Link
+                          href="/pricing"
+                          className="rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-100"
+                        >
+                          Upgrade plan
+                        </Link>
+                      </div>
+                    )}
+                  </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between border-t border-zinc-100 px-6 py-4 dark:border-zinc-700">
-              {/* Summary */}
-              <div className="flex flex-col gap-0.5">
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {files.length === 0 && t.uploadModal.summaryNoFiles}
-                  {files.length > 0 && !allSettled && !uploading && t.uploadModal.summaryReady(uploadableFiles.filter(f => f.status === "pending").length)}
-                  {uploading && t.uploadModal.summaryUploading(doneCount, uploadableFiles.filter(f => f.status !== "error").length)}
-                  {allSettled && t.uploadModal.summarySettled(doneCount, errorCount)}
-                </p>
-                {exceededFiles.length > 0 && !allSettled && (
-                  <p className="text-xs text-red-500">
-                    {uploadableFiles.filter(f => f.status === "pending").length} of {files.length} photos will be uploaded &mdash; storage limit reached for the rest.
-                  </p>
-                )}
-              </div>
+                  {/* ── Sections ────────────────────────────────────────────── */}
 
-              <div className="flex gap-2">
-                <button
-                  onClick={handleClose}
-                  className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                >
-                  {allSettled ? t.common.close : t.common.cancel}
-                </button>
-                {!allSettled && (
-                  <button
-                    onClick={startUploads}
-                    disabled={uploading || uploadableFiles.filter((f) => f.status === "pending").length === 0}
-                    className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                  {/* Uploading now */}
+                  <Section
+                    title="Uploading now"
+                    count={queue.uploading.length}
+                    collapsed={!!collapsed.uploading}
+                    onToggle={() => toggleSection("uploading")}
                   >
-                    {uploading ? t.uploadModal.submitting : t.uploadModal.submit(uploadableFiles.filter((f) => f.status === "pending").length || "")}
+                    {queue.uploading.map((item) => (
+                      <UploadingRow key={item.id} item={item} />
+                    ))}
+                  </Section>
+
+                  {/* Queued (PENDING + PAUSED) */}
+                  <Section
+                    title="Queued"
+                    count={queuedItems.length}
+                    collapsed={!!collapsed.queued}
+                    onToggle={() => toggleSection("queued")}
+                  >
+                    {queuedItems.map((item) => (
+                      <QueuedRow key={item.id} item={item} />
+                    ))}
+                  </Section>
+
+                  {/* Failed */}
+                  <Section
+                    title="Failed"
+                    count={queue.failed.length}
+                    collapsed={!!collapsed.failed}
+                    onToggle={() => toggleSection("failed")}
+                    action={
+                      queue.failed.length > 1 ? (
+                        <button
+                          onClick={handleRetryAll}
+                          className="rounded-md border border-zinc-300 px-2 py-0.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                        >
+                          Retry all
+                        </button>
+                      ) : undefined
+                    }
+                  >
+                    {queue.failed.map((item) => (
+                      <FailedRow key={item.id} item={item} onRetry={handleRetryItem} />
+                    ))}
+                  </Section>
+
+                  {/* Completed */}
+                  <Section
+                    title="Completed"
+                    count={queue.done.length}
+                    collapsed={!!collapsed.completed}
+                    onToggle={() => toggleSection("completed")}
+                    action={
+                      <button
+                        onClick={queue.clearCompleted}
+                        className="rounded-md border border-zinc-300 px-2 py-0.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                      >
+                        Clear
+                      </button>
+                    }
+                  >
+                    {queue.done.map((item) => (
+                      <CompletedRow key={item.id} item={item} />
+                    ))}
+                  </Section>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-end border-t border-zinc-100 px-6 py-4 dark:border-zinc-700">
+                  <button
+                    onClick={handleClose}
+                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                  >
+                    {t.common.close}
                   </button>
-                )}
+                </div>
               </div>
             </div>
-          </div>
-          </div>{/* end centering wrapper */}
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }

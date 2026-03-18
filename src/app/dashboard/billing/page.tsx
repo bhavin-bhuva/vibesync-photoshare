@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getServerT } from "@/lib/i18n/server";
+import { getEventLimits } from "@/lib/platform-settings";
+import { formatStorageSize } from "@/lib/storage";
 import { ManageBillingButton } from "./ManageBillingButton";
 import type { PlanTier } from "@/generated/prisma/client";
 
@@ -19,24 +21,6 @@ const PLAN_BADGE: Record<PlanTier, string> = {
   FREE:   "bg-zinc-100 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300",
   PRO:    "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
   STUDIO: "bg-violet-100 text-violet-700 dark:bg-violet-900 dark:text-violet-300",
-};
-
-const PLAN_EVENT_LIMIT: Record<PlanTier, string> = {
-  FREE: "3",
-  PRO: "25",
-  STUDIO: "Unlimited",
-};
-
-const PLAN_STORAGE_BYTES: Record<PlanTier, number> = {
-  FREE:   1  * 1024 ** 3,
-  PRO:    50 * 1024 ** 3,
-  STUDIO: 500 * 1024 ** 3,
-};
-
-const PLAN_STORAGE_LABEL: Record<PlanTier, string> = {
-  FREE: "1 GB",
-  PRO: "50 GB",
-  STUDIO: "500 GB",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -57,16 +41,19 @@ export default async function BillingPage() {
   const [t, session] = await Promise.all([getServerT(), getServerSession(authOptions)]);
   if (!session) redirect("/login");
 
-  const user = await db.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      subscription: true,
-      events: {
-        include: { photos: { select: { size: true } } },
+  const [user, eventLimits] = await Promise.all([
+    db.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        subscription: true,
+        events: {
+          include: { photos: { select: { size: true } } },
+        },
       },
-    },
-  });
-  if (!user) redirect("/login");
+    }),
+    getEventLimits(),
+  ]);
+  if (!user) redirect("/api/auth/force-signout");
 
   const sub = user.subscription;
   const plan: PlanTier = sub?.planTier ?? "FREE";
@@ -75,11 +62,21 @@ export default async function BillingPage() {
   const hasRealCustomer = sub?.stripeCustomerId && !sub.stripeCustomerId.startsWith("cus_pending_");
   const canManage = isPaid && !!hasRealCustomer;
 
-  // Usage
+  // Usage — storage limit comes from the user record (set by webhook on subscription change)
   const eventCount = user.events.length;
   const storageUsed = user.events.flatMap((e) => e.photos).reduce((s, p) => s + p.size, 0);
-  const storageLimit = PLAN_STORAGE_BYTES[plan];
+  const storageLimit = Number(user.storageLimit);
   const storagePercent = Math.min(Math.round((storageUsed / storageLimit) * 100), 100);
+  const storageLimitLabel = formatStorageSize(user.storageLimit);
+
+  // Event limit — null means unlimited (STUDIO)
+  const planEventLimitNum: Record<PlanTier, number | null> = {
+    FREE:   eventLimits.FREE,
+    PRO:    eventLimits.PRO,
+    STUDIO: null,
+  };
+  const eventLimitNum = planEventLimitNum[plan];
+  const eventLimitLabel = eventLimitNum != null ? String(eventLimitNum) : "Unlimited";
 
   // Status label key
   type StatusKey = "active" | "trialing" | "past_due" | "canceled" | "incomplete";
@@ -195,18 +192,18 @@ export default async function BillingPage() {
               <div className="mb-1.5 flex items-center justify-between text-sm">
                 <span className="font-medium text-zinc-700 dark:text-zinc-300">{t.billing.eventsLabel}</span>
                 <span className="text-zinc-500 dark:text-zinc-400">
-                  {t.billing.eventsUsed(eventCount, PLAN_EVENT_LIMIT[plan])}
+                  {t.billing.eventsUsed(eventCount, eventLimitLabel)}
                 </span>
               </div>
-              {plan !== "STUDIO" && (
+              {eventLimitNum != null && (
                 <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-700">
                   <div
                     className={`h-full rounded-full ${
-                      eventCount >= parseInt(PLAN_EVENT_LIMIT[plan])
+                      eventCount >= eventLimitNum
                         ? "bg-red-500"
                         : "bg-emerald-500"
                     }`}
-                    style={{ width: `${Math.min((eventCount / parseInt(PLAN_EVENT_LIMIT[plan])) * 100, 100)}%` }}
+                    style={{ width: `${Math.min((eventCount / eventLimitNum) * 100, 100)}%` }}
                   />
                 </div>
               )}
@@ -217,7 +214,7 @@ export default async function BillingPage() {
               <div className="mb-1.5 flex items-center justify-between text-sm">
                 <span className="font-medium text-zinc-700 dark:text-zinc-300">{t.billing.storageLabel}</span>
                 <span className="text-zinc-500 dark:text-zinc-400">
-                  {t.billing.storageUsed(formatBytes(storageUsed), PLAN_STORAGE_LABEL[plan])}
+                  {t.billing.storageUsed(formatBytes(storageUsed), storageLimitLabel)}
                 </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-700">

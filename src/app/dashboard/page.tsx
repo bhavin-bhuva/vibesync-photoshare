@@ -74,7 +74,11 @@ export default async function DashboardPage({
     getEventLimits(),
   ]);
 
-  if (!user) redirect("/login");
+  if (!user) {
+    // Session references a deleted or non-existent user — force a full signout
+    // to clear the stale JWT cookie so the proxy loop doesn't occur.
+    redirect("/api/auth/force-signout");
+  }
 
   const plan = user.subscription?.planTier ?? "FREE";
   const badge = PLAN_BADGE[plan];

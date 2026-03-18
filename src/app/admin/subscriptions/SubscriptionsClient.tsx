@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -45,7 +44,6 @@ function statusBadge(status: string) {
   return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${s.cls}`}>{s.label}</span>;
 }
 
-const PLAN_AMOUNT: Record<string, string> = { FREE: "$0", PRO: "$19/mo", STUDIO: "$49/mo" };
 
 function SortIcon({ active, dir }: { active: boolean; dir: "asc" | "desc" }) {
   return (
@@ -73,6 +71,7 @@ export function SubscriptionsClient({
   statusFilter,
   dateFrom,
   dateTo,
+  planAmounts,
 }: {
   rows:         SubscriptionRow[];
   total:        number;
@@ -84,6 +83,7 @@ export function SubscriptionsClient({
   statusFilter: string;
   dateFrom:     string;
   dateTo:       string;
+  planAmounts:  Record<string, string>;
 }) {
   const router = useRouter();
 
@@ -217,7 +217,7 @@ export function SubscriptionsClient({
                   </td>
                   {/* Amount */}
                   <td className="px-4 py-3 font-mono text-sm tabular-nums text-zinc-700">
-                    {PLAN_AMOUNT[row.planTier] ?? "—"}
+                    {planAmounts[row.planTier] ?? "—"}
                   </td>
                   {/* Billing */}
                   <td className="px-4 py-3 text-zinc-400">
@@ -258,7 +258,7 @@ export function SubscriptionsClient({
           <div className="flex items-center gap-1">
             <button onClick={() => updateParams({ page: currentPage > 2 ? String(currentPage - 1) : null })} disabled={currentPage <= 1} className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-40">← Prev</button>
             {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              let p = totalPages <= 7 ? i + 1 : currentPage <= 4 ? i + 1 : currentPage >= totalPages - 3 ? totalPages - 6 + i : currentPage - 3 + i;
+              const p = totalPages <= 7 ? i + 1 : currentPage <= 4 ? i + 1 : currentPage >= totalPages - 3 ? totalPages - 6 + i : currentPage - 3 + i;
               return (
                 <button key={p} onClick={() => updateParams({ page: p > 1 ? String(p) : null })} className={`rounded-lg px-3 py-1.5 text-xs font-medium ${p === currentPage ? "bg-blue-600 text-white" : "border border-zinc-300 text-zinc-600 hover:bg-zinc-50"}`}>{p}</button>
               );

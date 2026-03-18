@@ -38,6 +38,16 @@ enum SharedLinkAccessType {
   NONE
 }
 
+enum PhotoStatus {
+  UPLOADING
+  READY
+}
+
+enum BillingInterval {
+  MONTH
+  YEAR
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -100,6 +110,9 @@ model Photo {
   thumbS3Key      String?
   filename        String
   size            Int
+  status          PhotoStatus     @default(READY)
+  width           Int?
+  height          Int?
   createdAt       DateTime        @default(now())
   eventId         String
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -169,6 +182,49 @@ model GalleryAccessAttempt {
   attemptedAt DateTime @default(now())
 
   @@index([slug, attemptedAt])
+}
+
+model StripePlan {
+  id              String          @id @default(cuid())
+  name            String          // e.g. "PRO", "STUDIO"
+  displayName     String          // e.g. "Pro Plan", "Studio Plan"
+  tier            PlanTier
+  stripePriceId   String          @unique
+  stripeProductId String?
+  price           Decimal         @db.Decimal(10, 2)
+  currency        String          @default("usd")
+  interval        BillingInterval @default(MONTH)
+  storageBytes    BigInt          // e.g. 107374182400 for 100 GB
+  maxEvents       Int?            // null = unlimited
+  features        Json            // string[] shown on pricing page
+  isActive        Boolean         @default(true)
+  isPopular       Boolean         @default(false)
+  sortOrder       Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model StripeWebhookConfig {
+  id             String    @id @default(cuid())
+  webhookSecret  String    // encrypted at rest
+  endpointUrl    String
+  isActive       Boolean   @default(true)
+  lastVerifiedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model WebhookLog {
+  id            String   @id @default(cuid())
+  eventType     String
+  stripeEventId String
+  status        String   // "SUCCESS" | "FAILED"
+  errorMessage  String?
+  processingMs  Int
+  receivedAt    DateTime @default(now())
+
+  @@index([receivedAt])
+  @@index([stripeEventId, status])
 }
 
 model AdminActivityLog {

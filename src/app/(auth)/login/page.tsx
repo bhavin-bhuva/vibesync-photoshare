@@ -41,7 +41,6 @@ function LoginForm() {
       const session = await getSession();
       const dest = session?.user?.role === "SUPER_ADMIN" ? "/admin" : "/dashboard";
       router.push(dest);
-      router.refresh();
     }
   }
 

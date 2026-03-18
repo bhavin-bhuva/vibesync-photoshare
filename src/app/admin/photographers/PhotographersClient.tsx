@@ -146,10 +146,11 @@ function ModalActions({ onCancel, onConfirm, confirmLabel, confirmCls, pending }
 }
 
 // — Change Plan Modal —
-function ChangePlanModal({ userId, userName, currentPlan, onClose, onDone }: {
+function ChangePlanModal({ userId, userName, currentPlan, planOptions, onClose, onDone }: {
   userId: string;
   userName: string;
   currentPlan: "FREE" | "PRO" | "STUDIO";
+  planOptions: { value: "FREE" | "PRO" | "STUDIO"; label: string; desc: string }[];
   onClose: () => void;
   onDone: () => void;
 }) {
@@ -166,11 +167,7 @@ function ChangePlanModal({ userId, userName, currentPlan, onClose, onDone }: {
     });
   }
 
-  const plans: { value: "FREE" | "PRO" | "STUDIO"; label: string; desc: string }[] = [
-    { value: "FREE",   label: "Free",   desc: "3 events · 1 GB" },
-    { value: "PRO",    label: "Pro",    desc: "25 events · 50 GB" },
-    { value: "STUDIO", label: "Studio", desc: "Unlimited · 500 GB" },
-  ];
+  const plans = planOptions;
 
   return (
     <ModalShell title={`Change Plan — ${userName}`} onClose={onClose}>
@@ -443,6 +440,7 @@ export function PhotographersClient({
   statusFilter,
   dateFrom,
   dateTo,
+  planOptions,
 }: {
   rows: PhotographerRow[];
   total: number;
@@ -455,6 +453,7 @@ export function PhotographersClient({
   statusFilter: string;
   dateFrom: string;
   dateTo: string;
+  planOptions: { value: "FREE" | "PRO" | "STUDIO"; label: string; desc: string }[];
 }) {
   const router = useRouter();
   const [inputValue, setInputValue] = useState(search);
@@ -727,6 +726,7 @@ export function PhotographersClient({
           userId={modal.userId}
           userName={modal.userName}
           currentPlan={modal.currentPlan}
+          planOptions={planOptions}
           onClose={() => setModal({ type: null })}
           onDone={onModalDone}
         />

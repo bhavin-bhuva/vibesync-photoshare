@@ -82,7 +82,7 @@ export const ja: Translations = {
     },
     upgrade: {
       eventLimitTitle: "イベント数の上限に達しました",
-      eventLimitBody: "無料プランは3イベントまでです。Proプラン（25件）またはStudioプラン（無制限）にアップグレードしてください。",
+      eventLimitBody: "現在のプランのイベント上限に達しました。プランをアップグレードしてイベントを追加してください。",
       zipTitle: "ZIPダウンロードは有料機能です",
       zipBody: "クライアントがギャラリー全体をZIPでダウンロードできるようにするには、ProまたはStudioにアップグレードしてください。",
       cta: "料金プランを見る",
@@ -356,9 +356,9 @@ export const ja: Translations = {
     mostPopular: "人気No.1",
     trialNote: "有料プランはすべて14日間の無料トライアル付き。いつでもキャンセル可能。",
     plans: {
-      free:   { name: "Free",   price: "$0",  description: "写真家として始めたばかりの方に。" },
-      pro:    { name: "Pro",    price: "$19", description: "クライアントが増えてきたスタジオに。" },
-      studio: { name: "Studio", price: "$49", description: "大量案件をこなすプロフェッショナルに。" },
+      free:   { name: "Free",   description: "写真家として始めたばかりの方に。" },
+      pro:    { name: "Pro",    description: "クライアントが増えてきたスタジオに。" },
+      studio: { name: "Studio", description: "大量案件をこなすプロフェッショナルに。" },
     },
     features: {
       events:       (n: string) => `${n} イベント`,
@@ -382,6 +382,8 @@ export const ja: Translations = {
       subscriptions: "サブスクリプション",
       activityLog:   "アクティビティログ",
       settings:      "設定",
+      plans:         "プラン",
+      webhook:       "Webhook",
     },
     topBar: {
       searchPlaceholder: "検索…",
@@ -394,6 +396,8 @@ export const ja: Translations = {
       "/admin/subscriptions":   "サブスクリプション",
       "/admin/activity":        "アクティビティログ",
       "/admin/settings":        "設定",
+      "/admin/plans":           "プラン",
+      "/admin/webhook":         "Webhook",
     } as Record<string, string>,
   },
 

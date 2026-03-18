@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/admin";
 import { Prisma } from "@/generated/prisma/client";
+import { getEventLimits } from "@/lib/platform-settings";
+import { formatStorageSize } from "@/lib/storage";
 import { SubscriptionsClient, type SubscriptionRow } from "./SubscriptionsClient";
 import { ManualOverridePanel } from "./ManualOverridePanel";
 
@@ -82,14 +84,29 @@ export default async function SubscriptionsPage({
     activeStudio,
     newThisMonth,
     canceledThisMonth,
+    proPlans,
+    studioPlans,
+    eventLimits,
+    freePlans,
   ] = await Promise.all([
     db.subscription.count({ where: { planTier: "PRO",    status: { in: ["active", "trialing"] } } }),
     db.subscription.count({ where: { planTier: "STUDIO", status: { in: ["active", "trialing"] } } }),
     db.subscription.count({ where: { planTier: { not: "FREE" }, createdAt: { gte: monthStart } } }),
     db.subscription.count({ where: { status: "canceled", updatedAt: { gte: monthStart } } }),
+    db.stripePlan.findMany({ where: { tier: "PRO",    isActive: true }, select: { price: true, storageBytes: true }, take: 1 }),
+    db.stripePlan.findMany({ where: { tier: "STUDIO", isActive: true }, select: { price: true, storageBytes: true }, take: 1 }),
+    getEventLimits(),
+    db.stripePlan.findMany({ where: { tier: "FREE",   isActive: true }, select: { storageBytes: true }, take: 1 }),
   ]);
 
-  const mrr = activePro * 19 + activeStudio * 49;
+  const proPrice       = proPlans[0]    ? Number(proPlans[0].price)    : 0;
+  const studioPrice    = studioPlans[0] ? Number(studioPlans[0].price) : 0;
+  const freeStorageLabel = freePlans[0]
+    ? formatStorageSize(freePlans[0].storageBytes)
+    : formatStorageSize(BigInt(1073741824)); // 1 GB fallback
+  const mrr         = activePro * proPrice + activeStudio * studioPrice;
+  const proLabel    = proPrice    > 0 ? `$${proPrice}/mo × active`    : "PRO × active";
+  const studioLabel = studioPrice > 0 ? `$${studioPrice}/mo × active` : "STUDIO × active";
 
   // ── Table data ──────────────────────────────────────────────────────────────
 
@@ -172,13 +189,13 @@ export default async function SubscriptionsPage({
         <StatCard
           label="PRO Subscribers"
           value={activePro.toLocaleString()}
-          sub="$19/mo × active"
+          sub={proLabel}
           accent="blue"
         />
         <StatCard
           label="STUDIO Subscribers"
           value={activeStudio.toLocaleString()}
-          sub="$49/mo × active"
+          sub={studioLabel}
           accent="violet"
         />
         <StatCard
@@ -210,12 +227,21 @@ export default async function SubscriptionsPage({
             statusFilter={statusFilter}
             dateFrom={dateFrom}
             dateTo={dateTo}
+            planAmounts={{
+              FREE:   "$0",
+              PRO:    proPrice    > 0 ? `$${proPrice}/mo`    : "—",
+              STUDIO: studioPrice > 0 ? `$${studioPrice}/mo` : "—",
+            }}
           />
         </Suspense>
       </section>
 
       {/* ── Manual Override ── */}
-      <ManualOverridePanel />
+      <ManualOverridePanel planOptions={[
+        { value: "FREE",   label: "Free",   desc: `$0 · ${eventLimits.FREE} events · ${freeStorageLabel}` },
+        { value: "PRO",    label: "Pro",    desc: proPrice    > 0 ? `$${proPrice}/mo · ${eventLimits.PRO} events · ${proPlans[0] ? formatStorageSize(proPlans[0].storageBytes) : "—"}` : "Pro" },
+        { value: "STUDIO", label: "Studio", desc: studioPrice > 0 ? `$${studioPrice}/mo · Unlimited · ${studioPlans[0] ? formatStorageSize(studioPlans[0].storageBytes) : "—"}` : "Studio" },
+      ]} />
 
     </div>
   );

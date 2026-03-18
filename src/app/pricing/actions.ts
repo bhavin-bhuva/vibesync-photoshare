@@ -21,7 +21,7 @@ export async function createCheckoutSessionAction(formData: FormData) {
 
   // Replace placeholder customer ID with a real Stripe customer
   let stripeCustomerId = user.subscription?.stripeCustomerId ?? "";
-  if (!stripeCustomerId || stripeCustomerId.startsWith("cus_pending_")) {
+  if (!stripeCustomerId || stripeCustomerId.startsWith("cus_pending_") || stripeCustomerId.startsWith("cus_test_")) {
     const customer = await stripe.customers.create({
       email: user.email,
       name: user.name ?? undefined,

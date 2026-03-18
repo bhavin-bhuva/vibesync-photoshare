@@ -79,6 +79,22 @@ function IconCog() {
   );
 }
 
+function IconTag() {
+  return (
+    <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fillRule="evenodd" d="M5.5 3A2.5 2.5 0 0 0 3 5.5v2.879a2.5 2.5 0 0 0 .732 1.767l6.5 6.5a2.5 2.5 0 0 0 3.536 0l2.878-2.878a2.5 2.5 0 0 0 0-3.536l-6.5-6.5A2.5 2.5 0 0 0 8.38 3H5.5ZM6 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function IconWebhook() {
+  return (
+    <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fillRule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm1.23-3.723a.75.75 0 0 0 .219-.53V2.929a.75.75 0 0 0-1.5 0V5.36l-.31-.31A7 7 0 0 0 3.239 8.188a.75.75 0 1 0 1.448.389A5.5 5.5 0 0 1 13.89 6.11l.311.31h-2.432a.75.75 0 0 0 0 1.5h4.243a.75.75 0 0 0 .53-.219Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 function IconLogout() {
   return (
     <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -104,6 +120,8 @@ export function Sidebar({ name, email }: { name: string | null; email: string })
     { href: "/admin/subscriptions",  label: t.admin.nav.subscriptions, icon: <IconCard /> },
     { href: "/admin/activity",       label: t.admin.nav.activityLog,   icon: <IconClock /> },
     { href: "/admin/settings",       label: t.admin.nav.settings,      icon: <IconCog /> },
+    { href: "/admin/plans",          label: t.admin.nav.plans,         icon: <IconTag /> },
+    { href: "/admin/webhook",        label: t.admin.nav.webhook,       icon: <IconWebhook /> },
   ];
 
   return (

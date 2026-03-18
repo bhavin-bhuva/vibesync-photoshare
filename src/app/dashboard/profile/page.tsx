@@ -16,7 +16,7 @@ export default async function ProfilePage() {
     where: { id: session.user.id },
     include: { studioProfile: true },
   });
-  if (!user) redirect("/login");
+  if (!user) redirect("/api/auth/force-signout");
 
   const sp = user.studioProfile;
   const logoUrl = sp?.logoS3Key ? await getCloudfrontSignedUrl(sp.logoS3Key) : null;

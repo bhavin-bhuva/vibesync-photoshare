@@ -7,19 +7,17 @@ import {
   type PhotographerSearchResult,
 } from "./actions";
 
-const PLAN_OPTIONS: { value: "FREE" | "PRO" | "STUDIO"; label: string; desc: string }[] = [
-  { value: "FREE",   label: "Free",   desc: "$0 · 3 events · 1 GB" },
-  { value: "PRO",    label: "Pro",    desc: "$19/mo · 25 events · 50 GB" },
-  { value: "STUDIO", label: "Studio", desc: "$49/mo · unlimited · 500 GB" },
-];
-
 const PLAN_BADGE: Record<string, string> = {
   FREE:   "bg-zinc-100 text-zinc-700",
   PRO:    "bg-blue-100 text-blue-700",
   STUDIO: "bg-violet-100 text-violet-700",
 };
 
-export function ManualOverridePanel() {
+export function ManualOverridePanel({
+  planOptions,
+}: {
+  planOptions: { value: "FREE" | "PRO" | "STUDIO"; label: string; desc: string }[];
+}) {
   const [email,        setEmail]       = useState("");
   const [searchErr,    setSearchErr]   = useState("");
   const [found,        setFound]       = useState<PhotographerSearchResult | null>(null);
@@ -125,7 +123,7 @@ export function ManualOverridePanel() {
                 New Plan
               </label>
               <div className="grid grid-cols-3 gap-2">
-                {PLAN_OPTIONS.map((p) => (
+                {planOptions.map((p) => (
                   <label
                     key={p.value}
                     className={`flex cursor-pointer flex-col rounded-lg border px-3 py-2.5 transition-colors ${

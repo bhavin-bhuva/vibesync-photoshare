@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { db } from "@/lib/db";
 import type { Prisma, PlanTier } from "@/generated/prisma/client";
+import { getEventLimits } from "@/lib/platform-settings";
+import { formatStorageSize } from "@/lib/storage";
 import { PhotographersClient, type PhotographerRow } from "./PhotographersClient";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -61,7 +63,7 @@ export default async function PhotographersPage({
   if (dateFrom || dateTo) where.createdAt = createdAtFilter;
 
   // ── Fetch ───────────────────────────────────────────────────────────────────
-  const [users, total] = await Promise.all([
+  const [users, total, dbPlans, eventLimits, freePlans] = await Promise.all([
     db.user.findMany({
       where,
       orderBy: buildOrderBy(sortBy, sortDir),
@@ -82,6 +84,9 @@ export default async function PhotographersPage({
       },
     }),
     db.user.count({ where }),
+    db.stripePlan.findMany({ where: { isActive: true }, select: { tier: true, price: true, storageBytes: true, maxEvents: true }, orderBy: { sortOrder: "asc" } }),
+    getEventLimits(),
+    db.stripePlan.findMany({ where: { tier: "FREE", isActive: true }, select: { storageBytes: true }, take: 1 }),
   ]);
 
   // ── Serialise for client (BigInt → string, Date → ISO) ─────────────────────
@@ -99,6 +104,23 @@ export default async function PhotographersPage({
     photoCount: u.events.reduce((sum, e) => sum + e._count.photos, 0),
   }));
 
+  // Build plan options for the change-plan modal
+  const freeStorageLabel = freePlans[0]
+    ? formatStorageSize(freePlans[0].storageBytes)
+    : formatStorageSize(BigInt(1073741824));
+  const planOptions: { value: "FREE" | "PRO" | "STUDIO"; label: string; desc: string }[] = [
+    { value: "FREE",   label: "Free",   desc: `${eventLimits.FREE} events · ${freeStorageLabel}` },
+    ...dbPlans.map((p) => ({
+      value: p.tier as "FREE" | "PRO" | "STUDIO",
+      label: p.tier === "PRO" ? "Pro" : "Studio",
+      desc: [
+        p.price && Number(p.price) > 0 ? `$${Number(p.price).toFixed(0)}/mo` : null,
+        p.maxEvents != null ? `${p.maxEvents} events` : "Unlimited",
+        formatStorageSize(p.storageBytes),
+      ].filter(Boolean).join(" · "),
+    })),
+  ];
+
   return (
     <Suspense>
       <PhotographersClient
@@ -113,6 +135,7 @@ export default async function PhotographersPage({
         statusFilter={statusFilter}
         dateFrom={dateFrom}
         dateTo={dateTo}
+        planOptions={planOptions}
       />
     </Suspense>
   );

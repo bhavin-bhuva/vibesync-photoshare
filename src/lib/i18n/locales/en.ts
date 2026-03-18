@@ -80,7 +80,7 @@ export const en = {
     },
     upgrade: {
       eventLimitTitle: "You've reached your event limit",
-      eventLimitBody: "Free plan includes 3 events. Upgrade to Pro (25 events) or Studio (unlimited) to keep growing.",
+      eventLimitBody: "You\u2019ve reached your plan\u2019s event limit. Upgrade your plan to keep creating events.",
       zipTitle: "ZIP download is a Pro feature",
       zipBody: "Upgrade to Pro or Studio to let your clients download the full gallery as a ZIP file.",
       cta: "View pricing",
@@ -354,6 +354,8 @@ export const en = {
       subscriptions: "Subscriptions",
       activityLog:   "Activity Log",
       settings:      "Settings",
+      plans:         "Plans",
+      webhook:       "Webhook",
     },
     topBar: {
       searchPlaceholder: "Search anything\u2026",
@@ -366,6 +368,8 @@ export const en = {
       "/admin/subscriptions":     "Subscriptions",
       "/admin/activity":          "Activity Log",
       "/admin/settings":          "Settings",
+      "/admin/plans":             "Plans",
+      "/admin/webhook":           "Webhook",
     } as Record<string, string>,
   },
 
@@ -380,9 +384,9 @@ export const en = {
     mostPopular: "Most popular",
     trialNote: "All paid plans include a 14-day free trial. Cancel anytime.",
     plans: {
-      free:   { name: "Free",   price: "$0",  description: "For photographers just getting started." },
-      pro:    { name: "Pro",    price: "$19", description: "For growing studios with more clients." },
-      studio: { name: "Studio", price: "$49", description: "For high-volume professionals." },
+      free:   { name: "Free",   description: "For photographers just getting started." },
+      pro:    { name: "Pro",    description: "For growing studios with more clients." },
+      studio: { name: "Studio", description: "For high-volume professionals." },
     },
     features: {
       events:       (n: string) => `${n} events`,

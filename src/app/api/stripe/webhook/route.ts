@@ -3,29 +3,57 @@ import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/lib/db";
 import type { PlanTier } from "@/generated/prisma/client";
-import { PLAN_STORAGE_LIMITS } from "@/lib/storage";
+import { getStorageLimitForTier } from "@/lib/storage";
+import { decrypt } from "@/lib/encryption";
 
-function tierFromPriceId(priceId: string): PlanTier {
-  if (priceId === process.env.STRIPE_PRO_PRICE_ID) return "PRO";
-  if (priceId === process.env.STRIPE_STUDIO_PRICE_ID) return "STUDIO";
-  return "FREE";
+async function tierFromPriceId(priceId: string): Promise<PlanTier> {
+  const plan = await db.stripePlan.findFirst({
+    where: { stripePriceId: priceId },
+    select: { tier: true },
+  });
+  return plan?.tier ?? "FREE";
+}
+
+async function resolveWebhookSecret(): Promise<string | null> {
+  const config = await db.stripeWebhookConfig.findFirst({
+    where: { isActive: true },
+    select: { webhookSecret: true },
+  });
+  if (config) return decrypt(config.webhookSecret);
+  return process.env.STRIPE_WEBHOOK_SECRET ?? null;
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
-  if (!sig || !process.env.STRIPE_WEBHOOK_SECRET) {
+  if (!sig) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 });
+  }
+
+  const webhookSecret = await resolveWebhookSecret();
+  if (!webhookSecret) {
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 400 });
   }
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  // ── Deduplication: skip events already processed successfully ──────────────
+  const duplicate = await db.webhookLog.findFirst({
+    where: { stripeEventId: event.id, status: "SUCCESS" },
+    select: { id: true },
+  });
+  if (duplicate) {
+    return NextResponse.json({ received: true });
+  }
+
+  // ── Process event ──────────────────────────────────────────────────────────
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -36,8 +64,9 @@ export async function POST(req: NextRequest) {
 
         const sub = await stripe.subscriptions.retrieve(subscriptionId);
         const priceId = sub.items.data[0].price.id;
+        const tier = await tierFromPriceId(priceId);
+        const storageLimit = await getStorageLimitForTier(tier);
 
-        const tier = tierFromPriceId(priceId);
         await db.$transaction([
           db.subscription.update({
             where: { userId },
@@ -51,7 +80,7 @@ export async function POST(req: NextRequest) {
           }),
           db.user.update({
             where: { id: userId },
-            data: { storageLimit: PLAN_STORAGE_LIMITS[tier] },
+            data: { storageLimit },
           }),
         ]);
         break;
@@ -60,12 +89,14 @@ export async function POST(req: NextRequest) {
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
         const priceId = sub.items.data[0].price.id;
-        const tier = tierFromPriceId(priceId);
+        const tier = await tierFromPriceId(priceId);
+        const storageLimit = await getStorageLimitForTier(tier);
         const existing = await db.subscription.findUnique({
           where: { stripeSubscriptionId: sub.id },
           select: { userId: true },
         });
         if (!existing) break;
+
         await db.$transaction([
           db.subscription.update({
             where: { stripeSubscriptionId: sub.id },
@@ -78,7 +109,7 @@ export async function POST(req: NextRequest) {
           }),
           db.user.update({
             where: { id: existing.userId },
-            data: { storageLimit: PLAN_STORAGE_LIMITS[tier] },
+            data: { storageLimit },
           }),
         ]);
         break;
@@ -91,6 +122,7 @@ export async function POST(req: NextRequest) {
           select: { userId: true },
         });
         if (!existing) break;
+
         await db.$transaction([
           db.subscription.update({
             where: { stripeSubscriptionId: sub.id },
@@ -104,16 +136,38 @@ export async function POST(req: NextRequest) {
           }),
           db.user.update({
             where: { id: existing.userId },
-            data: { storageLimit: PLAN_STORAGE_LIMITS["FREE"] },
+            data: { storageLimit: await getStorageLimitForTier("FREE") },
           }),
         ]);
         break;
       }
     }
-  } catch (err) {
-    console.error("[stripe-webhook]", event.type, err);
-    return NextResponse.json({ error: "Handler failed" }, { status: 500 });
-  }
 
-  return NextResponse.json({ received: true });
+    await db.webhookLog.create({
+      data: {
+        stripeEventId: event.id,
+        eventType: event.type,
+        status: "SUCCESS",
+        processingMs: Date.now() - startTime,
+        receivedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error("[stripe-webhook]", event.type, error);
+
+    await db.webhookLog.create({
+      data: {
+        stripeEventId: event.id ?? "unknown",
+        eventType: event.type ?? "unknown",
+        status: "FAILED",
+        errorMessage: error instanceof Error ? error.message : String(error),
+        processingMs: Date.now() - startTime,
+        receivedAt: new Date(),
+      },
+    });
+
+    return NextResponse.json({ error: "Webhook failed" }, { status: 500 });
+  }
 }

@@ -43,6 +43,7 @@ async function main() {
   });
 
   console.log(`Seeded admin: ${admin.email} (id: ${admin.id})`);
+  console.log("No default plans seeded — create plans from /admin/plans");
 }
 
 main()
