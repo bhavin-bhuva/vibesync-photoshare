@@ -4,10 +4,11 @@ import { createContext, useContext } from "react";
 import type { Translations } from "./locales/en";
 import { en } from "./locales/en";
 import { ja } from "./locales/ja";
+import { gu } from "./locales/gu";
 
-export type Locale = "en" | "ja";
+export type Locale = "en" | "ja" | "gu";
 
-const localeMap: Record<Locale, Translations> = { en, ja };
+const localeMap: Record<Locale, Translations> = { en, ja, gu };
 
 const LocaleContext = createContext<Translations>(en);
 

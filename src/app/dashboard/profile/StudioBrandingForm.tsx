@@ -244,13 +244,13 @@ export function WatermarkSettings({
             role="switch"
             aria-checked={enabled}
             onClick={() => setEnabled((v) => !v)}
-            className={`relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${
+            className={`relative mt-0.5 h-5 w-9 shrink-0 overflow-hidden rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 ${
               enabled ? "bg-zinc-900 dark:bg-zinc-50" : "bg-zinc-300 dark:bg-zinc-600"
             }`}
           >
             <span
-              className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform dark:bg-zinc-900 ${
-                enabled ? "translate-x-4" : "translate-x-0.5"
+              className={`absolute left-0 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform dark:bg-zinc-900 ${
+                enabled ? "translate-x-[18px]" : "translate-x-0.5"
               }`}
             />
           </button>
@@ -262,21 +262,35 @@ export function WatermarkSettings({
 
         {/* Position picker */}
         <Field label={wm.positionLabel}>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             {POSITIONS.map((pos) => (
-              <button
+              <label
                 key={pos}
-                type="button"
-                onClick={() => setPosition(pos)}
-                disabled={!enabled}
-                className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-40 ${
+                className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors ${
+                  !enabled ? "cursor-not-allowed opacity-40" : ""
+                } ${
                   position === pos
-                    ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
-                    : "border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600"
+                    ? "border-zinc-900 bg-zinc-50 dark:border-zinc-400 dark:bg-zinc-700/60"
+                    : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700/20 dark:hover:border-zinc-500 dark:hover:bg-zinc-700/40"
                 }`}
               >
-                {wm.positions[pos]}
-              </button>
+                <input
+                  type="radio"
+                  name="watermarkPositionRadio"
+                  value={pos}
+                  checked={position === pos}
+                  disabled={!enabled}
+                  onChange={() => setPosition(pos)}
+                  className="h-4 w-4 shrink-0 accent-zinc-900 dark:accent-zinc-200"
+                />
+                <span className={`text-sm font-medium ${
+                  position === pos
+                    ? "text-zinc-900 dark:text-zinc-100"
+                    : "text-zinc-600 dark:text-zinc-400"
+                }`}>
+                  {wm.positions[pos]}
+                </span>
+              </label>
             ))}
           </div>
         </Field>

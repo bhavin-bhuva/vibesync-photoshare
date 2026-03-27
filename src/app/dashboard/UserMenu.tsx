@@ -189,6 +189,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
 const LOCALES: { code: Locale; label: string; flag: string }[] = [
   { code: "en", label: "English", flag: "🇺🇸" },
   { code: "ja", label: "日本語", flag: "🇯🇵" },
+  { code: "gu", label: "ગુજરાતી", flag: "🇮🇳" },
 ];
 
 // ─── UserMenu ─────────────────────────────────────────────────────────────────
@@ -306,31 +307,34 @@ export function UserMenu({
 
             {/* Language switcher */}
             <div className="px-2 py-2">
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
                 {t.userMenu.language}
               </p>
-              <div className="flex gap-2">
-                {LOCALES.map(({ code, label, flag }) => (
-                  <button
-                    key={code}
-                    onClick={() => handleLocaleSwitch(code)}
-                    disabled={switchingLocale !== null}
-                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors disabled:opacity-60 ${
-                      locale === code
-                        ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                        : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                    }`}
-                  >
-                    <span>{flag}</span>
-                    <span>{label}</span>
-                    {switchingLocale === code && (
-                      <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4l3-3-3-3v4a8 8 0 1 0 8 8h-4l3 3 3-3h-4a8 8 0 0 1-8 8A8 8 0 0 1 4 12Z" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
+              <div className="relative">
+                <select
+                  value={locale}
+                  disabled={switchingLocale !== null}
+                  onChange={(e) => handleLocaleSwitch(e.target.value as Locale)}
+                  className="w-full appearance-none rounded-lg border border-zinc-200 bg-zinc-50 py-2 pl-3 pr-8 text-sm text-zinc-700 transition-colors hover:border-zinc-300 focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:border-zinc-500"
+                >
+                  {LOCALES.map(({ code, label, flag }) => (
+                    <option key={code} value={code}>
+                      {flag} {label}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-2.5 flex items-center">
+                  {switchingLocale ? (
+                    <svg className="h-3.5 w-3.5 animate-spin text-zinc-400" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4l3-3-3-3v4a8 8 0 1 0 8 8h-4l3 3 3-3h-4a8 8 0 0 1-8 8A8 8 0 0 1 4 12Z" />
+                    </svg>
+                  ) : (
+                    <svg className="h-3.5 w-3.5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
               </div>
             </div>
 
