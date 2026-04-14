@@ -1,0 +1,35 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'pull_request') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '@claude'))
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request for the PhotoShare Next.js app. Focus on:
+            - Logic errors and bugs
+            - Security vulnerabilities (auth bypass, missing cookie checks, XSS, SQL injection)
+            - Plan gating correctness (watermark and ZIP download must be PRO/STUDIO only)
+            - Share token HMAC verification is timing-safe
+            - BigInt storage values are serialized before passing to client components
+            - No direct S3 URLs exposed to client — always use CloudFront signed URLs
+            - Prisma query correctness
+            - Missing await on params in Next.js App Router pages
+          max_turns: "5"
