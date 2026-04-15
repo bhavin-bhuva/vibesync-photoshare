@@ -74,6 +74,8 @@ export function CoverPhotoUpload({
       const saved = await setCoverPhotoAction(eventId, presigned.key);
       if (saved.error) throw new Error(saved.error);
 
+      // Clear optimistic preview so the refreshed server URL takes over
+      setPreviewUrl(null);
       // Refresh server data — the page will re-render with the real signed URL
       router.refresh();
     } catch (err) {

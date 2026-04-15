@@ -72,7 +72,7 @@ function getPrivateKey(): string | null {
  * CloudFront image-transform function (Lambda@Edge or CloudFront Functions).
  * The params are signed into the URL so the signature covers them.
  */
-async function buildSignedUrl(s3Key: string, queryParams?: Record<string, string | number>): Promise<string | null> {
+function buildSignedUrl(s3Key: string, queryParams?: Record<string, string | number>): string | null {
   const domain = process.env.CLOUDFRONT_DOMAIN;
   const keyPairId = process.env.CLOUDFRONT_KEY_PAIR_ID;
   const privateKey = getPrivateKey();
@@ -93,24 +93,20 @@ async function buildSignedUrl(s3Key: string, queryParams?: Record<string, string
   const url = `https://${domain}/${s3Key}${qs}`;
   const dateLessThan = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
 
-  return new Promise((resolve) => {
-    setImmediate(() => {
-      try {
-        const signed = getSignedUrl({ url, keyPairId, privateKey, dateLessThan });
-        setCachedUrl(cacheKey, signed, URL_CACHE_TTL_MS);
-        resolve(signed);
-      } catch {
-        resolve(null);
-      }
-    });
-  });
+  try {
+    const signed = getSignedUrl({ url, keyPairId, privateKey, dateLessThan });
+    setCachedUrl(cacheKey, signed, URL_CACHE_TTL_MS);
+    return signed;
+  } catch {
+    return null;
+  }
 }
 
 /**
  * Original full-resolution signed URL.
  * Use ONLY for downloads — never for displaying images in the UI.
  */
-export async function getCloudfrontSignedUrl(s3Key: string): Promise<string | null> {
+export function getCloudfrontSignedUrl(s3Key: string): string | null {
   return buildSignedUrl(s3Key);
 }
 
@@ -122,10 +118,10 @@ export async function getCloudfrontSignedUrl(s3Key: string): Promise<string | nu
  * widthPx:  800  → grid thumbnails (masonry cards)
  * widthPx: 1920  → lightbox preview (large but not raw original)
  */
-export async function getCloudfrontPreviewUrl(
+export function getCloudfrontPreviewUrl(
   s3Key: string,
   widthPx: 800 | 1920 = 800,
   quality = widthPx === 800 ? 80 : 90,
-): Promise<string | null> {
+): string | null {
   return buildSignedUrl(s3Key, { w: widthPx, q: quality });
 }
