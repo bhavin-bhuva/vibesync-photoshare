@@ -16,6 +16,23 @@ services:
       timeout: 5s
       retries: 10
 
+  face-service:
+    build: ./services/face-service
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist downloaded models across rebuilds — avoids re-downloading 300 MB
+      - face_models:/app/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
   app:
     build:
       context: .
@@ -30,6 +47,8 @@ services:
       NEXTAUTH_URL: http://localhost:3000
       NODE_ENV: development
       CLOUDFRONT_PRIVATE_KEY_PATH: /app/private_key.pem
+      FACE_SERVICE_URL: http://face-service:8000
+      CRON_SECRET: ${CRON_SECRET:-dev-cron-secret}
     volumes:
       - .:/app
       # keep the container's node_modules; don't override with host's
@@ -42,3 +61,4 @@ services:
 
 volumes:
   postgres_data:
+  face_models:

@@ -68,6 +68,9 @@ export default async function SharePage({
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const linkAny = link as any;
+
   if (!link) notFound();
 
   // Suspended photographer — show generic unavailable page, no details
@@ -135,6 +138,19 @@ export default async function SharePage({
   const photographerPlan = event.user.subscription?.planTier ?? "FREE";
   const zipAllowed = photographerPlan !== "FREE";
   const totalSize = event.photos.reduce((s, p) => s + p.size, 0);
+
+  // Face search is available when:
+  //   1. The shared link has faceSearchEnabled = true
+  //   2. The event has faceIndexingEnabled = true
+  //   3. At least one FaceCluster exists (i.e. indexing has completed)
+  const linkFaceSearchEnabled: boolean = linkAny?.faceSearchEnabled ?? false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const eventFaceIndexingEnabled: boolean = (event as any).faceIndexingEnabled ?? false;
+  let faceSearchEnabled = false;
+  if (linkFaceSearchEnabled && eventFaceIndexingEnabled) {
+    const clusterCount = await db.faceCluster.count({ where: { eventId: event.id } });
+    faceSearchEnabled = clusterCount > 0;
+  }
 
   const [photos, coverUrl] = await Promise.all([
     Promise.all(
@@ -245,7 +261,7 @@ export default async function SharePage({
 
       {/* Gallery */}
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <Gallery photos={photos} slug={slug} sharedLinkId={link.id} zipAllowed={zipAllowed} />
+        <Gallery photos={photos} slug={slug} sharedLinkId={link.id} zipAllowed={zipAllowed} faceSearchEnabled={faceSearchEnabled} />
       </main>
 
       <footer className="border-t border-zinc-200 py-6 text-center dark:border-zinc-700">

@@ -63,7 +63,7 @@ export const en = {
 
   // ─── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
-    welcome: (name: string) => `Welcome back, ${name} \uD83D\uDC4B`,
+    welcome: (name: string) => `Hello, ${name}`,
     subtitle: "Here\u2019s an overview of your galleries.",
     stats: {
       events: "Events",
@@ -112,6 +112,48 @@ export const en = {
     selectionsButton: "Selections",
     noPhotosSubtitle: "Hit \u201cUpload Photos\u201d above to add photos to this event.",
     loadMore: "Load more photos",
+    tabPhotos: "Photos",
+    tabPeople: "People",
+  },
+
+  // ─── People tab ────────────────────────────────────────────────────────────
+  peoplePage: {
+    disabledTitle: "Face detection is disabled for this event",
+    disabledInfo:
+      "When enabled, faces in uploaded photos will be automatically detected and grouped.",
+    enableToggleLabel: "Enable Face Detection",
+    enabling: "Enabling\u2026",
+    analyzingTitle: "Analyzing faces\u2026",
+    clusteringTitle: "Clustering faces\u2026",
+    analyzingProgress: (processed: number, total: number) =>
+      `${processed} / ${total} photos processed`,
+    facesFoundSoFar: (n: number) => `${n} face${n !== 1 ? "s" : ""} found so far`,
+    emptyTitle: "No people detected yet",
+    emptySubtitle:
+      "Click \u201cScan Faces Now\u201d to detect and group people across all photos.",
+    scanButton: "Scan Faces Now",
+    rescanButton: "Re-scan All Faces",
+    rescanning: "Scanning\u2026",
+    statsBar: (people: number, photos: number, faces: number) =>
+      `${people} people detected \u00b7 ${photos} photos analyzed \u00b7 ${faces} faces found`,
+    addNamePlaceholder: "Add name\u2026",
+    photoCount: (n: number) => `${n} photo${n !== 1 ? "s" : ""}`,
+    hideLabel: "Hide",
+    showLabel: "Show",
+    hiddenBadge: "Hidden",
+    clusterPhotosTitle: (label: string | null) =>
+      label ? `Photos of ${label}` : "Photos of this person",
+    noPhotosInCluster: "No photos found for this person.",
+    loadingPhotos: "Loading photos\u2026",
+    backToPeople: "Back to People",
+    unknownPerson: "Unknown Person",
+    deleteFaceDataButton: "Delete All Face Data",
+    deleteFaceDataTitle: "Delete all face data?",
+    deleteFaceDataBody:
+      "This will permanently delete all detected faces, clusters, and embeddings for this event. Face search will be disabled for all shared links. This cannot be undone.",
+    deleteFaceDataConfirm: "Yes, delete all face data",
+    deleteFaceDataDeleting: "Deleting\u2026",
+    deleteFaceDataCancel: "Cancel",
   },
 
   // ─── Upload modal ──────────────────────────────────────────────────────────
@@ -170,6 +212,10 @@ export const en = {
     accessBadgePassword: "Password Protected",
     pinRevealAriaLabel: "Reveal PIN",
     pinHideAriaLabel: "Hide PIN",
+    faceSearchToggleLabel: "Allow customers to find their photos by selfie",
+    faceSearchProcessingWarning: "Face detection is still processing. You can enable this once analysis is complete.",
+    faceSearchBadge: "🤳 Face Search On",
+    faceSearchStats: (n: number): string => `${n} ${n === 1 ? "person" : "people"} indexed`,
   },
 
   // ─── Cover photo ───────────────────────────────────────────────────────────
@@ -290,6 +336,43 @@ export const en = {
     statusDelivered: "Delivered",
     downloadZip: "Download ZIP",
     clientNoteLabel: "Note from client",
+  },
+
+  // ─── Find My Photos (face search on share page) ───────────────────────────
+  faceSearch: {
+    buttonLabel: "Find My Photos",
+    modalTitle: "Find Your Photos",
+    cameraButton: "Use Camera",
+    uploadButton: "Upload Photo",
+    privacyTitle: "Privacy Notice",
+    privacyBody:
+      "Your photo is used only to find your photos in this gallery. It is automatically deleted after 24 hours and never shared with anyone.",
+    privacyStoredItem: "Your selfie is temporarily stored for matching only — never used for any other purpose.",
+    privacyDurationItem: "It is automatically deleted within 24 hours. Matched photo IDs are kept for the duration of the event.",
+    privacyVisibilityItem: "Your selfie is never shown to others. Only you can see your matched photos.",
+    privacyCheckbox: "I understand and agree to these privacy terms.",
+    agreeButton: "I Agree & Continue",
+    previewTitle: "Confirm Your Photo",
+    previewHint: "Make sure your face is clearly visible.",
+    changePhoto: "Use a different photo",
+    searchButton: "Search My Photos",
+    searching: "Searching\u2026",
+    searchingMessage: (n: number) => `Searching through ${n} photo${n !== 1 ? "s" : ""}\u2026`,
+    noFaceTitle: "No face detected",
+    noFaceBody: "We couldn\u2019t detect a face in your photo. Please try a clearer, well-lit selfie.",
+    tryAgain: "Try Again",
+    resultsTitle: (n: number) =>
+      n > 0 ? `Found ${n} photo${n !== 1 ? "s" : ""} with you! \uD83C\uDF89` : "No photos found",
+    resultsSubtitle: (n: number): string =>
+      n > 0
+        ? `Your photos are highlighted in the gallery below.`
+        : "We couldn\u2019t find you in this gallery. Try a clearer, front-facing photo.",
+    viewMatched: "View My Photos",
+    viewAll: "View All Photos",
+    filteredBanner: (n: number) => `Showing ${n} matched photo${n !== 1 ? "s" : ""}`,
+    clearFilter: "View all",
+    errorUpload: "Failed to upload photo. Please try again.",
+    errorSearch: "Search failed. Please try again.",
   },
 
   // ─── Gallery (public share page) ──────────────────────────────────────────

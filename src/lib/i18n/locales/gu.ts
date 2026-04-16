@@ -65,7 +65,7 @@ export const gu: Translations = {
 
   // ─── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
-    welcome: (name: string) => `પાછા આવ્યા, ${name} 👋`,
+    welcome: (name: string) => `કેમ છો?, ${name}`,
     subtitle: "તમારા ગૅલેરીઓનો સારાંશ અહીં છે.",
     stats: {
       events: "ઇવેન્ટ્સ",
@@ -114,6 +114,43 @@ export const gu: Translations = {
     selectionsButton: "સિલેક્શન્સ",
     noPhotosSubtitle: "ઇવેન્ટમાં ફોટો ઉમેરવા ઉપરનું \u201cફોટો અપલોડ કરો\u201d દબાવો.",
     loadMore: "વધુ ફોટો લોડ કરો",
+    tabPhotos: "ફોટો",
+    tabPeople: "લોકો",
+  },
+
+  // ─── People page ───────────────────────────────────────────────────────────
+  peoplePage: {
+    disabledTitle: "આ ઇવેન્ટ માટે ચહેરો શોધ બંધ છે",
+    disabledInfo: "ચાલુ કરવામાં આવે ત્યારે, અપલોડ કરેલ ફોટોમાં ચહેરા આપોઆપ શોધાઈ જૂથ થશે.",
+    enableToggleLabel: "ચહેરો શોધ ચાલુ કરો",
+    enabling: "ચાલુ થઈ રહ્યું છે\u2026",
+    analyzingTitle: "ચહેરા વિશ્લેષણ\u2026",
+    clusteringTitle: "ચહેરા જૂથ\u2026",
+    analyzingProgress: (processed: number, total: number) => `${processed} / ${total} ફોટો`,
+    facesFoundSoFar: (n: number) => `${n} ચહેરા મળ્યા`,
+    emptyTitle: "હજુ કોઈ લોકો મળ્યા નથી",
+    emptySubtitle: "\u201cસ્કૅન ફેસ\u201d ક્લિક કરો.",
+    scanButton: "ફેસ સ્કૅન કરો",
+    rescanButton: "ફરી સ્કૅન કરો",
+    rescanning: "સ્કૅન\u2026",
+    statsBar: (people: number, photos: number, faces: number) =>
+      `${people} લોકો \u00b7 ${photos} ફોટો \u00b7 ${faces} ચહેરા`,
+    addNamePlaceholder: "નામ ઉમેરો\u2026",
+    photoCount: (n: number) => `${n} ફોટો`,
+    hideLabel: "છૂપાવો",
+    showLabel: "બતાવો",
+    hiddenBadge: "છૂપાયેલ",
+    clusterPhotosTitle: (label: string | null) => label ? `${label}ના ફોટો` : "આ વ્યક્તિના ફોટો",
+    noPhotosInCluster: "આ વ્યક્તિ માટે ફોટો મળ્યા નથી.",
+    loadingPhotos: "ફોટો લોડ\u2026",
+    backToPeople: "લોકો પર પાછા",
+    unknownPerson: "અજ્ઞાત વ્યક્તિ",
+    deleteFaceDataButton: "બધો ચહેરો ડેટા ડિલીટ કરો",
+    deleteFaceDataTitle: "બધો ચહેરો ડેટા ડિલીટ કરો?",
+    deleteFaceDataBody: "આ ઇવેન્ટ માટે બધા ચહેરા, ક્લસ્ટર અને એમ્બેડિંગ કાયમ માટે ડિલીટ થઈ જશે.",
+    deleteFaceDataConfirm: "હા, ડિલીટ કરો",
+    deleteFaceDataDeleting: "ડિલીટ\u2026",
+    deleteFaceDataCancel: "રદ કરો",
   },
 
   // ─── Upload modal ──────────────────────────────────────────────────────────
@@ -172,6 +209,10 @@ export const gu: Translations = {
     accessBadgePassword: "પાસવર્ડ સુરક્ષિત",
     pinRevealAriaLabel: "PIN દેખાડો",
     pinHideAriaLabel: "PIN છુપાવો",
+    faceSearchToggleLabel: "ગ્રાહકોને સેલ્ફી દ્વારા તેમના ફોટો શોધવા દો",
+    faceSearchProcessingWarning: "ચહેરા શોધ હજી પ્રક્રિયામાં છે. વિશ્લેષણ પૂર્ણ થાય ત્યારે આ સક્ષમ કરી શકશો.",
+    faceSearchBadge: "🤳 ચહેરા શોધ ચાલુ",
+    faceSearchStats: (n: number): string => `${n} ${n === 1 ? "વ્યક્તિ" : "લોકો"} ઇન્ડેક્સ`,
   },
 
   // ─── Cover photo ───────────────────────────────────────────────────────────
@@ -292,6 +333,43 @@ export const gu: Translations = {
     statusDelivered: "ડિલિવર થયો",
     downloadZip: "ZIP ડાઉનલોડ",
     clientNoteLabel: "ક્લાઇન્ટ તરફથી નોંધ",
+  },
+
+  // ─── Find My Photos (face search on share page) ───────────────────────────
+  faceSearch: {
+    buttonLabel: "મારા ફોટો શોધો",
+    modalTitle: "તમારા ફોટો શોધો",
+    cameraButton: "કૅમેરા વાપરો",
+    uploadButton: "ફોટો અપલોડ",
+    privacyTitle: "ગોપનીયતા સૂચના",
+    privacyBody:
+      "તમારો ફોટો ફક્ત ગૅલેરીમાં તમારા ફોટો શોધવા માટે ઉપયોગ થાય છે. તે 24 કલાક પછી આપોઆપ ડિલીટ થઈ જાય છે.",
+    privacyStoredItem: "તમારી સેલ્ફી ફક્ત મેળ માટે અસ્થાયી સ્ટોર થાય છે — અન્ય હેતુ માટે ક્યારેય નહીં.",
+    privacyDurationItem: "24 કલાકની અંદર આપોઆપ ડિલીટ. મળેલ ફોટો ID ઇવેન્ટ સુધી સચવાય.",
+    privacyVisibilityItem: "તમારી સેલ્ફી કોઈ અન્યને દેખાતી નથી. ફક્ત તમે જ મળેલ ફોટો જોઈ શકો.",
+    privacyCheckbox: "મને સમજ આવ્યું અને હું આ ગોપનીયતા શરતો સ્વીકારું છું.",
+    agreeButton: "સ્વીકારો અને ચાલુ",
+    previewTitle: "ફોટો ચકાસો",
+    previewHint: "ખાતરી કરો કે ચહેરો સ્પષ્ટ દેખાય.",
+    changePhoto: "અલગ ફોટો વાપરો",
+    searchButton: "મારા ફોટો શોધો",
+    searching: "શોધ ચાલુ…",
+    searchingMessage: (n: number) => `${n} ફોટોમાં શોધ ચાલુ…`,
+    noFaceTitle: "ચહેરો ન મળ્યો",
+    noFaceBody: "ફોટોમાં ચહેરો ન મળ્યો. સ્પષ્ટ, પ્રકાશિત સેલ્ફી અજમાવો.",
+    tryAgain: "ફરી પ્રયાસ",
+    resultsTitle: (n: number) =>
+      n > 0 ? `${n} ફોટો મળ્યા! \uD83C\uDF89` : "કોઈ ફોટો ન મળ્યો",
+    resultsSubtitle: (n: number) =>
+      n > 0
+        ? "તમારા ફોટો નીચે ગૅલેરીમાં હાઇલાઇટ છે."
+        : "ગૅલેરીમાં તમે ન મળ્યા. સ્પષ્ટ ફ્રન્ટ-ફેસ ફોટો અજમાવો.",
+    viewMatched: "મારા ફોટો જુઓ",
+    viewAll: "બધા ફોટો જુઓ",
+    filteredBanner: (n: number) => `${n} મળેલ ફોટો`,
+    clearFilter: "બધા જુઓ",
+    errorUpload: "ફોટો અપલોડ ન થઈ. ફરી પ્રયાસ.",
+    errorSearch: "શોધ ન થઈ. ફરી પ્રયાસ.",
   },
 
   // ─── Gallery (public share page) ──────────────────────────────────────────

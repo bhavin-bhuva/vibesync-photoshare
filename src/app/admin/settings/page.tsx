@@ -4,6 +4,7 @@ import {
   PlatformSettingsSection,
   PlanLimitsSection,
   EmailSettingsSection,
+  FaceSettingsSection,
 } from "./SettingsClient";
 
 export default async function SettingsPage() {
@@ -47,6 +48,24 @@ export default async function SettingsPage() {
           awsKeyId:  settings[SETTING_KEYS.SES_AWS_KEY_ID],
           // Never send the secret to the client — just tell it whether one is stored
           hasSecret: settings[SETTING_KEYS.SES_AWS_SECRET].length > 0,
+        }}
+      />
+
+      <FaceSettingsSection
+        initial={{
+          featureEnabled:      settings[SETTING_KEYS.FACE_FEATURE_ENABLED]      !== "false",
+          defaultIndexing:     settings[SETTING_KEYS.FACE_DEFAULT_INDEXING]      === "true",
+          similarityThreshold: parseFloat(settings[SETTING_KEYS.FACE_SIMILARITY_THRESHOLD]),
+          maxPerEvent:         parseInt(settings[SETTING_KEYS.FACE_MAX_PER_EVENT], 10),
+          indexingFree:        settings[SETTING_KEYS.FACE_INDEXING_FREE]         === "true",
+          indexingPro:         settings[SETTING_KEYS.FACE_INDEXING_PRO]          !== "false",
+          indexingStudio:      settings[SETTING_KEYS.FACE_INDEXING_STUDIO]       !== "false",
+          searchFree:          settings[SETTING_KEYS.FACE_SEARCH_FREE]           === "true",
+          searchPro:           settings[SETTING_KEYS.FACE_SEARCH_PRO]            !== "false",
+          searchStudio:        settings[SETTING_KEYS.FACE_SEARCH_STUDIO]         !== "false",
+          maxSearchesFree:     parseInt(settings[SETTING_KEYS.FACE_MAX_SEARCHES_FREE],   10),
+          maxSearchesPro:      parseInt(settings[SETTING_KEYS.FACE_MAX_SEARCHES_PRO],    10),
+          maxSearchesStudio:   parseInt(settings[SETTING_KEYS.FACE_MAX_SEARCHES_STUDIO], 10),
         }}
       />
 

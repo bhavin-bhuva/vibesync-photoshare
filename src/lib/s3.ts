@@ -4,6 +4,7 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  DeleteObjectsCommand,
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -158,4 +159,39 @@ export async function deleteS3Object(key: string): Promise<{ error?: string }> {
   } catch (err) {
     return { error: (err as Error).message };
   }
+}
+
+/**
+ * Delete up to N S3 objects in batches of 1000 (S3 API limit per request).
+ * Best-effort — logs errors but never throws.
+ */
+export async function deleteS3Objects(keys: string[]): Promise<{ deleted: number; errors: number }> {
+  const bucket = process.env.AWS_S3_BUCKET_NAME;
+  if (!bucket || keys.length === 0) return { deleted: 0, errors: 0 };
+
+  const BATCH = 1000;
+  let deleted = 0;
+  let errors = 0;
+
+  for (let i = 0; i < keys.length; i += BATCH) {
+    const batch = keys.slice(i, i + BATCH);
+    try {
+      const res = await s3.send(
+        new DeleteObjectsCommand({
+          Bucket: bucket,
+          Delete: { Objects: batch.map((Key) => ({ Key })), Quiet: false },
+        })
+      );
+      deleted += res.Deleted?.length ?? 0;
+      errors  += res.Errors?.length  ?? 0;
+      if (res.Errors?.length) {
+        console.error("[deleteS3Objects] errors:", res.Errors.map((e) => `${e.Key}: ${e.Message}`));
+      }
+    } catch (err) {
+      console.error("[deleteS3Objects] batch failed:", err);
+      errors += batch.length;
+    }
+  }
+
+  return { deleted, errors };
 }

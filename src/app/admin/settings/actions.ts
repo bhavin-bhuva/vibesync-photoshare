@@ -6,6 +6,7 @@ import { requireSuperAdmin } from "@/lib/admin";
 import {
   setSettings,
   setSetting,
+  getSettings,
   getSesConfig,
   SETTING_KEYS,
   type SettingKey,
@@ -228,5 +229,142 @@ export async function saveSesConfigAction(updates: {
     const msg = e instanceof Error ? e.message : "";
     if (msg === "UNAUTHORIZED" || msg === "FORBIDDEN") return { error: "Access denied." };
     return { error: "Failed to save SES configuration." };
+  }
+}
+
+// ─── Save face AI global controls ────────────────────────────────────────────
+
+export async function saveFaceGlobalSettingsAction(updates: {
+  featureEnabled:      boolean;
+  defaultIndexing:     boolean;
+  similarityThreshold: number;
+  maxPerEvent:         number;
+}): Promise<{ error?: string }> {
+  try {
+    await requireSuperAdmin();
+    if (updates.similarityThreshold < 0.5 || updates.similarityThreshold > 0.8) {
+      return { error: "Similarity threshold must be between 0.5 and 0.8." };
+    }
+    if (updates.maxPerEvent < 1) {
+      return { error: "Max faces per event must be at least 1." };
+    }
+    await setSettings({
+      [SETTING_KEYS.FACE_FEATURE_ENABLED]:      updates.featureEnabled  ? "true" : "false",
+      [SETTING_KEYS.FACE_DEFAULT_INDEXING]:      updates.defaultIndexing ? "true" : "false",
+      [SETTING_KEYS.FACE_SIMILARITY_THRESHOLD]:  String(updates.similarityThreshold),
+      [SETTING_KEYS.FACE_MAX_PER_EVENT]:         String(updates.maxPerEvent),
+    } as Partial<Record<SettingKey, string>>);
+    return {};
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg === "UNAUTHORIZED" || msg === "FORBIDDEN") return { error: "Access denied." };
+    return { error: "Failed to save face settings." };
+  }
+}
+
+// ─── Save face AI plan controls ───────────────────────────────────────────────
+
+export async function saveFacePlanControlsAction(updates: {
+  indexingFree:       boolean;
+  indexingPro:        boolean;
+  indexingStudio:     boolean;
+  searchFree:         boolean;
+  searchPro:          boolean;
+  searchStudio:       boolean;
+  maxSearchesFree:    number;
+  maxSearchesPro:     number;
+  maxSearchesStudio:  number;
+}): Promise<{ error?: string }> {
+  try {
+    await requireSuperAdmin();
+    await setSettings({
+      [SETTING_KEYS.FACE_INDEXING_FREE]:       updates.indexingFree   ? "true" : "false",
+      [SETTING_KEYS.FACE_INDEXING_PRO]:        updates.indexingPro    ? "true" : "false",
+      [SETTING_KEYS.FACE_INDEXING_STUDIO]:     updates.indexingStudio ? "true" : "false",
+      [SETTING_KEYS.FACE_SEARCH_FREE]:         updates.searchFree     ? "true" : "false",
+      [SETTING_KEYS.FACE_SEARCH_PRO]:          updates.searchPro      ? "true" : "false",
+      [SETTING_KEYS.FACE_SEARCH_STUDIO]:       updates.searchStudio   ? "true" : "false",
+      [SETTING_KEYS.FACE_MAX_SEARCHES_FREE]:   String(updates.maxSearchesFree),
+      [SETTING_KEYS.FACE_MAX_SEARCHES_PRO]:    String(updates.maxSearchesPro),
+      [SETTING_KEYS.FACE_MAX_SEARCHES_STUDIO]: String(updates.maxSearchesStudio),
+    } as Partial<Record<SettingKey, string>>);
+    return {};
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg === "UNAUTHORIZED" || msg === "FORBIDDEN") return { error: "Access denied." };
+    return { error: "Failed to save face plan controls." };
+  }
+}
+
+// ─── Face service health check ────────────────────────────────────────────────
+
+export type FaceServiceHealth = {
+  online:       boolean;
+  responseMs:   number;
+  checkedAt:    string;
+  detail?:      string;
+};
+
+export async function checkFaceServiceHealthAction(): Promise<{ health?: FaceServiceHealth; error?: string }> {
+  try {
+    await requireSuperAdmin();
+    const url = process.env.FACE_SERVICE_URL;
+    if (!url) {
+      return { health: { online: false, responseMs: 0, checkedAt: new Date().toISOString(), detail: "FACE_SERVICE_URL env var not set" } };
+    }
+    const start = Date.now();
+    let online = false;
+    let detail: string | undefined;
+    try {
+      const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(5000) });
+      online = res.ok;
+      if (!res.ok) detail = `HTTP ${res.status}`;
+    } catch (err) {
+      detail = (err as Error).message;
+    }
+    return {
+      health: {
+        online,
+        responseMs: Date.now() - start,
+        checkedAt:  new Date().toISOString(),
+        detail,
+      },
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg === "UNAUTHORIZED" || msg === "FORBIDDEN") return { error: "Access denied." };
+    return { error: "Failed to check face service health." };
+  }
+}
+
+// ─── Face AI usage statistics ─────────────────────────────────────────────────
+
+export type FaceUsageStats = {
+  totalFacesIndexed:      number;
+  searchesToday:          number;
+  selfiesPendingDeletion: number;
+  eventsWithIndexing:     number;
+};
+
+export async function getFaceUsageStatsAction(): Promise<{ stats?: FaceUsageStats; error?: string }> {
+  try {
+    await requireSuperAdmin();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const now = new Date();
+
+    const [totalFacesIndexed, searchesToday, selfiesPendingDeletion, eventsWithIndexing] =
+      await Promise.all([
+        db.faceRecord.count(),
+        db.faceSearchSession.count({ where: { createdAt: { gte: todayStart } } }),
+        db.faceSearchSession.count({ where: { selfieS3Key: { not: null }, expiresAt: { gt: now } } }),
+        db.event.count({ where: { faceIndexingEnabled: true } }),
+      ]);
+
+    return { stats: { totalFacesIndexed, searchesToday, selfiesPendingDeletion, eventsWithIndexing } };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    if (msg === "UNAUTHORIZED" || msg === "FORBIDDEN") return { error: "Access denied." };
+    return { error: "Failed to load face usage stats." };
   }
 }

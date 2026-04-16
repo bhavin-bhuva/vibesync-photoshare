@@ -8,6 +8,7 @@ import { PhotoGrid } from "./PhotoGrid";
 import { UploadModal } from "./UploadModal";
 import { ShareModal, type SharedLinkRow } from "./ShareModal";
 import { CoverPhotoUpload } from "./CoverPhotoUpload";
+import { PeopleTab, type ClusterCardData, type ActiveJobData } from "./PeopleTab";
 import { getCloudfrontSignedUrl, getCloudfrontPreviewUrl } from "@/lib/cloudfront";
 
 function formatDate(date: Date) {
@@ -31,45 +32,69 @@ export default async function EventPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ cursor?: string }>;
+  searchParams: Promise<{ cursor?: string; tab?: string }>;
 }) {
-  const [{ id }, { cursor }] = await Promise.all([params, searchParams]);
+  const [{ id }, { cursor, tab }] = await Promise.all([params, searchParams]);
+  const activeTab = tab === "people" ? "people" : "photos";
   const [t, session] = await Promise.all([getServerT(), getServerSession(authOptions)]);
   if (!session) redirect("/login");
 
-  const [event, pendingSelectionsCount, photos, totalSizeAgg] = await Promise.all([
-    db.event.findUnique({
-      where: { id },
-      include: {
-        sharedLinks: {
-          orderBy: { createdAt: "desc" },
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          select: { id: true, slug: true, expiresAt: true, createdAt: true, accessType: true } as any,
+  const [event, pendingSelectionsCount, photos, totalSizeAgg, clusters, activeJob, photosAnalyzed] =
+    await Promise.all([
+      db.event.findUnique({
+        where: { id },
+        include: {
+          sharedLinks: {
+            orderBy: { createdAt: "desc" },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            select: { id: true, slug: true, expiresAt: true, createdAt: true, accessType: true, faceSearchEnabled: true } as any,
+          },
+          _count: { select: { photos: true } },
         },
-        _count: { select: { photos: true } },
-      },
-    }),
-    db.photoSelection.count({
-      where: { status: "PENDING", sharedLink: { eventId: id } },
-    }),
-    db.photo.findMany({
-      where: { eventId: id },
-      orderBy: { createdAt: "desc" },
-      take: PAGE_SIZE,
-      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-    }),
-    db.photo.aggregate({
-      where: { eventId: id },
-      _sum: { size: true },
-    }),
-  ]);
+      }),
+      db.photoSelection.count({
+        where: { status: "PENDING", sharedLink: { eventId: id } },
+      }),
+      db.photo.findMany({
+        where: { eventId: id },
+        orderBy: { createdAt: "desc" },
+        take: PAGE_SIZE,
+        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+      }),
+      db.photo.aggregate({
+        where: { eventId: id },
+        _sum: { size: true },
+      }),
+      // People tab — always fetch so tab switch is instant
+      db.faceCluster.findMany({
+        where: { eventId: id },
+        orderBy: { photoCount: "desc" },
+        select: {
+          id: true,
+          label: true,
+          coverCropS3Key: true,
+          photoCount: true,
+          faceCount: true,
+          isHidden: true,
+        },
+      }),
+      db.faceIndexingJob.findFirst({
+        where: { eventId: id, status: { in: ["PENDING", "RUNNING", "CLUSTERING"] } },
+        orderBy: { createdAt: "desc" },
+        select: { status: true, processedPhotos: true, totalPhotos: true, facesFound: true },
+      }),
+      db.faceRecord.groupBy({
+        by: ["photoId"],
+        where: { eventId: id },
+      }).then((rows) => rows.length),
+    ]);
 
   if (!event || event.userId !== session.user.id) notFound();
 
   const nextCursor = photos.length === PAGE_SIZE ? photos[photos.length - 1].id : null;
   const totalSizeBytes = totalSizeAgg._sum.size ?? 0;
 
-  const [photosWithUrls, coverSignedUrl] = await Promise.all([
+  const [photosWithUrls, coverSignedUrl, clustersWithUrls] = await Promise.all([
     Promise.all(
       photos.map(async (photo) => ({
         ...photo,
@@ -77,11 +102,29 @@ export default async function EventPage({
         thumbnailUrl: (photo as any).thumbS3Key
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ? await getCloudfrontSignedUrl((photo as any).thumbS3Key)
-          : await getCloudfrontPreviewUrl(photo.s3Key, 800), // fallback for pre-existing photos
+          : await getCloudfrontPreviewUrl(photo.s3Key, 800),
       }))
     ),
     event.coverPhotoKey ? getCloudfrontSignedUrl(event.coverPhotoKey) : null,
+    Promise.all(
+      clusters.map(async (c): Promise<ClusterCardData> => ({
+        id: c.id,
+        label: c.label,
+        coverCropUrl: getCloudfrontSignedUrl(c.coverCropS3Key) ?? "",
+        photoCount: c.photoCount,
+        faceCount: c.faceCount,
+        isHidden: c.isHidden,
+      }))
+    ),
   ]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const faceIndexingEnabled = !!((event as any).faceIndexingEnabled as boolean | undefined);
+  const faceIndexingDone = !activeJob && clusters.length > 0;
+  const totalFacesFound = clusters.reduce((s, c) => s + c.faceCount, 0);
+  const activeJobData: ActiveJobData = activeJob
+    ? { ...activeJob, status: activeJob.status as string }
+    : null;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
@@ -149,6 +192,9 @@ export default async function EventPage({
               <ShareModal
                 eventId={id}
                 initialLinks={event.sharedLinks as unknown as SharedLinkRow[]}
+                faceIndexingEnabled={faceIndexingEnabled}
+                faceIndexingDone={faceIndexingDone}
+                peopleIndexed={clusters.length}
               />
             </div>
           </div>
@@ -165,19 +211,69 @@ export default async function EventPage({
       {/* ── Cover photo ── */}
       <CoverPhotoUpload eventId={id} currentCoverUrl={coverSignedUrl} />
 
+      {/* ── Tab bar ── */}
+      <div className="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="mx-auto flex max-w-6xl gap-1 px-6">
+          <Link
+            href={`/dashboard/events/${id}`}
+            className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === "photos"
+                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+            }`}
+          >
+            {t.eventPage.tabPhotos}
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400">
+              {event._count.photos}
+            </span>
+          </Link>
+          <Link
+            href={`/dashboard/events/${id}?tab=people`}
+            className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === "people"
+                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+            }`}
+          >
+            {t.eventPage.tabPeople}
+            {clusters.length > 0 && (
+              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-700 dark:text-zinc-400">
+                {clusters.length}
+              </span>
+            )}
+          </Link>
+        </div>
+      </div>
+
       {/* ── Main content ── */}
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <PhotoGrid photos={photosWithUrls} />
-
-        {nextCursor && (
-          <div className="mt-8 flex justify-center">
-            <Link
-              href={`/dashboard/events/${id}?cursor=${nextCursor}`}
-              className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-            >
-              {t.eventPage.loadMore}
-            </Link>
-          </div>
+        {activeTab === "photos" ? (
+          <>
+            <PhotoGrid photos={photosWithUrls} />
+            {nextCursor && (
+              <div className="mt-8 flex justify-center">
+                <Link
+                  href={`/dashboard/events/${id}?cursor=${nextCursor}`}
+                  className="rounded-lg border border-zinc-300 bg-white px-5 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                >
+                  {t.eventPage.loadMore}
+                </Link>
+              </div>
+            )}
+          </>
+        ) : (
+          <PeopleTab
+            eventId={id}
+            faceIndexingEnabled={faceIndexingEnabled}
+            clusters={clustersWithUrls}
+            activeJob={activeJobData}
+            totalPhotoCount={event._count.photos}
+            stats={{
+              people: clusters.length,
+              photosAnalyzed: photosAnalyzed,
+              facesFound: totalFacesFound,
+            }}
+          />
         )}
       </main>
     </div>

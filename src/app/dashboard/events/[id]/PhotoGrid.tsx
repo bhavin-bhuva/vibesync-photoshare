@@ -421,7 +421,13 @@ function PhotoCard({
 
 const BATCH_SIZE = 24;
 
-export function PhotoGrid({ photos: initial }: { photos: PhotoWithUrl[] }) {
+export function PhotoGrid({
+  photos: initial,
+  onLightboxChange,
+}: {
+  photos: PhotoWithUrl[];
+  onLightboxChange?: (isOpen: boolean) => void;
+}) {
   // allPhotos = full ordered list (rendered + pending).
   // visibleCount = how many cards are currently in the DOM.
   // renderedPhotos is derived so it never diverges from the two source values.
@@ -478,6 +484,7 @@ export function PhotoGrid({ photos: initial }: { photos: PhotoWithUrl[] }) {
   async function openLightbox(index: number) {
     const photo = renderedPhotos[index];
     setLightboxIndex(index);
+    onLightboxChange?.(true);
 
     const cached = lightboxUrlCache.current.get(photo.id);
     if (cached) {
@@ -509,6 +516,7 @@ export function PhotoGrid({ photos: initial }: { photos: PhotoWithUrl[] }) {
     setLightboxUrl(null);
     setLightboxUrlLoading(false);
     pendingFetchId.current = null;
+    onLightboxChange?.(false);
   }
 
   function handleDeleted(id: string) {

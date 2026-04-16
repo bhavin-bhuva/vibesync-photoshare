@@ -65,7 +65,7 @@ export const ja: Translations = {
 
   // ─── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
-    welcome: (name: string) => `おかえりなさい、${name} 👋`,
+    welcome: (name: string) => `こんにちは、${name}`,
     subtitle: "ギャラリーの概要です。",
     stats: {
       events: "イベント",
@@ -114,6 +114,43 @@ export const ja: Translations = {
     selectionsButton: "セレクション",
     noPhotosSubtitle: "上の「写真をアップロード」からこのイベントに写真を追加してください。",
     loadMore: "さらに写真を読み込む",
+    tabPhotos: "写真",
+    tabPeople: "人物",
+  },
+
+  // ─── People page ───────────────────────────────────────────────────────────
+  peoplePage: {
+    disabledTitle: "このイベントでは顔認識が無効です",
+    disabledInfo: "有効にすると、アップロードされた写真の顔が自動的に検出されグループ化されます。",
+    enableToggleLabel: "顔認識を有効にする",
+    enabling: "有効化中\u2026",
+    analyzingTitle: "顔を分析中\u2026",
+    clusteringTitle: "顔をクラスタリング中\u2026",
+    analyzingProgress: (processed: number, total: number) => `${processed} / ${total} 枚処理済み`,
+    facesFoundSoFar: (n: number) => `${n} 件の顔を検出`,
+    emptyTitle: "まだ人物が検出されていません",
+    emptySubtitle: "\u300c顔をスキャン\u300dをクリックしてください。",
+    scanButton: "顔をスキャン",
+    rescanButton: "再スキャン",
+    rescanning: "スキャン中\u2026",
+    statsBar: (people: number, photos: number, faces: number) =>
+      `${people} 人 \u00b7 ${photos} 枚 \u00b7 ${faces} 顔`,
+    addNamePlaceholder: "名前を追加\u2026",
+    photoCount: (n: number) => `${n} 枚`,
+    hideLabel: "非表示",
+    showLabel: "表示",
+    hiddenBadge: "非表示",
+    clusterPhotosTitle: (label: string | null) => label ? `${label}の写真` : "この人の写真",
+    noPhotosInCluster: "この人の写真は見つかりませんでした。",
+    loadingPhotos: "写真を読み込み中\u2026",
+    backToPeople: "ピープルに戻る",
+    unknownPerson: "不明な人物",
+    deleteFaceDataButton: "すべての顔データを削除",
+    deleteFaceDataTitle: "すべての顔データを削除しますか?",
+    deleteFaceDataBody: "このイベントのすべての顔、クラスター、埋め込みが完全に削除されます。",
+    deleteFaceDataConfirm: "はい、削除します",
+    deleteFaceDataDeleting: "削除中\u2026",
+    deleteFaceDataCancel: "キャンセル",
   },
 
   // ─── Upload modal ──────────────────────────────────────────────────────────
@@ -172,6 +209,10 @@ export const ja: Translations = {
     accessBadgePassword: "パスワード保護",
     pinRevealAriaLabel: "PINを表示",
     pinHideAriaLabel: "PINを非表示",
+    faceSearchToggleLabel: "お客様がセルフィーで自分の写真を探せるようにする",
+    faceSearchProcessingWarning: "顔認識はまだ処理中です。分析が完了したら有効にできます。",
+    faceSearchBadge: "🤳 顔検索オン",
+    faceSearchStats: (n: number): string => `${n}人インデックス済み`,
   },
 
   // ─── Cover photo ───────────────────────────────────────────────────────────
@@ -292,6 +333,43 @@ export const ja: Translations = {
     statusDelivered: "納品済み",
     downloadZip: "ZIPダウンロード",
     clientNoteLabel: "クライアントからのメモ",
+  },
+
+  // ─── Find My Photos (face search on share page) ───────────────────────────
+  faceSearch: {
+    buttonLabel: "自分の写真を探す",
+    modalTitle: "あなたの写真を見つける",
+    cameraButton: "カメラを使う",
+    uploadButton: "写真をアップロード",
+    privacyTitle: "プライバシーについて",
+    privacyBody:
+      "あなたの写真はギャラリー内の写真を検索するためだけに使用されます。24時間後に自動的に削除され、第三者と共有されることはありません。",
+    privacyStoredItem: "セルフィーはマッチングのみに一時的に保存されます — 他の目的には使用されません。",
+    privacyDurationItem: "24時間以内に自動削除されます。一致した写真IDはイベント期間中保持されます。",
+    privacyVisibilityItem: "あなたのセルフィーは他の人には表示されません。一致した写真はあなただけが見られます。",
+    privacyCheckbox: "プライバシー条件を理解し、同意します。",
+    agreeButton: "同意して続ける",
+    previewTitle: "写真を確認",
+    previewHint: "顔がはっきり写っているか確認してください。",
+    changePhoto: "別の写真を使う",
+    searchButton: "写真を検索",
+    searching: "検索中…",
+    searchingMessage: (n: number) => `${n}枚の写真を検索中…`,
+    noFaceTitle: "顔が検出されませんでした",
+    noFaceBody: "写真から顔を検出できませんでした。明るい場所で正面から撮影した写真をお試しください。",
+    tryAgain: "もう一度",
+    resultsTitle: (n: number) =>
+      n > 0 ? `${n}枚の写真が見つかりました！\uD83C\uDF89` : "写真が見つかりませんでした",
+    resultsSubtitle: (n: number) =>
+      n > 0
+        ? "ギャラリーにあなたの写真が表示されています。"
+        : "ギャラリーであなたを見つけられませんでした。正面向きの鮮明な写真でお試しください。",
+    viewMatched: "自分の写真を見る",
+    viewAll: "すべての写真を見る",
+    filteredBanner: (n: number) => `${n}枚の一致した写真`,
+    clearFilter: "すべて表示",
+    errorUpload: "アップロードに失敗しました。再度お試しください。",
+    errorSearch: "検索に失敗しました。再度お試しください。",
   },
 
   // ─── Gallery (public share page) ──────────────────────────────────────────

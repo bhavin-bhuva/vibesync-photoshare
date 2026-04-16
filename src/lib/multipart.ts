@@ -13,6 +13,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkStorageLimit, incrementStorage } from "@/lib/storage";
 import { createThumbnail } from "@/lib/thumbnail";
+import { processSinglePhotoFaces } from "@/lib/faceIndexing";
 
 // ─── S3 client ────────────────────────────────────────────────────────────────
 
@@ -143,10 +144,16 @@ export async function completeMultipartUpload(
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Unauthorized." };
 
-  // Verify the photo belongs to the authenticated user
+  // Verify the photo belongs to the authenticated user.
+  // Also fetch eventId and faceIndexingEnabled so we can trigger indexing below.
   const photo = await db.photo.findFirst({
     where: { id: photoId, event: { userId: session.user.id } },
-    select: { id: true, s3Key: true },
+    select: {
+      id: true,
+      s3Key: true,
+      eventId: true,
+      event: { select: { faceIndexingEnabled: true } },
+    },
   });
   if (!photo) return { error: "Photo not found." };
 
@@ -186,6 +193,26 @@ export async function completeMultipartUpload(
     .catch((err: Error) =>
       console.error("[completeMultipartUpload] Thumbnail failed:", err.message)
     );
+
+  // Face indexing — fire-and-forget so the upload response is never delayed.
+  // Only runs when the photographer has enabled face indexing for this event.
+  if (photo.event.faceIndexingEnabled) {
+    db.faceIndexingJob.create({
+      data: { eventId: photo.eventId, status: "PENDING", totalPhotos: 1 },
+      select: { id: true },
+    })
+      .then((job) => {
+        processSinglePhotoFaces(
+          { id: photo.id, s3Key: photo.s3Key, eventId: photo.eventId },
+          job.id
+        ).catch((err: Error) =>
+          console.error("[completeMultipartUpload] Face indexing failed:", err.message)
+        );
+      })
+      .catch((err: Error) =>
+        console.error("[completeMultipartUpload] FaceIndexingJob create failed:", err.message)
+      );
+  }
 
   return { success: true, photoId };
 }

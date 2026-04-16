@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "@/lib/i18n";
 import { submitPhotoSelectionAction } from "./actions";
+import { FindMyPhotosModal } from "./FindMyPhotosModal";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -372,12 +373,13 @@ function PhotoCard({
 // ─── Gallery ──────────────────────────────────────────────────────────────────
 
 export function Gallery({
-  photos, slug, sharedLinkId, zipAllowed,
+  photos, slug, sharedLinkId, zipAllowed, faceSearchEnabled,
 }: {
   photos: GalleryPhoto[];
   slug: string;
   sharedLinkId: string;
   zipAllowed: boolean;
+  faceSearchEnabled: boolean;
 }) {
   const t = useT();
   const [mode, setMode] = useState<GalleryMode>("view");
@@ -385,6 +387,10 @@ export function Gallery({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [zipping, setZipping] = useState(false);
   const [showZipPrompt, setShowZipPrompt] = useState(false);
+  // Face search
+  const [showFaceSearch, setShowFaceSearch] = useState(false);
+  // null = show all; string[] = show only matched photos
+  const [matchedPhotoIds, setMatchedPhotoIds] = useState<string[] | null>(null);
 
   // Form fields for submission
   const [customerName, setCustomerName] = useState("");
@@ -497,8 +503,35 @@ export function Gallery({
     );
   }
 
+  // When face search is active, only show matched photos
+  const displayPhotos = matchedPhotoIds !== null
+    ? photos.filter((p) => matchedPhotoIds.includes(p.id))
+    : photos;
+
   return (
     <>
+      {/* ── Face-search filter badge ── */}
+      {matchedPhotoIds !== null && (
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-blue-100 pl-3 pr-1.5 py-1 dark:bg-blue-950/60">
+          <svg className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+            <path fillRule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z" clipRule="evenodd" />
+          </svg>
+          <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+            {t.faceSearch.filteredBanner(matchedPhotoIds.length)}
+          </span>
+          <button
+            onClick={() => setMatchedPhotoIds(null)}
+            aria-label={t.faceSearch.clearFilter}
+            className="flex h-5 w-5 items-center justify-center rounded-full text-blue-500 transition-colors hover:bg-blue-200 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-900 dark:hover:text-blue-200"
+          >
+            <svg className="h-3 w-3" viewBox="0 0 12 12" fill="currentColor">
+              <path d="M1.72 1.72a.75.75 0 0 1 1.06 0L6 4.94l3.22-3.22a.75.75 0 0 1 1.06 1.06L7.06 6l3.22 3.22a.75.75 0 0 1-1.06 1.06L6 7.06l-3.22 3.22a.75.75 0 0 1-1.06-1.06L4.94 6 1.72 2.78a.75.75 0 0 1 0-1.06Z" />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* ── Mode toggle + Download All bar ── */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         {/* Mode pills */}
@@ -532,6 +565,19 @@ export function Gallery({
             </button>
           )}
         </div>
+
+        {/* Find My Photos — only in view mode when face search is enabled */}
+        {mode === "view" && faceSearchEnabled && (
+          <button
+            onClick={() => setShowFaceSearch(true)}
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
+            </svg>
+            {t.faceSearch.buttonLabel}
+          </button>
+        )}
 
         {/* Download All — only in view mode */}
         {mode === "view" && (
@@ -583,30 +629,55 @@ export function Gallery({
         document.body
       )}
 
-      {/* Photo grid */}
-      <div style={{ columns: "3 240px", gap: "14px" }}>
-        {photos.map((photo, i) => (
-          <div key={photo.id} style={{ breakInside: "avoid", marginBottom: 14 }}>
-            <PhotoCard
-              photo={photo}
-              slug={slug}
-              selectMode={mode === "select"}
-              isSelected={selectedIds.has(photo.id)}
-              onToggle={() => toggleSelect(photo.id)}
-              onOpen={() => setLightboxIndex(i)}
-            />
-          </div>
-        ))}
-      </div>
+      {/* Photo grid — filtered when face search is active */}
+      {displayPhotos.length === 0 && matchedPhotoIds !== null ? (
+        <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white py-16 text-center dark:border-zinc-700 dark:bg-zinc-800">
+          <p className="text-3xl">\uD83D\uDD0D</p>
+          <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            No matching photos found
+          </p>
+          <button
+            onClick={() => setMatchedPhotoIds(null)}
+            className="mt-3 text-xs text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+          >
+            {t.faceSearch.viewAll}
+          </button>
+        </div>
+      ) : (
+        <div style={{ columns: "3 240px", gap: "14px" }}>
+          {displayPhotos.map((photo, i) => (
+            <div key={photo.id} style={{ breakInside: "avoid", marginBottom: 14 }}>
+              <PhotoCard
+                photo={photo}
+                slug={slug}
+                selectMode={mode === "select"}
+                isSelected={selectedIds.has(photo.id)}
+                onToggle={() => toggleSelect(photo.id)}
+                onOpen={() => setLightboxIndex(i)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Lightbox (view mode only) */}
+      {/* Lightbox (view mode only) — indexes into displayPhotos */}
       {lightboxIndex !== null && mode === "view" && (
         <Lightbox
-          photos={photos}
+          photos={displayPhotos}
           index={lightboxIndex}
           slug={slug}
           onClose={() => setLightboxIndex(null)}
           onGo={setLightboxIndex}
+        />
+      )}
+
+      {/* ── Find My Photos modal ── */}
+      {showFaceSearch && (
+        <FindMyPhotosModal
+          slug={slug}
+          totalPhotos={photos.length}
+          onFilter={(ids) => setMatchedPhotoIds(ids)}
+          onClose={() => setShowFaceSearch(false)}
         />
       )}
 

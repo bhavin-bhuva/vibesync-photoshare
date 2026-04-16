@@ -17,6 +17,22 @@ export const SETTING_KEYS = {
   SES_AWS_REGION:       "ses_aws_region",
   SES_AWS_KEY_ID:       "ses_aws_access_key_id",
   SES_AWS_SECRET:       "ses_aws_secret_access_key",
+  // Face AI feature controls
+  FACE_FEATURE_ENABLED:       "face_feature_enabled",
+  FACE_DEFAULT_INDEXING:      "face_default_indexing",
+  FACE_SIMILARITY_THRESHOLD:  "face_similarity_threshold",
+  FACE_MAX_PER_EVENT:         "face_max_per_event",
+  // Face AI plan controls — which plans can index / search
+  FACE_INDEXING_FREE:         "face_indexing_free",
+  FACE_INDEXING_PRO:          "face_indexing_pro",
+  FACE_INDEXING_STUDIO:       "face_indexing_studio",
+  FACE_SEARCH_FREE:           "face_search_free",
+  FACE_SEARCH_PRO:            "face_search_pro",
+  FACE_SEARCH_STUDIO:         "face_search_studio",
+  // Face AI monthly search limits per plan (0 = unlimited)
+  FACE_MAX_SEARCHES_FREE:     "face_max_searches_free",
+  FACE_MAX_SEARCHES_PRO:      "face_max_searches_pro",
+  FACE_MAX_SEARCHES_STUDIO:   "face_max_searches_studio",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
@@ -37,6 +53,20 @@ export const SETTING_DEFAULTS: Record<SettingKey, string> = {
   ses_aws_region:              "",
   ses_aws_access_key_id:       "",
   ses_aws_secret_access_key:   "",
+  // Face AI defaults
+  face_feature_enabled:        "true",
+  face_default_indexing:       "false",
+  face_similarity_threshold:   "0.6",
+  face_max_per_event:          "10000",
+  face_indexing_free:          "false",
+  face_indexing_pro:           "true",
+  face_indexing_studio:        "true",
+  face_search_free:            "false",
+  face_search_pro:             "true",
+  face_search_studio:          "true",
+  face_max_searches_free:      "0",
+  face_max_searches_pro:       "500",
+  face_max_searches_studio:    "0",
 };
 
 // ─── Getters ──────────────────────────────────────────────────────────────────
