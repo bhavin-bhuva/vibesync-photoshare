@@ -149,6 +149,9 @@ export const en = {
     loadingPhotos: "Loading photos\u2026",
     backToPeople: "Back to People",
     unknownPerson: "Unknown Person",
+    viewPhotos: "View Photos",
+    renamePerson: "Rename Person",
+    hideFromGallery: "Hide from Gallery",
     deleteFaceDataButton: "Delete All Face Data",
     deleteFaceDataTitle: "Delete all face data?",
     deleteFaceDataBody:
