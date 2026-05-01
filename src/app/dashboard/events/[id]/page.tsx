@@ -4,8 +4,8 @@ import { db } from "@/lib/db";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getServerT } from "@/lib/i18n/server";
-import { PhotoGrid } from "./PhotoGrid";
-import { UploadModal } from "./UploadModal";
+import { PhotoGrid, type GroupFilterOption } from "./PhotoGrid";
+import { UploadModal, type GroupOption } from "./UploadModal";
 import { ShareModal, type SharedLinkRow } from "./ShareModal";
 import { CoverPhotoUpload } from "./CoverPhotoUpload";
 import { PeopleTab, type ClusterCardData, type ActiveJobData } from "./PeopleTab";
@@ -32,14 +32,14 @@ export default async function EventPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ cursor?: string; tab?: string }>;
+  searchParams: Promise<{ cursor?: string; tab?: string; group?: string }>;
 }) {
-  const [{ id }, { cursor, tab }] = await Promise.all([params, searchParams]);
+  const [{ id }, { cursor, tab, group }] = await Promise.all([params, searchParams]);
   const activeTab = tab === "people" ? "people" : "photos";
   const [t, session] = await Promise.all([getServerT(), getServerSession(authOptions)]);
   if (!session) redirect("/login");
 
-  const [event, pendingSelectionsCount, photos, totalSizeAgg, clusters, activeJob, photosAnalyzed] =
+  const [event, pendingSelectionsCount, photos, totalSizeAgg, groups, ungroupedCount, clusters, activeJob, photosAnalyzed] =
     await Promise.all([
       db.event.findUnique({
         where: { id },
@@ -65,6 +65,12 @@ export default async function EventPage({
         where: { eventId: id },
         _sum: { size: true },
       }),
+      db.photoGroup.findMany({
+        where: { eventId: id },
+        orderBy: { sortOrder: "asc" },
+        select: { id: true, name: true, color: true, isVisible: true, photoCount: true },
+      }),
+      db.photo.count({ where: { eventId: id, groupId: null } }),
       // People tab — always fetch so tab switch is instant
       db.faceCluster.findMany({
         where: { eventId: id },
@@ -158,6 +164,14 @@ export default async function EventPage({
                   <span className="text-sm text-zinc-500 dark:text-zinc-400">
                     {t.common.photoCount(event._count.photos)}
                   </span>
+                  {groups.length > 0 && (
+                    <>
+                      <span className="text-zinc-300 dark:text-zinc-600">·</span>
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                        {groups.length} {groups.length === 1 ? "group" : "groups"}
+                      </span>
+                    </>
+                  )}
                   {totalSizeBytes > 0 && (
                     <>
                       <span className="text-zinc-300 dark:text-zinc-600">·</span>
@@ -187,7 +201,7 @@ export default async function EventPage({
                 )}
               </Link>
 
-              <UploadModal eventId={id} />
+              <UploadModal eventId={id} groups={groups as GroupOption[]} />
 
               <ShareModal
                 eventId={id}
@@ -195,6 +209,7 @@ export default async function EventPage({
                 faceIndexingEnabled={faceIndexingEnabled}
                 faceIndexingDone={faceIndexingDone}
                 peopleIndexed={clusters.length}
+                groups={groups.map((g) => ({ id: g.id, name: g.name, color: g.color ?? null }))}
               />
             </div>
           </div>
@@ -215,7 +230,7 @@ export default async function EventPage({
       <div className="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
         <div className="mx-auto flex max-w-6xl gap-1 px-6">
           <Link
-            href={`/dashboard/events/${id}`}
+            href={`/dashboard/events/${id}${group ? `?group=${group}` : ""}`}
             className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
               activeTab === "photos"
                 ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
@@ -228,7 +243,7 @@ export default async function EventPage({
             </span>
           </Link>
           <Link
-            href={`/dashboard/events/${id}?tab=people`}
+            href={`/dashboard/events/${id}?tab=people${group ? `&group=${group}` : ""}`}
             className={`-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
               activeTab === "people"
                 ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
@@ -249,7 +264,14 @@ export default async function EventPage({
       <main className="mx-auto max-w-6xl px-6 py-8">
         {activeTab === "photos" ? (
           <>
-            <PhotoGrid photos={photosWithUrls} />
+            <PhotoGrid
+              photos={photosWithUrls}
+              eventId={id}
+              groups={groups as GroupFilterOption[]}
+              ungroupedCount={ungroupedCount}
+              totalPhotoCount={event._count.photos}
+              initialGroupFilter={group ?? "all"}
+            />
             {nextCursor && (
               <div className="mt-8 flex justify-center">
                 <Link

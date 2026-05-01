@@ -16,11 +16,11 @@ const s3 = new S3Client({
   },
 });
 
-function safeFilename(str: string): string {
+function safeSegment(str: string): string {
   return str
-    .replace(/[^a-z0-9\s\-_]/gi, "")
+    .replace(/[^a-z0-9\s\-]/gi, "")
     .trim()
-    .replace(/\s+/g, "_") || "files";
+    .replace(/\s+/g, "-") || "files";
 }
 
 export async function GET(
@@ -63,7 +63,7 @@ export async function GET(
       },
       selectedPhotos: {
         include: {
-          photo: { select: { id: true, s3Key: true, filename: true } },
+          photo: { select: { id: true, s3Key: true, filename: true, groupId: true } },
         },
       },
     },
@@ -94,10 +94,19 @@ export async function GET(
       }
     : null;
 
-  // 4. Build ZIP filename
-  const zipName = `${safeFilename(selection.customerName)}-selections-${safeFilename(event.name)}.zip`;
+  // 4. Build subfolder map — organize by group when the event has any groups
+  const groups = await db.photoGroup.findMany({
+    where: { eventId: event.id },
+    orderBy: { sortOrder: "asc" },
+    select: { id: true, name: true },
+  });
+  const useSubfolders = groups.length > 0;
+  const groupFolderMap = new Map(groups.map((g) => [g.id, safeSegment(g.name)]));
 
-  // 5. Stream ZIP: archiver → PassThrough → Web ReadableStream
+  // 5. Build ZIP filename
+  const zipName = `${safeSegment(selection.customerName)}-selections-${safeSegment(event.name)}.zip`;
+
+  // 6. Stream ZIP: archiver → PassThrough → Web ReadableStream
   const passThrough = new PassThrough();
   const archive = archiver("zip", { zlib: { level: 6 } });
 
@@ -131,7 +140,11 @@ export async function GET(
           }
         }
 
-        archive.append(buffer, { name: photo.filename });
+        const entryName = useSubfolders
+          ? `${photo.groupId ? (groupFolderMap.get(photo.groupId) ?? "Ungrouped") : "Ungrouped"}/${photo.filename}`
+          : photo.filename;
+
+        archive.append(buffer, { name: entryName });
       } catch (err) {
         console.error("[download-selection] failed to fetch", photo.s3Key, err);
       }

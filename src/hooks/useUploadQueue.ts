@@ -83,8 +83,8 @@ export function useUploadQueue(eventId: string) {
   // ── Actions ──────────────────────────────────────────────────────────────────
 
   const addFiles = useCallback(
-    async (files: File[]): Promise<void> => {
-      await Promise.all(files.map((file) => addToQueue(eventId, file)));
+    async (files: File[], groupId?: string | null): Promise<void> => {
+      await Promise.all(files.map((file) => addToQueue(eventId, file, groupId ?? null)));
       await refresh();
     },
     [eventId, refresh]

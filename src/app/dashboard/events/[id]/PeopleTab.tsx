@@ -426,6 +426,7 @@ export function PeopleTab({
           {!personPhotosLoading && personPhotos.length > 0 && (
             <PhotoGrid
               photos={personPhotos}
+              eventId={eventId}
               onLightboxChange={setIsLightboxOpen}
             />
           )}

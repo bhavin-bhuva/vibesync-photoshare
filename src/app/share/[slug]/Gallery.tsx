@@ -12,8 +12,16 @@ export interface GalleryPhoto {
   id: string;
   filename: string;
   size: number;
+  groupId: string | null;
   thumbnailUrl: string | null; // grid cards — resized preview (~800 px)
   signedUrl: string | null;    // lightbox — large preview (~1920 px), not original
+}
+
+export interface GalleryGroup {
+  id: string;
+  name: string;
+  color: string | null;
+  photoCount: number;
 }
 
 type GalleryMode = "view" | "select";
@@ -146,6 +154,72 @@ async function triggerDownload(slug: string, photoId: string, filename: string) 
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ─── Group filter bar ─────────────────────────────────────────────────────────
+
+function GroupFilterBar({
+  groups,
+  activeGroupId,
+  totalCount,
+  onSelect,
+}: {
+  groups: GalleryGroup[];
+  activeGroupId: string | null;
+  totalCount: number;
+  onSelect: (groupId: string | null) => void;
+}) {
+  const displayCount = activeGroupId
+    ? (groups.find((g) => g.id === activeGroupId)?.photoCount ?? 0)
+    : totalCount;
+
+  return (
+    <div className="mb-6">
+      {/* Scrollable pill row — hide scrollbar on all browsers */}
+      <div
+        className="flex gap-2 overflow-x-auto pb-1"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
+      >
+        {/* All Photos */}
+        <button
+          onClick={() => onSelect(null)}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 px-4 py-1.5 text-sm font-medium transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 ${
+            activeGroupId === null
+              ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+              : "border-zinc-300 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-600 dark:bg-transparent dark:text-zinc-400 dark:hover:border-zinc-400 dark:hover:text-zinc-200"
+          }`}
+        >
+          <span aria-hidden="true" className="text-[10px] leading-none">✦</span>
+          All Photos
+        </button>
+
+        {/* Group pills */}
+        {groups.map((group) => {
+          const isActive = activeGroupId === group.id;
+          const color = group.color ?? "#6366f1";
+          return (
+            <button
+              key={group.id}
+              onClick={() => onSelect(group.id)}
+              style={
+                isActive
+                  ? { borderColor: color, backgroundColor: color, color: "#fff" }
+                  : { borderColor: color, color }
+              }
+              className="inline-flex shrink-0 items-center rounded-full border-2 bg-white px-4 py-1.5 text-sm font-medium transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:bg-transparent"
+            >
+              {group.name}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Photo count */}
+      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+        {displayCount.toLocaleString()} {displayCount === 1 ? "photo" : "photos"}
+      </p>
+    </div>
+  );
 }
 
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
@@ -374,23 +448,29 @@ function PhotoCard({
 
 export function Gallery({
   photos, slug, sharedLinkId, zipAllowed, faceSearchEnabled,
+  groups = [],
+  eventName = "",
 }: {
   photos: GalleryPhoto[];
   slug: string;
   sharedLinkId: string;
   zipAllowed: boolean;
   faceSearchEnabled: boolean;
+  groups?: GalleryGroup[];
+  eventName?: string;
 }) {
   const t = useT();
   const [mode, setMode] = useState<GalleryMode>("view");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [zipping, setZipping] = useState(false);
+  const [zippingGroup, setZippingGroup] = useState(false);
   const [showZipPrompt, setShowZipPrompt] = useState(false);
   // Face search
   const [showFaceSearch, setShowFaceSearch] = useState(false);
-  // null = show all; string[] = show only matched photos
   const [matchedPhotoIds, setMatchedPhotoIds] = useState<string[] | null>(null);
+  // Group filter
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
   // Form fields for submission
   const [customerName, setCustomerName] = useState("");
@@ -398,14 +478,18 @@ export function Gallery({
   const [customerNote, setCustomerNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  // submitted: persisted in sessionStorage so it survives a page refresh
   const [submitted, setSubmitted] = useState(false);
 
-  // Hydrate state from storage on mount (client-only)
+  // Hydrate state from storage + URL hash on mount (client-only)
   useEffect(() => {
     setSelectedIds(loadSavedIds(slug));
     if (wasSubmitted(slug)) setSubmitted(true);
-  }, [slug]);
+    // Restore group filter from URL hash
+    const hash = window.location.hash.slice(1);
+    if (hash && groups.some((g) => g.id === hash)) {
+      setActiveGroupId(hash);
+    }
+  }, [slug]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -419,7 +503,19 @@ export function Gallery({
 
   function switchMode(next: GalleryMode) {
     setMode(next);
-    setLightboxIndex(null); // close lightbox when switching
+    setLightboxIndex(null);
+  }
+
+  function handleGroupSelect(groupId: string | null) {
+    setActiveGroupId(groupId);
+    setLightboxIndex(null);
+    // Update URL hash without triggering browser anchor scroll
+    const newUrl =
+      window.location.pathname +
+      window.location.search +
+      (groupId ? `#${groupId}` : "");
+    history.replaceState(null, "", newUrl);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handleDownloadAll() {
@@ -444,6 +540,33 @@ export function Gallery({
     }
   }
 
+  async function handleDownloadGroup(groupId: string) {
+    if (!zipAllowed) { setShowZipPrompt(true); return; }
+    setZippingGroup(true);
+    try {
+      const res = await fetch(`/api/download/${slug}?group=${encodeURIComponent(groupId)}`);
+      if (!res.ok) throw new Error("Download failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const group = groups.find((g) => g.id === groupId);
+      const safe = (s: string) =>
+        s.replace(/[^a-z0-9\s]/gi, "").trim().replace(/\s+/g, "-") || "photos";
+      a.download = group
+        ? `${safe(eventName)}-${safe(group.name)}.zip`
+        : `${slug}-group.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setZippingGroup(false);
+    }
+  }
+
   async function handleSubmit() {
     setSubmitError("");
     if (!customerName.trim()) { setSubmitError(t.gallery.errorNoName); return; }
@@ -459,7 +582,6 @@ export function Gallery({
     );
     setSubmitting(false);
     if ("error" in result) { setSubmitError(result.error); return; }
-    // Clear selection from localStorage, mark submitted in sessionStorage
     saveIds(slug, new Set());
     markSubmitted(slug);
     setSelectedIds(new Set());
@@ -476,7 +598,6 @@ export function Gallery({
     );
   }
 
-  // ── Full-screen thank-you state ──────────────────────────────────────────
   if (submitted) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 py-20 text-center">
@@ -503,10 +624,20 @@ export function Gallery({
     );
   }
 
-  // When face search is active, only show matched photos
-  const displayPhotos = matchedPhotoIds !== null
-    ? photos.filter((p) => matchedPhotoIds.includes(p.id))
-    : photos;
+  // Derived display list: group filter → face search filter (both can stack)
+  const groupFilteredPhotos =
+    activeGroupId !== null
+      ? photos.filter((p) => p.groupId === activeGroupId)
+      : photos;
+
+  const displayPhotos =
+    matchedPhotoIds !== null
+      ? groupFilteredPhotos.filter((p) => matchedPhotoIds.includes(p.id))
+      : groupFilteredPhotos;
+
+  // Only show the filter bar when there are 2+ visible groups with photos
+  const showGroupFilter = groups.length >= 2;
+  const activeGroup = activeGroupId ? groups.find((g) => g.id === activeGroupId) ?? null : null;
 
   return (
     <>
@@ -532,7 +663,17 @@ export function Gallery({
         </div>
       )}
 
-      {/* ── Mode toggle + Download All bar ── */}
+      {/* ── Group filter bar ── */}
+      {showGroupFilter && (
+        <GroupFilterBar
+          groups={groups}
+          activeGroupId={activeGroupId}
+          totalCount={photos.length}
+          onSelect={handleGroupSelect}
+        />
+      )}
+
+      {/* ── Mode toggle + Download buttons bar ── */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         {/* Mode pills */}
         <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
@@ -546,7 +687,6 @@ export function Gallery({
           >
             {t.gallery.modeView}
           </button>
-          {/* Select Photos hidden once submitted this session */}
           {!submitted && (
             <button
               onClick={() => switchMode("select")}
@@ -566,43 +706,72 @@ export function Gallery({
           )}
         </div>
 
-        {/* Find My Photos — only in view mode when face search is enabled */}
-        {mode === "view" && faceSearchEnabled && (
-          <button
-            onClick={() => setShowFaceSearch(true)}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
-            </svg>
-            {t.faceSearch.buttonLabel}
-          </button>
-        )}
-
-        {/* Download All — only in view mode */}
+        {/* Right-side action buttons (view mode) */}
         {mode === "view" && (
-          <button
-            onClick={handleDownloadAll}
-            disabled={zipping}
-            className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            {zipping ? (
-              <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
-            ) : (
-              <>
-                {!zipAllowed && (
-                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
-                  </svg>
-                )}
-                {zipAllowed && <DownloadIcon className="h-4 w-4" />}
-                {t.sharePage.downloadAll}
-              </>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Find My Photos */}
+            {faceSearchEnabled && (
+              <button
+                onClick={() => setShowFaceSearch(true)}
+                className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
+                </svg>
+                {t.faceSearch.buttonLabel}
+              </button>
             )}
-          </button>
+
+            {/* Download Group (only when a group filter is active) */}
+            {activeGroup && (
+              <button
+                onClick={() => handleDownloadGroup(activeGroup.id)}
+                disabled={zippingGroup}
+                style={
+                  zippingGroup
+                    ? undefined
+                    : { borderColor: activeGroup.color ?? "#6366f1", color: activeGroup.color ?? "#6366f1" }
+                }
+                className="flex items-center gap-2 rounded-lg border-2 bg-white px-4 py-2 text-sm font-medium transition-colors hover:opacity-80 disabled:opacity-60 dark:bg-transparent"
+              >
+                {zippingGroup ? (
+                  <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
+                ) : (
+                  <>
+                    <DownloadIcon className="h-4 w-4" />
+                    Download {activeGroup.name}
+                    <span className="text-xs opacity-70">
+                      ({activeGroup.photoCount.toLocaleString()})
+                    </span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Download All */}
+            <button
+              onClick={handleDownloadAll}
+              disabled={zipping}
+              className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              {zipping ? (
+                <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
+              ) : (
+                <>
+                  {!zipAllowed && (
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {zipAllowed && <DownloadIcon className="h-4 w-4" />}
+                  {t.sharePage.downloadAll}
+                </>
+              )}
+            </button>
+          </div>
         )}
 
-        {/* Clear selection — only in select mode */}
+        {/* Clear selection (select mode) */}
         {mode === "select" && selectedIds.size > 0 && (
           <button
             onClick={() => { setSelectedIds(new Set()); saveIds(slug, new Set()); }}
@@ -629,19 +798,34 @@ export function Gallery({
         document.body
       )}
 
-      {/* Photo grid — filtered when face search is active */}
-      {displayPhotos.length === 0 && matchedPhotoIds !== null ? (
+      {/* Photo grid */}
+      {displayPhotos.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white py-16 text-center dark:border-zinc-700 dark:bg-zinc-800">
-          <p className="text-3xl">\uD83D\uDD0D</p>
-          <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            No matching photos found
-          </p>
-          <button
-            onClick={() => setMatchedPhotoIds(null)}
-            className="mt-3 text-xs text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
-          >
-            {t.faceSearch.viewAll}
-          </button>
+          {matchedPhotoIds !== null ? (
+            <>
+              <p className="text-3xl">🔍</p>
+              <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">No matching photos found</p>
+              <button
+                onClick={() => setMatchedPhotoIds(null)}
+                className="mt-3 text-xs text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
+              >
+                {t.faceSearch.viewAll}
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-3xl">📂</p>
+              <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                No photos in {activeGroup?.name ?? "this group"}
+              </p>
+              <button
+                onClick={() => handleGroupSelect(null)}
+                className="mt-3 text-xs text-zinc-500 underline-offset-2 hover:underline dark:text-zinc-400"
+              >
+                View all photos
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <div style={{ columns: "3 240px", gap: "14px" }}>
@@ -671,7 +855,7 @@ export function Gallery({
         />
       )}
 
-      {/* ── Find My Photos modal ── */}
+      {/* Find My Photos modal */}
       {showFaceSearch && (
         <FindMyPhotosModal
           slug={slug}
@@ -681,12 +865,11 @@ export function Gallery({
         />
       )}
 
-      {/* ── Sticky selection bar (select mode) ── */}
+      {/* Sticky selection bar (select mode) */}
       {mode === "select" && createPortal(
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 shadow-2xl shadow-black/10 backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-900/95">
           <div className="mx-auto max-w-3xl px-4 py-4">
 
-            {/* Count row */}
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                 {selectedIds.size === 0
@@ -698,7 +881,6 @@ export function Gallery({
               )}
             </div>
 
-            {/* Form fields */}
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <div>
                 <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
@@ -738,7 +920,6 @@ export function Gallery({
               </div>
             </div>
 
-            {/* Submit button */}
             <div className="mt-3 flex justify-end">
               <button
                 onClick={handleSubmit}

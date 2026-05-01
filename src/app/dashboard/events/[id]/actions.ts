@@ -117,6 +117,50 @@ export async function deletePhotoAction(
   return {};
 }
 
+export async function bulkDeletePhotosAction(
+  photoIds: string[]
+): Promise<{ deleted: number; error?: string }> {
+  const session = await getServerSession(authOptions);
+  if (!session) return { deleted: 0, error: "Unauthorized." };
+  if (photoIds.length === 0) return { deleted: 0 };
+
+  type PhotoRow = { id: string; s3Key: string; thumbS3Key?: string | null; size: number; event: { id: string } };
+  // Verify ownership of all photos in a single query
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const photos = (await db.photo.findMany({
+    where: { id: { in: photoIds }, event: { userId: session.user.id } },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    include: { event: { select: { id: true } } } as any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  })) as unknown as PhotoRow[];
+
+  if (photos.length === 0) return { deleted: 0 };
+
+  // Delete S3 objects — best-effort; orphaned objects are acceptable over blocking the delete
+  const keys: string[] = photos.flatMap((p) => [
+    p.s3Key,
+    ...(p.thumbS3Key ? [p.thumbS3Key] : []),
+  ]);
+  if (keys.length > 0) await deleteS3Objects(keys).catch(() => undefined);
+
+  const totalSize = photos.reduce((sum, p) => sum + p.size, 0);
+  const ids = photos.map((p) => p.id);
+
+  await db.$transaction([
+    db.photo.deleteMany({ where: { id: { in: ids } } }),
+    db.user.update({
+      where: { id: session.user.id },
+      data: { storageUsedBytes: { decrement: BigInt(totalSize) } },
+    }),
+  ]);
+
+  const eventIds = [...new Set(photos.map((p) => p.event.id))];
+  for (const eId of eventIds) revalidatePath(`/dashboard/events/${eId}`);
+  revalidatePath("/dashboard");
+
+  return { deleted: photos.length };
+}
+
 // ─── Cover photo ──────────────────────────────────────────────────────────────
 
 export async function setCoverPhotoAction(
@@ -149,7 +193,8 @@ export async function createSharedLinkAction(
   accessType: "PASSWORD" | "PIN" | "NONE",
   credential: string | null,
   expiresAt: string | null,
-  faceSearchEnabled = false
+  faceSearchEnabled = false,
+  groupVisibilityOverrides: Record<string, boolean> | null = null
 ): Promise<{ slug?: string; error?: string }> {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Unauthorized." };
@@ -177,6 +222,9 @@ export async function createSharedLinkAction(
     eventId,
     expiresAt: expiresAt ? new Date(expiresAt) : null,
     faceSearchEnabled,
+    ...(groupVisibilityOverrides && Object.keys(groupVisibilityOverrides).length > 0
+      ? { groupVisibilityOverrides }
+      : {}),
   };
 
   if (accessType === "PASSWORD" && credential) {

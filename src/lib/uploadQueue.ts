@@ -21,6 +21,7 @@ export interface QueueItem {
   uploadId: string | null;       // S3 multipart upload ID — null until createMultipartUpload
   s3Key: string | null;          // final S3 object key — null until createMultipartUpload
   photoId: string | null;        // DB Photo row ID — null until createMultipartUpload
+  groupId: string | null;        // PhotoGroup to assign the photo to on completion
   completedParts: CompletedPart[];
   retryCount: number;
   lastError: string | null;
@@ -103,7 +104,11 @@ export async function initQueue(): Promise<void> {
  * so there is nothing to do, while a FAILED item can be re-queued intentionally
  * by dropping the file again.
  */
-export async function addToQueue(eventId: string, file: File): Promise<string> {
+export async function addToQueue(
+  eventId: string,
+  file: File,
+  groupId: string | null = null
+): Promise<string> {
   const existing = await getEventQueue(eventId);
   const active = existing.find(
     (i) =>
@@ -127,6 +132,7 @@ export async function addToQueue(eventId: string, file: File): Promise<string> {
     uploadId: null,
     s3Key: null,
     photoId: null,
+    groupId,
     completedParts: [],
     retryCount: 0,
     lastError: null,

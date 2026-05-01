@@ -60,6 +60,11 @@ export default async function SharePage({
       event: {
         include: {
           photos: { orderBy: { createdAt: "desc" } },
+          photoGroups: {
+            where: { photoCount: { gt: 0 } },
+            orderBy: { sortOrder: "asc" },
+            select: { id: true, name: true, color: true, photoCount: true, isVisible: true },
+          },
           user: {
             include: { subscription: true, studioProfile: true },
           },
@@ -135,6 +140,16 @@ export default async function SharePage({
   // ── Authenticated gallery view ─────────────────────────────────────────────
 
   const { event } = link;
+
+  // Resolve effective group visibility: per-link overrides take precedence over PhotoGroup.isVisible
+  const groupOverrides = (linkAny?.groupVisibilityOverrides ?? null) as Record<string, boolean> | null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const visibleGroups = ((event as any).photoGroups as Array<{ id: string; name: string; color: string | null; photoCount: number; isVisible: boolean }>)
+    .filter((g) => {
+      if (groupOverrides !== null && g.id in groupOverrides) return groupOverrides[g.id];
+      return g.isVisible;
+    });
+
   const photographerPlan = event.user.subscription?.planTier ?? "FREE";
   const zipAllowed = photographerPlan !== "FREE";
   const totalSize = event.photos.reduce((s, p) => s + p.size, 0);
@@ -158,6 +173,8 @@ export default async function SharePage({
         id: photo.id,
         filename: photo.filename,
         size: photo.size,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        groupId: (photo as any).groupId ?? null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         thumbnailUrl: (photo as any).thumbS3Key
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -261,7 +278,15 @@ export default async function SharePage({
 
       {/* Gallery */}
       <main className="mx-auto max-w-6xl px-6 py-8">
-        <Gallery photos={photos} slug={slug} sharedLinkId={link.id} zipAllowed={zipAllowed} faceSearchEnabled={faceSearchEnabled} />
+        <Gallery
+          photos={photos}
+          slug={slug}
+          sharedLinkId={link.id}
+          zipAllowed={zipAllowed}
+          faceSearchEnabled={faceSearchEnabled}
+          groups={visibleGroups}
+          eventName={event.name}
+        />
       </main>
 
       <footer className="border-t border-zinc-200 py-6 text-center dark:border-zinc-700">

@@ -67,6 +67,10 @@ export default async function DashboardPage({
             _count: { select: { photos: true } },
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             sharedLinks: { select: { accessType: true, expiresAt: true } as any },
+            photoGroups: {
+              orderBy: { sortOrder: "asc" as const },
+              select: { id: true, name: true, color: true },
+            },
           },
         },
       },
@@ -293,6 +297,39 @@ export default async function DashboardPage({
                       <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
                         {formatDate(event.date)}
                       </p>
+                      {/* Group pills */}
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                      {((event as any).photoGroups as Array<{ id: string; name: string; color: string | null }>).length > 0 && (() => {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        const grps = (event as any).photoGroups as Array<{ id: string; name: string; color: string | null }>;
+                        const visible = grps.slice(0, 3);
+                        const extra = grps.length - visible.length;
+                        return (
+                          <div className="mt-2 flex flex-wrap items-center gap-1">
+                            {visible.map((g) => (
+                              <span
+                                key={g.id}
+                                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                                style={{
+                                  backgroundColor: g.color ? `${g.color}22` : "#6366f122",
+                                  color: g.color ?? "#6366f1",
+                                }}
+                              >
+                                <span
+                                  className="h-1.5 w-1.5 rounded-full"
+                                  style={{ backgroundColor: g.color ?? "#6366f1" }}
+                                />
+                                {g.name}
+                              </span>
+                            ))}
+                            {extra > 0 && (
+                              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
+                                +{extra} more
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })()}
                       {/* Protection badges — distinct types among non-expired links */}
                       {(() => {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any

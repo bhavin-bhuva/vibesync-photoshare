@@ -116,10 +116,12 @@ model Event {
   userId            String
   user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   photos               Photo[]
+  photoGroups          PhotoGroup[]
   sharedLinks          SharedLink[]
   faceIndexingEnabled  Boolean           @default(false)
   lastClusteredAt      DateTime?
   faceDataDeletedAt    DateTime?
+  autoGroupByDate      Boolean           @default(false)
   faceRecords          FaceRecord[]
   faceClusters         FaceCluster[]
   faceIndexingJobs     FaceIndexingJob[]
@@ -137,8 +139,32 @@ model Photo {
   createdAt       DateTime        @default(now())
   eventId         String
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  groupId         String?
+  group           PhotoGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
   selectedPhotos  SelectedPhoto[]
   faceRecords     FaceRecord[]
+
+  @@index([groupId])
+  @@index([eventId, groupId])
+}
+
+model PhotoGroup {
+  id           String   @id @default(cuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  color        String?  @default("#6366f1") // hex color for the filter pill UI
+  coverPhotoId String?
+  sortOrder    Int      @default(0)
+  isVisible    Boolean  @default(true)
+  photoCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  photos       Photo[]
+
+  @@index([eventId])
+  @@unique([eventId, name])
 }
 
 model SharedLink {
@@ -150,10 +176,11 @@ model SharedLink {
   pinPlain       String?              // plain-text PIN stored for photographer recovery
   expiresAt      DateTime?
   createdAt      DateTime             @default(now())
-  eventId             String
-  event               Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  photoSelections     PhotoSelection[]
-  faceSearchEnabled   Boolean              @default(false)
+  eventId                  String
+  event                    Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  photoSelections          PhotoSelection[]
+  faceSearchEnabled        Boolean              @default(false)
+  groupVisibilityOverrides Json?                // map of groupId → boolean; null means use PhotoGroup.isVisible
 }
 
 model PhotoSelection {

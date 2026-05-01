@@ -12,6 +12,12 @@ import { generateSecurePin } from "@/lib/pin";
 
 type AccessType = "NONE" | "PIN" | "PASSWORD";
 
+export type EventGroup = {
+  id: string;
+  name: string;
+  color: string | null;
+};
+
 export type SharedLinkRow = {
   id: string;
   slug: string;
@@ -245,12 +251,14 @@ export function ShareModal({
   faceIndexingEnabled = false,
   faceIndexingDone = false,
   peopleIndexed = 0,
+  groups = [],
 }: {
   eventId: string;
   initialLinks: SharedLinkRow[];
   faceIndexingEnabled?: boolean;
   faceIndexingDone?: boolean;
   peopleIndexed?: number;
+  groups?: EventGroup[];
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -273,6 +281,7 @@ export function ShareModal({
   const [newUrl, setNewUrl] = useState<string | null>(null);
   const [newPinDisplay, setNewPinDisplay] = useState<string | null>(null);
   const [faceSearchEnabled, setFaceSearchEnabled] = useState(false);
+  const [groupOverrides, setGroupOverrides] = useState<Record<string, boolean>>({});
 
   const router = useRouter();
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -295,6 +304,7 @@ export function ShareModal({
     setNewUrl(null);
     setNewPinDisplay(null);
     setFaceSearchEnabled(false);
+    setGroupOverrides({});
   }
 
   useEffect(() => {
@@ -342,7 +352,8 @@ export function ShareModal({
       accessType,
       credential,
       expiresAt || null,
-      faceSearchEnabled
+      faceSearchEnabled,
+      Object.keys(groupOverrides).length > 0 ? groupOverrides : null
     );
     setSubmitting(false);
 
@@ -625,6 +636,52 @@ export function ShareModal({
                               </p>
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {/* ── Group Visibility ── */}
+                      {groups.length > 0 && (
+                        <div>
+                          <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                            Group Visibility
+                            <span className="ml-1.5 font-normal text-zinc-400">(overrides default visibility per group)</span>
+                          </label>
+                          <div className="space-y-1.5 rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/50">
+                            {groups.map((g) => {
+                              const isVisible = g.id in groupOverrides ? groupOverrides[g.id] : true;
+                              return (
+                                <label key={g.id} className="flex cursor-pointer items-center gap-3">
+                                  <div className="relative shrink-0">
+                                    <input
+                                      type="checkbox"
+                                      className="sr-only"
+                                      checked={isVisible}
+                                      onChange={(e) =>
+                                        setGroupOverrides((prev) => ({ ...prev, [g.id]: e.target.checked }))
+                                      }
+                                    />
+                                    <div
+                                      className={`h-5 w-9 rounded-full transition-colors ${
+                                        isVisible ? "bg-blue-600" : "bg-zinc-300 dark:bg-zinc-600"
+                                      }`}
+                                    />
+                                    <div
+                                      className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                                        isVisible ? "translate-x-4" : "translate-x-0"
+                                      }`}
+                                    />
+                                  </div>
+                                  <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                                    <span
+                                      className="h-2 w-2 rounded-full"
+                                      style={{ backgroundColor: g.color ?? "#6366f1" }}
+                                    />
+                                    {g.name}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
 
