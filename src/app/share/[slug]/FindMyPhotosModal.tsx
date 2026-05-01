@@ -152,7 +152,7 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
   }
 
   const modal = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -160,8 +160,8 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
         aria-hidden="true"
       />
 
-      {/* Panel */}
-      <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-zinc-900">
+      {/* Panel — bottom sheet on mobile, centered modal on sm+ */}
+      <div className="relative z-10 max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-900 sm:max-h-[90vh] sm:max-w-sm sm:rounded-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
@@ -189,24 +189,24 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
                   <img
                     src={previewUrl}
                     alt="Your selfie"
-                    className="h-48 w-full object-cover"
+                    className="max-h-[300px] w-full object-cover"
                   />
                 </div>
               )}
 
               {/* Camera / Upload buttons */}
               {!previewUrl && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <button
                     onClick={() => cameraInputRef.current?.click()}
-                    className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 px-4 py-5 text-sm font-medium text-zinc-700 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
+                    className="flex min-h-[56px] flex-row items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 px-4 py-4 text-sm font-medium text-zinc-700 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400 sm:flex-col sm:py-5"
                   >
                     <CameraIcon />
                     {fs.cameraButton}
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 px-4 py-5 text-sm font-medium text-zinc-700 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
+                    className="flex min-h-[56px] flex-row items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 px-4 py-4 text-sm font-medium text-zinc-700 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400 sm:flex-col sm:py-5"
                   >
                     <UploadIcon />
                     {fs.uploadButton}
@@ -251,7 +251,7 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
                 <img
                   src={previewUrl}
                   alt="Your selfie preview"
-                  className="h-52 w-full object-cover"
+                  className="max-h-[300px] w-full object-cover"
                 />
               </div>
               <p className="text-xs text-zinc-400 dark:text-zinc-500">{fs.previewHint}</p>

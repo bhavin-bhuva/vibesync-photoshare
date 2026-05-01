@@ -172,9 +172,13 @@ function Lightbox({
   const photo = photos[index];
   const hasPrev = index > 0;
   const hasNext = index < photos.length - 1;
+  const [showInfo, setShowInfo] = useState(false);
+  const [swipeOffset, setSwipeOffset] = useState({ x: 0, y: 0 });
+  const swipeStart = useRef({ x: 0, y: 0 });
+  const swipeActive = useRef(false);
 
-  const prev = useCallback(() => { if (hasPrev) onGo(index - 1); }, [hasPrev, index, onGo]);
-  const next = useCallback(() => { if (hasNext) onGo(index + 1); }, [hasNext, index, onGo]);
+  const prev = useCallback(() => { if (hasPrev) { setShowInfo(false); onGo(index - 1); } }, [hasPrev, index, onGo]);
+  const next = useCallback(() => { if (hasNext) { setShowInfo(false); onGo(index + 1); } }, [hasNext, index, onGo]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -192,9 +196,60 @@ function Lightbox({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, prev, next]);
 
+  function handleSwipeStart(e: React.PointerEvent) {
+    if (!e.isPrimary) return;
+    swipeStart.current = { x: e.clientX, y: e.clientY };
+    swipeActive.current = true;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function handleSwipeMove(e: React.PointerEvent) {
+    if (!swipeActive.current || !e.isPrimary) return;
+    const dx = e.clientX - swipeStart.current.x;
+    const dy = e.clientY - swipeStart.current.y;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      setSwipeOffset({ x: dx, y: 0 });
+    } else if (dy > 0) {
+      setSwipeOffset({ x: 0, y: dy });
+    }
+  }
+
+  function handleSwipeEnd(e: React.PointerEvent) {
+    if (!swipeActive.current || !e.isPrimary) return;
+    swipeActive.current = false;
+    const dx = e.clientX - swipeStart.current.x;
+    const dy = e.clientY - swipeStart.current.y;
+    setSwipeOffset({ x: 0, y: 0 });
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    if (absDx < 10 && absDy < 10) { setShowInfo((v) => !v); return; }
+    if (absDx > 50 && absDx > absDy) { if (dx < 0) next(); else prev(); return; }
+    if (dy > 80 && absDy > absDx) onClose();
+  }
+
   return createPortal(
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/95" onClick={onClose}>
-      <div className="flex shrink-0 items-center justify-between px-4 py-3" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[9999] flex flex-col bg-black">
+
+      {/* ── Mobile top bar ── */}
+      <div
+        className="flex shrink-0 items-center sm:hidden"
+        style={{ height: "calc(56px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+      >
+        <div className="flex w-full items-center px-4">
+          <button onClick={onClose} aria-label={t.lightbox.closeAriaLabel} className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/10">
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 10H5M9 5l-5 5 5 5" />
+            </svg>
+          </button>
+          <span className="flex-1 text-center text-sm tabular-nums text-white/70">
+            {t.lightbox.counter(index + 1, photos.length)}
+          </span>
+          <div className="h-10 w-10" aria-hidden="true" />
+        </div>
+      </div>
+
+      {/* ── Desktop top bar ── */}
+      <div className="hidden shrink-0 items-center justify-between px-4 py-3 sm:flex">
         <span className="min-w-[3rem] text-sm tabular-nums text-white/50">
           {t.lightbox.counter(index + 1, photos.length)}
         </span>
@@ -204,37 +259,66 @@ function Lightbox({
         </button>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center" onClick={(e) => e.stopPropagation()}>
-        <button onClick={prev} disabled={!hasPrev} aria-label={t.lightbox.prevAriaLabel} className="absolute left-3 z-10 rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:left-5">
+      {/* ── Image area ── */}
+      <div
+        className="relative flex min-h-0 flex-1 items-center justify-center sm:px-16 sm:py-2"
+        onPointerDown={handleSwipeStart}
+        onPointerMove={handleSwipeMove}
+        onPointerUp={handleSwipeEnd}
+        onPointerCancel={() => { swipeActive.current = false; setSwipeOffset({ x: 0, y: 0 }); }}
+      >
+        <button onClick={prev} disabled={!hasPrev} aria-label={t.lightbox.prevAriaLabel} className="absolute left-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
           <ChevronLeftIcon />
         </button>
 
-        <div className="flex max-h-full max-w-full items-center justify-center px-16 py-2">
-          {isLoadingUrl ? (
-            <SpinnerIcon className="h-10 w-10 text-white/40" />
-          ) : signedUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={photo.id} src={signedUrl} alt={photo.filename} className="max-h-[calc(100vh-10rem)] max-w-full rounded-lg object-contain shadow-2xl" draggable={false} />
-          ) : (
-            <div className={`flex h-64 w-96 max-w-full items-center justify-center rounded-lg bg-gradient-to-br ${cardGradient(photo.id)}`}>
-              <svg className="h-16 w-16 text-white/30" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
-                <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
-              </svg>
-            </div>
-          )}
-        </div>
+        {isLoadingUrl ? (
+          <SpinnerIcon className="h-10 w-10 text-white/40" />
+        ) : signedUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={photo.id}
+            src={signedUrl}
+            alt={photo.filename}
+            className="max-h-full max-w-full object-contain sm:max-h-[calc(100vh-10rem)] sm:rounded-lg sm:shadow-2xl"
+            draggable={false}
+            style={{
+              transform: `translate(${swipeOffset.x}px, ${swipeOffset.y}px)`,
+              touchAction: "pinch-zoom",
+              userSelect: "none",
+            }}
+          />
+        ) : (
+          <div className={`flex h-64 w-96 max-w-full items-center justify-center rounded-lg bg-gradient-to-br ${cardGradient(photo.id)}`}>
+            <svg className="h-16 w-16 text-white/30" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
+              <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
+            </svg>
+          </div>
+        )}
 
-        <button onClick={next} disabled={!hasNext} aria-label={t.lightbox.nextAriaLabel} className="absolute right-3 z-10 rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:right-5">
+        <button onClick={next} disabled={!hasNext} aria-label={t.lightbox.nextAriaLabel} className="absolute right-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
           <ChevronRightIcon />
         </button>
       </div>
 
-      <div className="flex shrink-0 items-center justify-between px-6 py-3" onClick={(e) => e.stopPropagation()}>
+      {/* ── Desktop footer ── */}
+      <div className="hidden shrink-0 items-center justify-between px-6 py-3 sm:flex">
         <span className="text-xs text-white/40">{formatBytes(photo.size)}</span>
         <span className="text-xs text-white/40">{formatDate(photo.createdAt)}</span>
       </div>
-      <p className="shrink-0 pb-3 text-center text-[11px] text-white/20">{t.lightbox.hint}</p>
+      <p className="hidden shrink-0 pb-3 text-center text-[11px] text-white/20 sm:block">{t.lightbox.hint}</p>
+
+      {/* ── Mobile info panel — tap image to toggle ── */}
+      <div className={`shrink-0 overflow-hidden transition-all duration-300 sm:hidden ${showInfo ? "max-h-32" : "max-h-0"}`}>
+        <div className="rounded-t-2xl bg-black/75 px-5 py-4 backdrop-blur-md" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}>
+          <p className="text-sm font-medium text-white">{photo.filename}</p>
+          <div className="mt-1.5 flex items-center gap-3 text-xs text-white/60">
+            <span>{formatBytes(photo.size)}</span>
+            <span>·</span>
+            <span>{formatDate(photo.createdAt)}</span>
+          </div>
+        </div>
+      </div>
     </div>,
     document.body
   );
@@ -506,6 +590,7 @@ function PhotoCard({
   groupName,
   onDeleted,
   onOpen,
+  onLongPress,
 }: {
   photo: PhotoWithUrl;
   selectionMode: boolean;
@@ -515,14 +600,27 @@ function PhotoCard({
   groupName: string | null;
   onDeleted: (id: string) => void;
   onOpen: () => void;
+  onLongPress?: () => void;
 }) {
   const t = useT();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const h = cardHeight(photo.id);
   const gradient = cardGradient(photo.id);
+
+  function handlePointerDown() {
+    if (selectionMode || !onLongPress) return;
+    longPressTimerRef.current = setTimeout(() => {
+      onLongPress();
+    }, 500);
+  }
+
+  function handlePointerUp() {
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+  }
 
   async function handleDelete() {
     setDeleting(true);
@@ -565,6 +663,10 @@ function PhotoCard({
         }`}
         style={{ height: h }}
         onClick={handleAreaClick}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onPointerLeave={handlePointerUp}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             selectionMode ? onToggleSelect(false) : onOpen();
@@ -706,10 +808,13 @@ function BulkActionBar({
   }, [assignOpen]);
 
   return createPortal(
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/95">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
+    <div
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/95"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="mx-auto flex min-h-[56px] max-w-6xl items-center justify-between gap-2 px-4 py-2 sm:min-h-[64px] sm:gap-4 sm:px-6 sm:py-3">
         {/* Left: count + exit */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onExit}
             aria-label="Exit selection mode"
@@ -718,7 +823,8 @@ function BulkActionBar({
             <XIcon className="h-4 w-4" />
           </button>
           <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            {count} {count === 1 ? "photo" : "photos"} selected
+            <span className="sm:hidden">{count} selected</span>
+            <span className="hidden sm:inline">{count} {count === 1 ? "photo" : "photos"} selected</span>
           </span>
         </div>
 
@@ -726,19 +832,23 @@ function BulkActionBar({
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-zinc-500">
             <SpinnerIcon className="h-4 w-4" />
-            Working…
+            <span className="hidden sm:inline">Working…</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Assign Group dropdown */}
             <div className="relative" ref={assignRef}>
               <button
                 onClick={() => { setAssignOpen((v) => !v); setDeleteStep(false); }}
                 disabled={groups.length === 0}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                title="Assign Group"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 sm:px-3"
               >
-                Assign Group
-                <svg className="h-3.5 w-3.5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                </svg>
+                <span className="hidden sm:inline">Assign Group</span>
+                <svg className="hidden h-3.5 w-3.5 text-zinc-400 sm:block" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
                 </svg>
               </button>
@@ -768,14 +878,19 @@ function BulkActionBar({
             {/* Remove Group */}
             <button
               onClick={() => { onRemoveGroup(); setDeleteStep(false); }}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              title="Remove Group"
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 sm:px-3"
             >
-              Remove Group
+              <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.091a4 4 0 0 0-5.557-5.556Z" clipRule="evenodd" />
+                <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.185A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" />
+              </svg>
+              <span className="hidden sm:inline">Remove Group</span>
             </button>
 
             {/* Delete — two-step */}
             {deleteStep ? (
-              <div className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 dark:border-red-800 dark:bg-red-950/40">
+              <div className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-2 py-1.5 dark:border-red-800 dark:bg-red-950/40 sm:px-3">
                 <span className="text-sm font-medium text-red-700 dark:text-red-400">
                   Delete {count}?
                 </span>
@@ -783,22 +898,23 @@ function BulkActionBar({
                   onClick={() => setDeleteStep(false)}
                   className="ml-1 text-xs text-red-500 underline hover:text-red-700"
                 >
-                  Cancel
+                  No
                 </button>
                 <button
                   onClick={() => { setDeleteStep(false); onBulkDelete(); }}
                   className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700"
                 >
-                  Confirm
+                  Yes
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setDeleteStep(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-950/30"
+                title="Delete"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-950/30 sm:px-3"
               >
                 <TrashIcon className="h-3.5 w-3.5" />
-                Delete
+                <span className="hidden sm:inline">Delete</span>
               </button>
             )}
           </div>
@@ -1215,23 +1331,27 @@ export function PhotoGrid({
             )}
           </div>
 
-          {/* ── Masonry grid ── */}
-          <div style={{ columns: "4 200px", gap: "14px" }}>
+          {/* ── Photo grid ── */}
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 lg:gap-[14px]">
             {renderedPhotos.map((photo, i) => {
               const group = photo.groupId ? groupMap.get(photo.groupId) : undefined;
               return (
-                <div key={photo.id} style={{ breakInside: "avoid", marginBottom: 14 }}>
-                  <PhotoCard
-                    photo={photo}
-                    selectionMode={selectionMode}
-                    isSelected={selectedIds.has(photo.id)}
-                    onToggleSelect={(shiftKey) => toggleSelect(i, shiftKey)}
-                    groupColor={group?.color ?? null}
-                    groupName={group?.name ?? null}
-                    onDeleted={handleDeleted}
-                    onOpen={() => openLightbox(i)}
-                  />
-                </div>
+                <PhotoCard
+                  key={photo.id}
+                  photo={photo}
+                  selectionMode={selectionMode}
+                  isSelected={selectedIds.has(photo.id)}
+                  onToggleSelect={(shiftKey) => toggleSelect(i, shiftKey)}
+                  groupColor={group?.color ?? null}
+                  groupName={group?.name ?? null}
+                  onDeleted={handleDeleted}
+                  onOpen={() => openLightbox(i)}
+                  onLongPress={() => {
+                    enterSelectionMode();
+                    setSelectedIds(new Set([photo.id]));
+                    lastClickedIndexRef.current = i;
+                  }}
+                />
               );
             })}
           </div>
@@ -1250,8 +1370,8 @@ export function PhotoGrid({
         </>
       )}
 
-      {/* Extra bottom padding in selection mode so the bulk bar doesn't cover photos */}
-      {selectionMode && <div className="h-20" />}
+      {/* Extra bottom padding so the bulk bar doesn't cover photos */}
+      {selectionMode && <div className="h-24 sm:h-20" />}
 
       {/* ── Lightbox ── */}
       {lightboxIndex !== null && (

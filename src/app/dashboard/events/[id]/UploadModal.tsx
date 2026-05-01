@@ -484,9 +484,11 @@ function GroupSelector({
 export function UploadModal({
   eventId,
   groups: initialGroups = [],
+  triggerClassName,
 }: {
   eventId: string;
   groups?: GroupOption[];
+  triggerClassName?: string;
 }) {
   const t = useT();
   const router = useRouter();
@@ -660,7 +662,7 @@ export function UploadModal({
       {/* Trigger */}
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+        className={triggerClassName ?? "flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"}
       >
         <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
           <path d="M9.25 13.25a.75.75 0 0 0 1.5 0V4.636l2.955 3.129a.75.75 0 0 0 1.09-1.03l-4.25-4.5a.75.75 0 0 0-1.09 0l-4.25 4.5a.75.75 0 1 0 1.09 1.03L9.25 4.636v8.614Z" />
