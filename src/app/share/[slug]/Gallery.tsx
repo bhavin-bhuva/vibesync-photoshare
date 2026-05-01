@@ -183,7 +183,7 @@ function GroupFilterBar({
         {/* All Photos */}
         <button
           onClick={() => onSelect(null)}
-          className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border-2 px-4 py-1.5 text-sm font-medium transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 ${
+          className={`inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border-2 px-4 py-1.5 text-sm font-medium transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 ${
             activeGroupId === null
               ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
               : "border-zinc-300 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-600 dark:bg-transparent dark:text-zinc-400 dark:hover:border-zinc-400 dark:hover:text-zinc-200"
@@ -206,7 +206,7 @@ function GroupFilterBar({
                   ? { borderColor: color, backgroundColor: color, color: "#fff" }
                   : { borderColor: color, color }
               }
-              className="inline-flex shrink-0 items-center rounded-full border-2 bg-white px-4 py-1.5 text-sm font-medium transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:bg-transparent"
+              className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-2 bg-white px-4 py-1.5 text-sm font-medium transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:bg-transparent"
             >
               {group.name}
             </button>
@@ -450,6 +450,7 @@ export function Gallery({
   photos, slug, sharedLinkId, zipAllowed, faceSearchEnabled,
   groups = [],
   eventName = "",
+  brandColor = null,
 }: {
   photos: GalleryPhoto[];
   slug: string;
@@ -458,6 +459,7 @@ export function Gallery({
   faceSearchEnabled: boolean;
   groups?: GalleryGroup[];
   eventName?: string;
+  brandColor?: string | null;
 }) {
   const t = useT();
   const [mode, setMode] = useState<GalleryMode>("view");
@@ -600,23 +602,23 @@ export function Gallery({
 
   if (submitted) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 py-20 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
-          <svg className="h-10 w-10 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <div className="flex min-h-[60vh] w-full flex-col items-center justify-center gap-6 px-4 py-20 text-center">
+        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40">
+          <svg className="h-16 w-16 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M20 6 9 17l-5-5" />
           </svg>
         </div>
-        <div className="max-w-sm">
+        <div className="w-full max-w-sm">
           <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
             {t.gallery.thankYouTitle}
           </h2>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
             {t.gallery.thankYouSubtitle}
           </p>
         </div>
         <button
           onClick={() => { clearSubmitted(slug); setSubmitted(false); setMode("view"); }}
-          className="flex items-center gap-2 rounded-lg border border-zinc-300 px-5 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="w-full max-w-xs rounded-lg border border-zinc-300 px-5 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           {t.gallery.browseGallery}
         </button>
@@ -674,9 +676,9 @@ export function Gallery({
       )}
 
       {/* ── Mode toggle + Download buttons bar ── */}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         {/* Mode pills */}
-        <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="inline-flex self-start rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
           <button
             onClick={() => switchMode("view")}
             className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
@@ -708,12 +710,12 @@ export function Gallery({
 
         {/* Right-side action buttons (view mode) */}
         {mode === "view" && (
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Find My Photos */}
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+            {/* Find My Photos — desktop only; mobile uses FAB */}
             {faceSearchEnabled && (
               <button
                 onClick={() => setShowFaceSearch(true)}
-                className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                className="hidden min-h-[48px] items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 sm:flex sm:min-h-0"
               >
                 <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
@@ -732,7 +734,7 @@ export function Gallery({
                     ? undefined
                     : { borderColor: activeGroup.color ?? "#6366f1", color: activeGroup.color ?? "#6366f1" }
                 }
-                className="flex items-center gap-2 rounded-lg border-2 bg-white px-4 py-2 text-sm font-medium transition-colors hover:opacity-80 disabled:opacity-60 dark:bg-transparent"
+                className="flex min-h-[48px] items-center justify-center gap-2 rounded-lg border-2 bg-white px-4 py-2 text-sm font-medium transition-colors hover:opacity-80 disabled:opacity-60 dark:bg-transparent sm:min-h-0"
               >
                 {zippingGroup ? (
                   <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
@@ -752,7 +754,7 @@ export function Gallery({
             <button
               onClick={handleDownloadAll}
               disabled={zipping}
-              className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="flex min-h-[48px] items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 sm:min-h-0"
             >
               {zipping ? (
                 <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
@@ -781,6 +783,24 @@ export function Gallery({
           </button>
         )}
       </div>
+
+      {/* ── Find My Photos FAB (mobile only) ── */}
+      {faceSearchEnabled && mode === "view" && (
+        <button
+          onClick={() => setShowFaceSearch(true)}
+          aria-label={t.faceSearch.buttonLabel}
+          style={{
+            backgroundColor: brandColor ?? "#2563eb",
+            bottom: "calc(16px + env(safe-area-inset-bottom))",
+            right: "16px",
+          }}
+          className="fixed z-30 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-lg transition-opacity hover:opacity-90 sm:hidden"
+        >
+          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
+          </svg>
+        </button>
+      )}
 
       {/* ZIP upgrade prompt */}
       {showZipPrompt && createPortal(
@@ -828,18 +848,17 @@ export function Gallery({
           )}
         </div>
       ) : (
-        <div style={{ columns: "3 240px", gap: "14px" }}>
+        <div className="grid grid-cols-2 gap-1 sm:gap-3 lg:grid-cols-3 lg:gap-[14px]">
           {displayPhotos.map((photo, i) => (
-            <div key={photo.id} style={{ breakInside: "avoid", marginBottom: 14 }}>
-              <PhotoCard
-                photo={photo}
-                slug={slug}
-                selectMode={mode === "select"}
-                isSelected={selectedIds.has(photo.id)}
-                onToggle={() => toggleSelect(photo.id)}
-                onOpen={() => setLightboxIndex(i)}
-              />
-            </div>
+            <PhotoCard
+              key={photo.id}
+              photo={photo}
+              slug={slug}
+              selectMode={mode === "select"}
+              isSelected={selectedIds.has(photo.id)}
+              onToggle={() => toggleSelect(photo.id)}
+              onOpen={() => setLightboxIndex(i)}
+            />
           ))}
         </div>
       )}
@@ -891,7 +910,7 @@ export function Gallery({
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   placeholder={t.gallery.namePlaceholder}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
                 />
               </div>
               <div>
@@ -903,7 +922,7 @@ export function Gallery({
                   value={customerEmail}
                   onChange={(e) => setCustomerEmail(e.target.value)}
                   placeholder={t.gallery.emailPlaceholder}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
                 />
               </div>
               <div>
@@ -915,7 +934,7 @@ export function Gallery({
                   value={customerNote}
                   onChange={(e) => setCustomerNote(e.target.value)}
                   placeholder={t.gallery.notePlaceholder}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
+                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
                 />
               </div>
             </div>

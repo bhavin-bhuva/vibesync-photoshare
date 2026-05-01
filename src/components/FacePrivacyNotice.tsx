@@ -39,15 +39,15 @@ export function FacePrivacyNotice({ checked, onChange }: Props) {
         </ul>
       </div>
 
-      {/* ── Consent checkbox ── */}
-      <label className="flex cursor-pointer items-start gap-2.5">
+      {/* ── Consent checkbox — 44px tap target ── */}
+      <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5">
         <input
           type="checkbox"
-          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-blue-600"
+          className="h-5 w-5 shrink-0 cursor-pointer accent-blue-600"
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
         />
-        <span className="select-none text-xs text-zinc-600 dark:text-zinc-400">
+        <span className="select-none text-sm leading-snug text-zinc-600 dark:text-zinc-400">
           {fs.privacyCheckbox}
         </span>
       </label>
