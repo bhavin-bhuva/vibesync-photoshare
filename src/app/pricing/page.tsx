@@ -121,23 +121,23 @@ export default async function PricingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <div className="py-16 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+      <div className="px-6 py-10 text-center sm:py-16">
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
           {t.pricing.title}
         </h1>
-        <p className="mt-3 text-lg text-zinc-500 dark:text-zinc-400">
+        <p className="mt-3 text-base text-zinc-500 dark:text-zinc-400 sm:text-lg">
           {t.pricing.subtitle}
         </p>
       </div>
 
       {/* ── Plan cards ── */}
-      <div className="mx-auto max-w-5xl px-6 pb-24">
+      <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 sm:pb-24">
         {PLANS.length === 0 && (
           <p className="py-16 text-center text-zinc-400 dark:text-zinc-500">
             No plans available yet. Check back soon.
           </p>
         )}
-        <div className={`grid gap-6 ${PLANS.length === 1 ? "max-w-sm mx-auto" : PLANS.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+        <div className={`grid gap-4 sm:gap-6 ${PLANS.length === 1 ? "mx-auto max-w-sm" : PLANS.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
           {PLANS.map((plan) => {
             const isCurrent = plan.tier === currentTier;
             const planMeta = t.pricing.plans[plan.key] ?? { name: plan.key, description: "" };
@@ -145,7 +145,7 @@ export default async function PricingPage() {
             return (
               <div
                 key={plan.key}
-                className={`relative flex flex-col rounded-2xl border bg-white p-8 shadow-sm dark:bg-zinc-800 ${
+                className={`relative flex flex-col rounded-2xl border bg-white p-6 shadow-sm dark:bg-zinc-800 sm:p-8 ${
                   plan.popular
                     ? "border-zinc-900 ring-2 ring-zinc-900 dark:border-zinc-50 dark:ring-zinc-50"
                     : "border-zinc-200 dark:border-zinc-700"
@@ -160,7 +160,7 @@ export default async function PricingPage() {
 
                 {/* Plan name + description */}
                 <div>
-                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                  <h2 className="text-center text-2xl font-semibold text-zinc-900 dark:text-zinc-50 sm:text-left sm:text-lg">
                     {planMeta.name}
                   </h2>
                   <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
@@ -203,21 +203,21 @@ export default async function PricingPage() {
                 {/* CTA */}
                 <div className="mt-8">
                   {isCurrent ? (
-                    <div className="w-full rounded-lg border border-zinc-200 py-2.5 text-center text-sm font-medium text-zinc-500 dark:border-zinc-600 dark:text-zinc-400">
+                    <div className="flex h-12 w-full items-center justify-center rounded-lg border border-zinc-200 text-sm font-medium text-zinc-500 dark:border-zinc-600 dark:text-zinc-400 sm:h-auto sm:py-2.5">
                       {t.pricing.currentPlan}
                     </div>
                   ) : plan.priceId === null ? (
                     // Free plan — not current (shouldn't happen once logged in, but handles logged-out state)
                     <Link
                       href="/register"
-                      className="block w-full rounded-lg border border-zinc-300 py-2.5 text-center text-sm font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-50 dark:hover:bg-zinc-700"
+                      className="flex h-12 w-full items-center justify-center rounded-lg border border-zinc-300 text-sm font-medium text-zinc-900 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-50 dark:hover:bg-zinc-700 sm:h-auto sm:py-2.5"
                     >
                       {t.pricing.getStarted}
                     </Link>
                   ) : !session ? (
                     <Link
                       href="/login?callbackUrl=/pricing"
-                      className={`block w-full rounded-lg py-2.5 text-center text-sm font-medium transition-colors ${
+                      className={`flex h-12 w-full items-center justify-center rounded-lg text-sm font-medium transition-colors sm:h-auto sm:py-2.5 ${
                         plan.popular
                           ? "bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
                           : "border border-zinc-300 text-zinc-900 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-50 dark:hover:bg-zinc-700"
@@ -230,7 +230,7 @@ export default async function PricingPage() {
                       <input type="hidden" name="priceId" value={plan.priceId} />
                       <button
                         type="submit"
-                        className={`w-full rounded-lg py-2.5 text-sm font-medium transition-colors ${
+                        className={`flex h-12 w-full items-center justify-center rounded-lg text-sm font-medium transition-colors sm:h-auto sm:py-2.5 ${
                           plan.popular
                             ? "bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
                             : "border border-zinc-300 text-zinc-900 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-50 dark:hover:bg-zinc-700"
