@@ -16,11 +16,16 @@ const s3 = new S3Client({
   },
 });
 
+function safeSegment(s: string): string {
+  return s.replace(/[^a-z0-9\s\-]/gi, "").trim().replace(/\s+/g, "-") || "photos";
+}
+
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   const { slug } = await params;
+  const groupId = req.nextUrl.searchParams.get("group");
 
   // ── Verify share cookie ──────────────────────────────────────────────────
   const cookieStore = await cookies();
@@ -29,13 +34,12 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // ── Load event + photos ──────────────────────────────────────────────────
+  // ── Load link + event (photos queried separately below) ─────────────────
   const link = await db.sharedLink.findUnique({
     where: { slug },
     include: {
       event: {
         include: {
-          photos: { orderBy: { createdAt: "desc" } },
           user: {
             include: {
               subscription: true,
@@ -61,7 +65,6 @@ export async function GET(
     return NextResponse.json({ error: "Link expired" }, { status: 410 });
   }
 
-  // ZIP download is a paid feature
   const plan = link.event.user.subscription?.planTier ?? "FREE";
   if (plan === "FREE") {
     return NextResponse.json({ error: "ZIP download requires a Pro or Studio plan" }, { status: 403 });
@@ -70,11 +73,49 @@ export async function GET(
   const { event } = link;
   const bucket = process.env.AWS_S3_BUCKET_NAME!;
 
-  // ── Safe filename for the ZIP ────────────────────────────────────────────
-  const safeName = event.name
-    .replace(/[^a-z0-9\s\-_]/gi, "")
-    .trim()
-    .replace(/\s+/g, "_") || "photos";
+  // ── Resolve group name when filtering by group ───────────────────────────
+  let groupName: string | null = null;
+  if (groupId) {
+    const group = await db.photoGroup.findFirst({
+      where: { id: groupId, eventId: event.id },
+      select: { name: true },
+    });
+    if (!group) return NextResponse.json({ error: "Group not found" }, { status: 404 });
+    groupName = group.name;
+  }
+
+  // ── Fetch photos ─────────────────────────────────────────────────────────
+  const photos = await db.photo.findMany({
+    where: {
+      eventId: event.id,
+      ...(groupId ? { groupId } : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, s3Key: true, filename: true, groupId: true },
+  });
+
+  // ── Build subfolder map for "all photos" downloads ───────────────────────
+  // Only relevant when downloading everything (no group filter).
+  // If the event has any groups, photos are placed in named subfolders;
+  // ungrouped photos go into an "Ungrouped" folder.
+  let groupFolderMap = new Map<string, string>();
+  let useSubfolders = false;
+  if (!groupId) {
+    const groups = await db.photoGroup.findMany({
+      where: { eventId: event.id },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, name: true },
+    });
+    if (groups.length > 0) {
+      useSubfolders = true;
+      groupFolderMap = new Map(groups.map((g) => [g.id, safeSegment(g.name)]));
+    }
+  }
+
+  // ── ZIP filename ─────────────────────────────────────────────────────────
+  const zipName = groupName
+    ? `${safeSegment(event.name)}-${safeSegment(groupName)}`
+    : safeSegment(event.name);
 
   // ── Stream ZIP via archiver → PassThrough → Web ReadableStream ───────────
   const passThrough = new PassThrough();
@@ -98,33 +139,34 @@ export async function GET(
       }
     : null;
 
-  // Fetch, optionally watermark, then append each photo as a buffer
   (async () => {
-    for (const photo of event.photos) {
+    for (const photo of photos) {
       try {
         const { Body } = await s3.send(
           new GetObjectCommand({ Bucket: bucket, Key: photo.s3Key })
         );
         if (!Body) continue;
 
-        // Buffer the S3 stream
         const chunks: Buffer[] = [];
         for await (const chunk of Body as S3Readable) {
           chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
         }
         let buffer: Buffer = Buffer.concat(chunks) as Buffer;
 
-        // Apply watermark for paid plans
         if (watermark) {
           try {
-            buffer = await applyWatermark(buffer, watermark) as Buffer;
+            buffer = (await applyWatermark(buffer, watermark)) as Buffer;
           } catch (err) {
             console.error("[download-zip] watermark failed for", photo.s3Key, err);
-            // keep the original buffer if watermarking fails
           }
         }
 
-        archive.append(buffer, { name: photo.filename });
+        // Flat structure for single-group downloads; subfolders for all-photos
+        const entryName = useSubfolders
+          ? `${photo.groupId ? (groupFolderMap.get(photo.groupId) ?? "Ungrouped") : "Ungrouped"}/${photo.filename}`
+          : photo.filename;
+
+        archive.append(buffer, { name: entryName });
       } catch (err) {
         console.error("[download-zip] failed to fetch", photo.s3Key, err);
       }
@@ -132,13 +174,12 @@ export async function GET(
     await archive.finalize();
   })();
 
-  // Convert Node.js PassThrough to a Web ReadableStream
   const webStream = Readable.toWeb(passThrough) as ReadableStream<Uint8Array>;
 
   return new NextResponse(webStream, {
     headers: {
       "Content-Type": "application/zip",
-      "Content-Disposition": `attachment; filename="${safeName}.zip"`,
+      "Content-Disposition": `attachment; filename="${zipName}.zip"`,
       "Transfer-Encoding": "chunked",
       "Cache-Control": "no-store",
     },

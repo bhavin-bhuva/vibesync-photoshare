@@ -16,9 +16,23 @@ import { getUploadManager } from "@/lib/uploadManager";
 import { networkMonitor } from "@/lib/networkMonitor";
 import { updateQueueItem, type QueueItem } from "@/lib/uploadQueue";
 import { getStorageStatus } from "./actions";
+import { createGroup } from "./groups/actions";
 import { useT } from "@/lib/i18n";
 
+// ─── Group types ──────────────────────────────────────────────────────────────
+
+export type GroupOption = {
+  id: string;
+  name: string;
+  color: string | null;
+};
+
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const GROUP_PRESET_COLORS = [
+  "#6366f1", "#8b5cf6", "#ec4899", "#ef4444",
+  "#f97316", "#eab308", "#22c55e", "#06b6d4",
+];
 
 const ACCEPTED_TYPES = {
   "image/jpeg": [".jpg", ".jpeg"],
@@ -226,15 +240,264 @@ function CompletedRow({ item }: { item: QueueItem }) {
   );
 }
 
+// ─── Quick-create group modal ─────────────────────────────────────────────────
+
+function CreateGroupModal({
+  eventId,
+  onCreated,
+  onCancel,
+}: {
+  eventId: string;
+  onCreated: (group: GroupOption) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState("");
+  const [color, setColor] = useState(GROUP_PRESET_COLORS[0]);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  async function submit() {
+    const trimmed = name.trim();
+    if (!trimmed) { setError("Name is required."); return; }
+    setSaving(true);
+    const res = await createGroup(eventId, { name: trimmed, color });
+    setSaving(false);
+    if ("error" in res) { setError(res.error); return; }
+    onCreated({ id: res.group.id, name: res.group.name, color: res.group.color });
+  }
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-2xl dark:bg-zinc-800"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          Create new group
+        </h3>
+
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Group name"
+          value={name}
+          onChange={(e) => { setName(e.target.value); setError(""); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") { e.preventDefault(); submit(); }
+            if (e.key === "Escape") onCancel();
+          }}
+          className="mt-3 w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100"
+        />
+        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+
+        <div className="mt-3">
+          <p className="mb-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">Color</p>
+          <div className="flex flex-wrap gap-1.5">
+            {GROUP_PRESET_COLORS.map((c) => (
+              <button
+                key={c}
+                type="button"
+                aria-label={c}
+                onClick={() => setColor(c)}
+                className="h-5 w-5 rounded-full transition-transform hover:scale-110"
+                style={{
+                  backgroundColor: c,
+                  outline: color === c ? `2px solid ${c}` : "2px solid transparent",
+                  outlineOffset: "2px",
+                }}
+              >
+                {color === c && (
+                  <svg className="m-auto h-3 w-3" viewBox="0 0 12 12" fill="none">
+                    <path d="M2.5 6 5 8.5 9.5 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            disabled={saving}
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={submit}
+            disabled={saving || !name.trim()}
+            className="flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+          >
+            {saving && (
+              <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8v4l3-3-3-3v4a8 8 0 1 0 8 8h-4l3 3 3-3h-4a8 8 0 0 1-8 8A8 8 0 0 1 4 12Z" />
+              </svg>
+            )}
+            {saving ? "Creating…" : "Create"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+// ─── Group selector ───────────────────────────────────────────────────────────
+
+function GroupSelector({
+  groups,
+  selectedId,
+  onSelect,
+  onGroupCreated,
+  eventId,
+}: {
+  groups: GroupOption[];
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+  onGroupCreated: (group: GroupOption) => void;
+  eventId: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const selected = groups.find((g) => g.id === selectedId) ?? null;
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    function handle(e: MouseEvent) {
+      if (!dropdownRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [open]);
+
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <span className="shrink-0 text-sm text-zinc-500 dark:text-zinc-400">Upload to:</span>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+          >
+            {selected ? (
+              <>
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: selected.color ?? "#6366f1" }}
+                />
+                <span className="max-w-[160px] truncate">{selected.name}</span>
+              </>
+            ) : (
+              <span className="text-zinc-500 dark:text-zinc-400">All Groups</span>
+            )}
+            <svg className="h-3.5 w-3.5 shrink-0 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+            </svg>
+          </button>
+
+          {open && (
+            <div className="absolute left-0 top-[calc(100%+4px)] z-20 min-w-[200px] rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+              {/* No group option */}
+              <button
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                onClick={() => { onSelect(null); setOpen(false); }}
+              >
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+                  <span className="h-2 w-2 rounded-full border border-zinc-400 dark:border-zinc-500" />
+                </span>
+                <span className="text-zinc-600 dark:text-zinc-300">No Group</span>
+                {selectedId === null && (
+                  <svg className="ml-auto h-4 w-4 shrink-0 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
+
+              {/* Existing groups */}
+              {groups.length > 0 && (
+                <div className="my-1 border-t border-zinc-100 dark:border-zinc-700" />
+              )}
+              {groups.map((g) => (
+                <button
+                  key={g.id}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700"
+                  onClick={() => { onSelect(g.id); setOpen(false); }}
+                >
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full ring-1 ring-black/10"
+                    style={{ backgroundColor: g.color ?? "#6366f1" }}
+                  />
+                  <span className="flex-1 truncate text-zinc-700 dark:text-zinc-200">{g.name}</span>
+                  {selectedId === g.id && (
+                    <svg className="h-4 w-4 shrink-0 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+              ))}
+
+              {/* Create new group */}
+              <div className="my-1 border-t border-zinc-100 dark:border-zinc-700" />
+              <button
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-500 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-700"
+                onClick={() => { setOpen(false); setShowCreate(true); }}
+              >
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                </svg>
+                Create new group…
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showCreate && (
+        <CreateGroupModal
+          eventId={eventId}
+          onCreated={(g) => {
+            onGroupCreated(g);
+            onSelect(g.id);
+            setShowCreate(false);
+          }}
+          onCancel={() => setShowCreate(false)}
+        />
+      )}
+    </>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export function UploadModal({ eventId }: { eventId: string }) {
+export function UploadModal({
+  eventId,
+  groups: initialGroups = [],
+}: {
+  eventId: string;
+  groups?: GroupOption[];
+}) {
   const t = useT();
   const router = useRouter();
   const queue = useUploadQueue(eventId);
 
   const [open, setOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+
+  // Group selection — persists for the lifetime of the modal session
+  const [groups, setGroups] = useState<GroupOption[]>(initialGroups);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [showOnlineBanner, setShowOnlineBanner] = useState(false);
   const onlineBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -342,10 +605,10 @@ export function UploadModal({ eventId }: { eventId: string }) {
   const onDrop = useCallback(
     async (accepted: File[], _rejected: FileRejection[]) => {
       if (accepted.length === 0) return;
-      await queue.addFiles(accepted);
+      await queue.addFiles(accepted, selectedGroupId);
       getUploadManager(eventId).processQueue();
     },
-    [eventId, queue]
+    [eventId, queue, selectedGroupId]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -486,6 +749,15 @@ export function UploadModal({ eventId }: { eventId: string }) {
                     </div>
                   )}
 
+                  {/* Group selector */}
+                  <GroupSelector
+                    groups={groups}
+                    selectedId={selectedGroupId}
+                    onSelect={setSelectedGroupId}
+                    onGroupCreated={(g) => setGroups((prev) => [...prev, g])}
+                    eventId={eventId}
+                  />
+
                   {/* Dropzone */}
                   <div className="relative">
                     <div
@@ -540,6 +812,30 @@ export function UploadModal({ eventId }: { eventId: string }) {
                       </div>
                     )}
                   </div>
+
+                  {/* Selected-group pill */}
+                  {(() => {
+                    const g = groups.find((g) => g.id === selectedGroupId);
+                    if (!g) return null;
+                    return (
+                      <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+                        <span>Uploading to:</span>
+                        <span className="flex items-center gap-1.5 rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-0.5 text-xs font-medium text-zinc-700 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200">
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: g.color ?? "#6366f1" }}
+                          />
+                          {g.name}
+                        </span>
+                        <button
+                          onClick={() => setSelectedGroupId(null)}
+                          className="text-xs text-zinc-400 underline hover:text-zinc-600 dark:hover:text-zinc-200"
+                        >
+                          change
+                        </button>
+                      </div>
+                    );
+                  })()}
 
                   {/* ── Sections ────────────────────────────────────────────── */}
 

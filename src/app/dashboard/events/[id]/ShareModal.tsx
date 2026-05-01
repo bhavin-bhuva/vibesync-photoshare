@@ -12,12 +12,19 @@ import { generateSecurePin } from "@/lib/pin";
 
 type AccessType = "NONE" | "PIN" | "PASSWORD";
 
+export type EventGroup = {
+  id: string;
+  name: string;
+  color: string | null;
+};
+
 export type SharedLinkRow = {
   id: string;
   slug: string;
   expiresAt: Date | null;
   createdAt: Date;
   accessType: AccessType;
+  faceSearchEnabled: boolean;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -189,6 +196,12 @@ function LinkRow({
                 {t.shareModal.expiredBadge}
               </span>
             )}
+
+            {link.faceSearchEnabled && (
+              <span className="shrink-0 rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+                {t.shareModal.faceSearchBadge}
+              </span>
+            )}
           </div>
 
           {/* Revealed PIN */}
@@ -235,9 +248,17 @@ function LinkRow({
 export function ShareModal({
   eventId,
   initialLinks,
+  faceIndexingEnabled = false,
+  faceIndexingDone = false,
+  peopleIndexed = 0,
+  groups = [],
 }: {
   eventId: string;
   initialLinks: SharedLinkRow[];
+  faceIndexingEnabled?: boolean;
+  faceIndexingDone?: boolean;
+  peopleIndexed?: number;
+  groups?: EventGroup[];
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -259,6 +280,8 @@ export function ShareModal({
   const [formError, setFormError] = useState("");
   const [newUrl, setNewUrl] = useState<string | null>(null);
   const [newPinDisplay, setNewPinDisplay] = useState<string | null>(null);
+  const [faceSearchEnabled, setFaceSearchEnabled] = useState(false);
+  const [groupOverrides, setGroupOverrides] = useState<Record<string, boolean>>({});
 
   const router = useRouter();
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -280,6 +303,8 @@ export function ShareModal({
     setFormError("");
     setNewUrl(null);
     setNewPinDisplay(null);
+    setFaceSearchEnabled(false);
+    setGroupOverrides({});
   }
 
   useEffect(() => {
@@ -326,7 +351,9 @@ export function ShareModal({
       eventId,
       accessType,
       credential,
-      expiresAt || null
+      expiresAt || null,
+      faceSearchEnabled,
+      Object.keys(groupOverrides).length > 0 ? groupOverrides : null
     );
     setSubmitting(false);
 
@@ -563,6 +590,100 @@ export function ShareModal({
                           className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:focus:border-zinc-400 dark:focus:ring-zinc-600"
                         />
                       </div>
+
+                      {/* ── Face search toggle (only when face indexing is enabled) ── */}
+                      {faceIndexingEnabled && (
+                        <div className="space-y-2">
+                          <label className="flex cursor-pointer items-start gap-3">
+                            <div className="relative mt-0.5 shrink-0">
+                              <input
+                                type="checkbox"
+                                className="sr-only"
+                                checked={faceSearchEnabled}
+                                disabled={!faceIndexingDone}
+                                onChange={(e) => setFaceSearchEnabled(e.target.checked)}
+                              />
+                              <div
+                                className={`h-5 w-9 rounded-full transition-colors ${
+                                  faceSearchEnabled && faceIndexingDone
+                                    ? "bg-blue-600"
+                                    : "bg-zinc-300 dark:bg-zinc-600"
+                                } ${!faceIndexingDone ? "opacity-50" : ""}`}
+                              />
+                              <div
+                                className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                                  faceSearchEnabled && faceIndexingDone ? "translate-x-4" : "translate-x-0"
+                                }`}
+                              />
+                            </div>
+                            <span className={`text-xs font-medium ${!faceIndexingDone ? "text-zinc-400 dark:text-zinc-500" : "text-zinc-700 dark:text-zinc-300"}`}>
+                              {t.shareModal.faceSearchToggleLabel}
+                              {faceIndexingDone && peopleIndexed > 0 && (
+                                <span className="ml-1.5 font-normal text-zinc-400 dark:text-zinc-500">
+                                  ({t.shareModal.faceSearchStats(peopleIndexed)})
+                                </span>
+                              )}
+                            </span>
+                          </label>
+
+                          {!faceIndexingDone && (
+                            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-800 dark:bg-amber-900/20">
+                              <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                              </svg>
+                              <p className="text-xs text-amber-700 dark:text-amber-400">
+                                {t.shareModal.faceSearchProcessingWarning}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── Group Visibility ── */}
+                      {groups.length > 0 && (
+                        <div>
+                          <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                            Group Visibility
+                            <span className="ml-1.5 font-normal text-zinc-400">(overrides default visibility per group)</span>
+                          </label>
+                          <div className="space-y-1.5 rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/50">
+                            {groups.map((g) => {
+                              const isVisible = g.id in groupOverrides ? groupOverrides[g.id] : true;
+                              return (
+                                <label key={g.id} className="flex cursor-pointer items-center gap-3">
+                                  <div className="relative shrink-0">
+                                    <input
+                                      type="checkbox"
+                                      className="sr-only"
+                                      checked={isVisible}
+                                      onChange={(e) =>
+                                        setGroupOverrides((prev) => ({ ...prev, [g.id]: e.target.checked }))
+                                      }
+                                    />
+                                    <div
+                                      className={`h-5 w-9 rounded-full transition-colors ${
+                                        isVisible ? "bg-blue-600" : "bg-zinc-300 dark:bg-zinc-600"
+                                      }`}
+                                    />
+                                    <div
+                                      className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                                        isVisible ? "translate-x-4" : "translate-x-0"
+                                      }`}
+                                    />
+                                  </div>
+                                  <span className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                                    <span
+                                      className="h-2 w-2 rounded-full"
+                                      style={{ backgroundColor: g.color ?? "#6366f1" }}
+                                    />
+                                    {g.name}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
 
                       {formError && (
                         <p className="text-sm text-red-500">{formError}</p>

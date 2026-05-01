@@ -13,6 +13,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkStorageLimit, incrementStorage } from "@/lib/storage";
 import { createThumbnail } from "@/lib/thumbnail";
+import { processSinglePhotoFaces } from "@/lib/faceIndexing";
 
 // ─── S3 client ────────────────────────────────────────────────────────────────
 
@@ -48,7 +49,8 @@ export async function createMultipartUpload(
   eventId: string,
   filename: string,
   mimeType: string,
-  fileSize: number
+  fileSize: number,
+  groupId: string | null = null
 ): Promise<
   | { uploadId: string; s3Key: string; photoId: string }
   | { error: string }
@@ -93,6 +95,7 @@ export async function createMultipartUpload(
       filename,
       size: fileSize,
       status: "UPLOADING",
+      groupId: groupId ?? null,
     },
     select: { id: true },
   });
@@ -138,15 +141,24 @@ export async function completeMultipartUpload(
   photoId: string,
   fileSize: number,
   width: number | null,
-  height: number | null
+  height: number | null,
+  lastModified: number | null = null
 ): Promise<{ success: true; photoId: string } | { error: string }> {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Unauthorized." };
 
-  // Verify the photo belongs to the authenticated user
+  // Verify the photo belongs to the authenticated user.
+  // Also fetch eventId, groupId, and faceIndexingEnabled so we can trigger
+  // group count update and face indexing below.
   const photo = await db.photo.findFirst({
     where: { id: photoId, event: { userId: session.user.id } },
-    select: { id: true, s3Key: true },
+    select: {
+      id: true,
+      s3Key: true,
+      eventId: true,
+      groupId: true,
+      event: { select: { faceIndexingEnabled: true, autoGroupByDate: true } },
+    },
   });
   if (!photo) return { error: "Photo not found." };
 
@@ -177,6 +189,16 @@ export async function completeMultipartUpload(
   // Increment the user's storage quota now that the file is permanently stored
   await incrementStorage(session.user.id, fileSize);
 
+  // Increment the group's photo count — fire-and-forget, best-effort
+  if (photo.groupId) {
+    db.photoGroup.update({
+      where: { id: photo.groupId },
+      data: { photoCount: { increment: 1 } },
+    }).catch((err: Error) =>
+      console.error("[completeMultipartUpload] Group photoCount increment failed:", err.message)
+    );
+  }
+
   // Thumbnail generation is intentionally fire-and-forget:
   // the photo is already usable; the thumb appears once S3 processing finishes.
   createThumbnail(s3Key)
@@ -186,6 +208,26 @@ export async function completeMultipartUpload(
     .catch((err: Error) =>
       console.error("[completeMultipartUpload] Thumbnail failed:", err.message)
     );
+
+  // Face indexing — fire-and-forget so the upload response is never delayed.
+  // Only runs when the photographer has enabled face indexing for this event.
+  if (photo.event.faceIndexingEnabled) {
+    db.faceIndexingJob.create({
+      data: { eventId: photo.eventId, status: "PENDING", totalPhotos: 1 },
+      select: { id: true },
+    })
+      .then((job) => {
+        processSinglePhotoFaces(
+          { id: photo.id, s3Key: photo.s3Key, eventId: photo.eventId },
+          job.id
+        ).catch((err: Error) =>
+          console.error("[completeMultipartUpload] Face indexing failed:", err.message)
+        );
+      })
+      .catch((err: Error) =>
+        console.error("[completeMultipartUpload] FaceIndexingJob create failed:", err.message)
+      );
+  }
 
   return { success: true, photoId };
 }

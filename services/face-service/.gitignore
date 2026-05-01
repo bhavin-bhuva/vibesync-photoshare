@@ -1,0 +1,13 @@
+# InsightFace downloads model weights here at first run — do not commit
+models/*
+!models/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Environment
+.env

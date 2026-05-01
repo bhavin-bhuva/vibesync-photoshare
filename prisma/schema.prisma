@@ -48,6 +48,21 @@ enum BillingInterval {
   YEAR
 }
 
+enum FaceJobStatus {
+  PENDING
+  RUNNING
+  CLUSTERING
+  DONE
+  FAILED
+}
+
+enum FaceSearchStatus {
+  PENDING
+  SEARCHING
+  DONE
+  FAILED
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -100,8 +115,16 @@ model Event {
   updatedAt         DateTime    @updatedAt
   userId            String
   user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  photos            Photo[]
-  sharedLinks       SharedLink[]
+  photos               Photo[]
+  photoGroups          PhotoGroup[]
+  sharedLinks          SharedLink[]
+  faceIndexingEnabled  Boolean           @default(false)
+  lastClusteredAt      DateTime?
+  faceDataDeletedAt    DateTime?
+  autoGroupByDate      Boolean           @default(false)
+  faceRecords          FaceRecord[]
+  faceClusters         FaceCluster[]
+  faceIndexingJobs     FaceIndexingJob[]
 }
 
 model Photo {
@@ -116,7 +139,32 @@ model Photo {
   createdAt       DateTime        @default(now())
   eventId         String
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  groupId         String?
+  group           PhotoGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
   selectedPhotos  SelectedPhoto[]
+  faceRecords     FaceRecord[]
+
+  @@index([groupId])
+  @@index([eventId, groupId])
+}
+
+model PhotoGroup {
+  id           String   @id @default(cuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  color        String?  @default("#6366f1") // hex color for the filter pill UI
+  coverPhotoId String?
+  sortOrder    Int      @default(0)
+  isVisible    Boolean  @default(true)
+  photoCount   Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  photos       Photo[]
+
+  @@index([eventId])
+  @@unique([eventId, name])
 }
 
 model SharedLink {
@@ -128,9 +176,11 @@ model SharedLink {
   pinPlain       String?              // plain-text PIN stored for photographer recovery
   expiresAt      DateTime?
   createdAt      DateTime             @default(now())
-  eventId        String
-  event          Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  photoSelections PhotoSelection[]
+  eventId                  String
+  event                    Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  photoSelections          PhotoSelection[]
+  faceSearchEnabled        Boolean              @default(false)
+  groupVisibilityOverrides Json?                // map of groupId → boolean; null means use PhotoGroup.isVisible
 }
 
 model PhotoSelection {
@@ -237,4 +287,76 @@ model AdminActivityLog {
   ipAddress  String?
   adminId    String
   admin      User     @relation(fields: [adminId], references: [id], onDelete: Restrict)
+}
+
+// ─── Face AI ──────────────────────────────────────────────────────────────────
+
+model FaceRecord {
+  id            String       @id @default(cuid())
+  photoId       String
+  photo         Photo        @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  eventId       String
+  event         Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  faceClusterId String?
+  faceCluster   FaceCluster? @relation(fields: [faceClusterId], references: [id])
+  faceIndex     Int          // which face in the photo (0, 1, 2 …)
+  confidence    Float        // detection confidence 0–1
+  boundingBoxX1 Float
+  boundingBoxY1 Float
+  boundingBoxX2 Float
+  boundingBoxY2 Float
+  cropS3Key     String       // cropped face thumbnail in S3
+  embedding     Bytes        // 512 × float32 stored as binary (~2 KB per face)
+  createdAt     DateTime     @default(now())
+
+  @@index([photoId])
+  @@index([eventId])
+  @@index([faceClusterId])
+}
+
+model FaceCluster {
+  id             String       @id @default(cuid())
+  eventId        String
+  event          Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  label          String?      // photographer sets: "Bride", "John", …
+  coverCropS3Key String       // best face crop used as cluster thumbnail
+  photoCount     Int          @default(0)
+  faceCount      Int          @default(0)
+  isHidden       Boolean      @default(false)
+  faces          FaceRecord[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([eventId])
+}
+
+model FaceIndexingJob {
+  id              String        @id @default(cuid())
+  eventId         String
+  event           Event         @relation(fields: [eventId], references: [id])
+  status          FaceJobStatus @default(PENDING)
+  totalPhotos     Int           @default(0)
+  processedPhotos Int           @default(0)
+  facesFound      Int           @default(0)
+  errorMessage    String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@index([eventId])
+  @@index([status])
+}
+
+model FaceSearchSession {
+  id                String           @id @default(cuid())
+  slug              String           // same slug as SharedLink
+  eventId           String
+  selfieS3Key       String?
+  matchedPhotoIds   Json             @default("[]")
+  matchedClusterIds Json             @default("[]")
+  status            FaceSearchStatus @default(PENDING)
+  createdAt         DateTime         @default(now())
+  expiresAt         DateTime         // 24 hours from creation
+
+  @@index([slug])
 }

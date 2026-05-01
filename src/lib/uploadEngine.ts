@@ -81,7 +81,7 @@ export async function uploadFile(
     // Wrap the server action call — retries on transient network failures.
     // Returned { error } strings are application errors, not retried.
     const result = await withRetry(
-      () => createMultipartUpload(item.eventId, item.filename, item.mimeType, item.size),
+      () => createMultipartUpload(item.eventId, item.filename, item.mimeType, item.size, item.groupId ?? null),
       { ...RETRY_OPTIONS, signal, onRetry }
     );
 
@@ -225,7 +225,8 @@ export async function uploadFile(
         photoId!,
         item.size,
         null, // width — not available without Canvas decode; can be supplied by callers later
-        null  // height — same reasoning
+        null, // height — same reasoning
+        item.file.lastModified ?? null
       ),
     { ...RETRY_OPTIONS, signal, onRetry }
   );
