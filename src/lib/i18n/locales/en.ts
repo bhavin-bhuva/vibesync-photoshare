@@ -64,11 +64,13 @@ export const en = {
   // ─── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
     welcome: (name: string) => `Hello, ${name}`,
+    welcomeShort: (name: string) => `Welcome, ${name} \ud83d\udc4b`,
     subtitle: "Here\u2019s an overview of your galleries.",
     stats: {
       events: "Events",
       photos: "Photos",
       storage: "Storage",
+      links: "Links",
       storageDetail: (used: string, limit: string) => `${used} / ${limit}`,
       storagePercent: (pct: number) => `${pct}% used`,
       atEventLimit: "Event limit reached \u2014 upgrade to add more.",

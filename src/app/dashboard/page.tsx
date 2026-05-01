@@ -27,7 +27,6 @@ function formatDate(date: Date): string {
   return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
-// Deterministic placeholder colour based on event name
 const COVER_GRADIENTS = [
   "from-rose-400 to-orange-300",
   "from-sky-400 to-blue-300",
@@ -37,8 +36,7 @@ const COVER_GRADIENTS = [
   "from-pink-400 to-rose-300",
 ];
 function placeholderGradient(name: string) {
-  const idx = name.charCodeAt(0) % COVER_GRADIENTS.length;
-  return COVER_GRADIENTS[idx];
+  return COVER_GRADIENTS[name.charCodeAt(0) % COVER_GRADIENTS.length];
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -79,8 +77,6 @@ export default async function DashboardPage({
   ]);
 
   if (!user) {
-    // Session references a deleted or non-existent user — force a full signout
-    // to clear the stale JWT cookie so the proxy loop doesn't occur.
     redirect("/api/auth/force-signout");
   }
 
@@ -99,15 +95,27 @@ export default async function DashboardPage({
   const events = user.events;
   const atEventLimit = eventLimit !== null && events.length >= eventLimit;
 
+  // Count active shared links across all events
+  const activeLinksCount = events.reduce((sum, e) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const links = (e as any).sharedLinks as Array<{ expiresAt: Date | null }> ?? [];
+    return sum + links.filter(l => !l.expiresAt || new Date() <= new Date(l.expiresAt)).length;
+  }, 0);
+
+  const totalPhotos = events.reduce((s, e) => s + e._count.photos, 0);
+
   const coverUrls = new Map(
     await Promise.all(
       events.map(async (e) => [e.id, e.coverPhotoKey ? await getCloudfrontSignedUrl(e.coverPhotoKey) : null] as const)
     )
   );
 
+  const firstName = (user.name ?? "").split(" ")[0] || user.email?.split("@")[0] || "";
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       {error === "access_denied" && <AccessDeniedToast />}
+
       {/* ── Header (desktop only — mobile uses MobileNav in layout) ── */}
       <header className="sticky top-0 z-10 hidden border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90 lg:block">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
@@ -122,7 +130,7 @@ export default async function DashboardPage({
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10 space-y-8">
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-10">
 
         {/* ── Storage warning banner ── */}
         {storagePercent > 90 && <StorageBanner />}
@@ -151,33 +159,39 @@ export default async function DashboardPage({
         })()}
 
         {/* ── Welcome + plan badge ── */}
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+            {/* Mobile: short welcome */}
+            <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 sm:hidden">
+              {t.dashboard.welcomeShort(firstName)}
+            </h1>
+            {/* Desktop: full welcome */}
+            <h1 className="hidden text-2xl font-semibold text-zinc-900 dark:text-zinc-50 sm:block">
               {t.dashboard.welcome(user.name ?? user.email ?? "")}
             </h1>
             <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
               {t.dashboard.subtitle}
             </p>
           </div>
-          <span
-            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${badge.className}`}
-          >
+          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wider ${badge.className}`}>
             {t.dashboard.planBadge(badge.label)}
           </span>
         </div>
 
-        {/* ── Stats row ── */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* ── Stats 2×2 on mobile, 4-col on desktop ── */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           {/* Events */}
-          <div className="rounded-2xl bg-white p-5 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+          <div className="flex min-h-[80px] flex-col items-center justify-center rounded-2xl bg-white p-4 text-center ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700 sm:items-start sm:text-left sm:p-5">
+            <svg className="mb-1.5 h-5 w-5 text-zinc-400 sm:hidden" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clipRule="evenodd" />
+            </svg>
             <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
               {t.dashboard.stats.events}
             </p>
-            <p className="mt-1 text-3xl font-semibold text-zinc-900 dark:text-zinc-50">
+            <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 sm:text-3xl">
               {events.length}
               {eventLimit !== null && (
-                <span className="ml-1 text-lg font-normal text-zinc-400">
+                <span className="ml-1 text-base font-normal text-zinc-400 sm:text-lg">
                   / {eventLimit}
                 </span>
               )}
@@ -190,21 +204,25 @@ export default async function DashboardPage({
           </div>
 
           {/* Photos */}
-          <div className="rounded-2xl bg-white p-5 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+          <div className="flex min-h-[80px] flex-col items-center justify-center rounded-2xl bg-white p-4 text-center ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700 sm:items-start sm:text-left sm:p-5">
+            <svg className="mb-1.5 h-5 w-5 text-zinc-400 sm:hidden" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
+              <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
+            </svg>
             <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
               {t.dashboard.stats.photos}
             </p>
-            <p className="mt-1 text-3xl font-semibold text-zinc-900 dark:text-zinc-50">
-              {events.reduce((s, e) => s + e._count.photos, 0).toLocaleString()}
+            <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 sm:text-3xl">
+              {totalPhotos.toLocaleString()}
             </p>
           </div>
 
           {/* Storage */}
-          <div className="rounded-2xl bg-white p-5 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+          <div className="flex min-h-[80px] flex-col justify-center rounded-2xl bg-white p-4 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700 sm:p-5">
             <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
               {t.dashboard.stats.storage}
             </p>
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-700">
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-700">
               <div
                 className={`h-full rounded-full transition-all ${
                   storagePercent > 95
@@ -216,8 +234,22 @@ export default async function DashboardPage({
                 style={{ width: `${Math.min(storagePercent, 100)}%` }}
               />
             </div>
-            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-              {formatBytes(storageUsed, storageLimit)}
+            <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+              {formatBytes(storageUsed, storageLimit)} ({storagePercent}%)
+            </p>
+          </div>
+
+          {/* Links */}
+          <div className="flex min-h-[80px] flex-col items-center justify-center rounded-2xl bg-white p-4 text-center ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700 sm:items-start sm:text-left sm:p-5">
+            <svg className="mb-1.5 h-5 w-5 text-zinc-400 sm:hidden" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M12.232 4.232a2.5 2.5 0 0 1 3.536 3.536l-1.225 1.224a.75.75 0 0 0 1.061 1.06l1.224-1.224a4 4 0 0 0-5.656-5.656l-3 3a4 4 0 0 0 .225 5.865.75.75 0 0 0 .977-1.138 2.5 2.5 0 0 1-.142-3.667l3-3Z" />
+              <path d="M11.603 7.963a.75.75 0 0 0-.977 1.138 2.5 2.5 0 0 1 .142 3.667l-3 3a2.5 2.5 0 0 1-3.536-3.536l1.225-1.224a.75.75 0 0 0-1.061-1.06l-1.224 1.224a4 4 0 1 0 5.656 5.656l3-3a4 4 0 0 0-.225-5.865Z" />
+            </svg>
+            <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
+              {t.dashboard.stats.links}
+            </p>
+            <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50 sm:text-3xl">
+              {activeLinksCount}
             </p>
           </div>
         </div>
@@ -228,32 +260,55 @@ export default async function DashboardPage({
             <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
               {t.dashboard.events.sectionTitle}
             </h2>
-            <CreateEventModal atEventLimit={atEventLimit} />
+            {/* Desktop trigger — hidden on mobile (FAB used instead) */}
+            <div className="hidden sm:block">
+              <CreateEventModal atEventLimit={atEventLimit} />
+            </div>
           </div>
 
           {events.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white py-16 text-center dark:border-zinc-700 dark:bg-zinc-800">
-              <p className="text-3xl">📷</p>
-              <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <p className="text-4xl">📷</p>
+              <p className="mt-4 text-base font-semibold text-zinc-700 dark:text-zinc-300">
                 {t.dashboard.events.empty}
               </p>
-              <p className="mt-1 text-sm text-zinc-400">
+              <p className="mt-2 text-sm text-zinc-400 dark:text-zinc-500">
                 {t.dashboard.events.emptySubtitle}
               </p>
+              <div className="mt-6">
+                <CreateEventModal atEventLimit={atEventLimit} emptyState />
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
               {events.map((event) => {
                 const coverUrl = coverUrls.get(event.id) ?? null;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const grps = (event as any).photoGroups as Array<{ id: string; name: string; color: string | null }>;
+                const visibleGrps = grps.slice(0, 2);
+                const extraGrps = grps.length - visibleGrps.length;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const links = (event as any).sharedLinks as Array<{ accessType: string; expiresAt: Date | null }> ?? [];
+                const activeTypes = [...new Set(
+                  links
+                    .filter((l) => !l.expiresAt || new Date() <= new Date(l.expiresAt))
+                    .map((l) => l.accessType)
+                )];
+
                 return (
                   <Link
                     key={event.id}
                     href={`/dashboard/events/${event.id}`}
-                    className="group overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200 transition-shadow hover:shadow-md dark:bg-zinc-800 dark:ring-zinc-700"
+                    className="group relative flex overflow-hidden rounded-2xl bg-white ring-1 ring-zinc-200 transition-shadow hover:shadow-md dark:bg-zinc-800 dark:ring-zinc-700 sm:flex-col"
                   >
+                    {/* Mobile: red dot for new selections (top-right of card) */}
+                    {event.hasNewSelections && (
+                      <span className="absolute right-2.5 top-2.5 z-10 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 sm:hidden" />
+                    )}
+
                     {/* Cover */}
                     <div
-                      className={`relative h-44 ${!coverUrl ? `bg-gradient-to-br ${placeholderGradient(event.name)}` : "bg-zinc-100 dark:bg-zinc-700"}`}
+                      className={`relative w-[120px] shrink-0 sm:h-44 sm:w-full ${!coverUrl ? `bg-gradient-to-br ${placeholderGradient(event.name)}` : "bg-zinc-100 dark:bg-zinc-700"}`}
                     >
                       {coverUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -264,15 +319,15 @@ export default async function DashboardPage({
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center opacity-20">
-                          <svg className="h-16 w-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <svg className="h-10 w-10 text-white sm:h-16 sm:w-16" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
                             <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
                           </svg>
                         </div>
                       )}
 
-                      {/* Photo count pill */}
-                      <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                      {/* Photo count pill — tablet+ only */}
+                      <span className="absolute bottom-3 right-3 hidden items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm sm:inline-flex">
                         <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
                           <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
@@ -280,9 +335,9 @@ export default async function DashboardPage({
                         {t.common.photoCount(event._count.photos)}
                       </span>
 
-                      {/* New selections badge */}
+                      {/* New selections badge — tablet+ */}
                       {event.hasNewSelections && (
-                        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-red-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm">
+                        <span className="absolute left-3 top-3 hidden items-center gap-1 rounded-full bg-red-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm sm:inline-flex">
                           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
                           {t.dashboard.newSelectionsBadge}
                         </span>
@@ -290,79 +345,68 @@ export default async function DashboardPage({
                     </div>
 
                     {/* Info */}
-                    <div className="p-4">
-                      <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">
+                    <div className="min-w-0 flex-1 p-3 sm:p-4">
+                      <p className="line-clamp-2 font-medium text-zinc-900 dark:text-zinc-50 sm:line-clamp-none sm:truncate">
                         {event.name}
                       </p>
-                      <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+                      <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
                         {formatDate(event.date)}
                       </p>
-                      {/* Group pills */}
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {((event as any).photoGroups as Array<{ id: string; name: string; color: string | null }>).length > 0 && (() => {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const grps = (event as any).photoGroups as Array<{ id: string; name: string; color: string | null }>;
-                        const visible = grps.slice(0, 3);
-                        const extra = grps.length - visible.length;
-                        return (
-                          <div className="mt-2 flex flex-wrap items-center gap-1">
-                            {visible.map((g) => (
+                      {/* Photo count + groups — mobile only */}
+                      <p className="mt-0.5 text-[13px] text-zinc-400 dark:text-zinc-500 sm:hidden">
+                        {t.common.photoCount(event._count.photos)}
+                      </p>
+
+                      {/* Group pills: max 2 */}
+                      {visibleGrps.length > 0 && (
+                        <div className="mt-2 flex flex-wrap items-center gap-1">
+                          {visibleGrps.map((g) => (
+                            <span
+                              key={g.id}
+                              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                              style={{
+                                backgroundColor: g.color ? `${g.color}22` : "#6366f122",
+                                color: g.color ?? "#6366f1",
+                              }}
+                            >
                               <span
-                                key={g.id}
-                                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-                                style={{
-                                  backgroundColor: g.color ? `${g.color}22` : "#6366f122",
-                                  color: g.color ?? "#6366f1",
-                                }}
-                              >
-                                <span
-                                  className="h-1.5 w-1.5 rounded-full"
-                                  style={{ backgroundColor: g.color ?? "#6366f1" }}
-                                />
-                                {g.name}
-                              </span>
-                            ))}
-                            {extra > 0 && (
-                              <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
-                                +{extra} more
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })()}
-                      {/* Protection badges — distinct types among non-expired links */}
-                      {(() => {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        const links = (event as any).sharedLinks as Array<{ accessType: string; expiresAt: Date | null }> ?? [];
-                        const activeTypes = [...new Set(
-                          links
-                            .filter((l) => !l.expiresAt || new Date() <= new Date(l.expiresAt))
-                            .map((l) => l.accessType)
-                        )];
-                        if (activeTypes.length === 0) return null;
-                        return (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {activeTypes.map((type) => (
-                              <span
-                                key={type}
-                                className={
-                                  type === "NONE"
-                                    ? "rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400"
-                                    : type === "PIN"
-                                    ? "rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                                    : "rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                }
-                              >
-                                {type === "NONE"
-                                  ? t.shareModal.accessBadgeNone
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={{ backgroundColor: g.color ?? "#6366f1" }}
+                              />
+                              {g.name}
+                            </span>
+                          ))}
+                          {extraGrps > 0 && (
+                            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
+                              +{extraGrps} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Protection badges */}
+                      {activeTypes.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {activeTypes.map((type) => (
+                            <span
+                              key={type}
+                              className={
+                                type === "NONE"
+                                  ? "rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400"
                                   : type === "PIN"
-                                  ? t.shareModal.accessBadgePin
-                                  : t.shareModal.accessBadgePassword}
-                              </span>
-                            ))}
-                          </div>
-                        );
-                      })()}
+                                  ? "rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                  : "rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                              }
+                            >
+                              {type === "NONE"
+                                ? t.shareModal.accessBadgeNone
+                                : type === "PIN"
+                                ? t.shareModal.accessBadgePin
+                                : t.shareModal.accessBadgePassword}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </Link>
                 );
@@ -371,6 +415,11 @@ export default async function DashboardPage({
           )}
         </div>
       </main>
+
+      {/* ── FAB — mobile only, above bottom tab bar ── */}
+      <div className="sm:hidden">
+        <CreateEventModal atEventLimit={atEventLimit} fab />
+      </div>
     </div>
   );
 }
