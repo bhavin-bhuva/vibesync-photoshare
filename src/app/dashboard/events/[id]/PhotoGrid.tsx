@@ -506,6 +506,7 @@ function PhotoCard({
   groupName,
   onDeleted,
   onOpen,
+  onLongPress,
 }: {
   photo: PhotoWithUrl;
   selectionMode: boolean;
@@ -515,14 +516,27 @@ function PhotoCard({
   groupName: string | null;
   onDeleted: (id: string) => void;
   onOpen: () => void;
+  onLongPress?: () => void;
 }) {
   const t = useT();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const h = cardHeight(photo.id);
   const gradient = cardGradient(photo.id);
+
+  function handlePointerDown() {
+    if (selectionMode || !onLongPress) return;
+    longPressTimerRef.current = setTimeout(() => {
+      onLongPress();
+    }, 500);
+  }
+
+  function handlePointerUp() {
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+  }
 
   async function handleDelete() {
     setDeleting(true);
@@ -565,6 +579,10 @@ function PhotoCard({
         }`}
         style={{ height: h }}
         onClick={handleAreaClick}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onPointerLeave={handlePointerUp}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             selectionMode ? onToggleSelect(false) : onOpen();
@@ -706,10 +724,13 @@ function BulkActionBar({
   }, [assignOpen]);
 
   return createPortal(
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/95">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
+    <div
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 shadow-2xl backdrop-blur-sm dark:border-zinc-700 dark:bg-zinc-900/95"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <div className="mx-auto flex min-h-[56px] max-w-6xl items-center justify-between gap-2 px-4 py-2 sm:min-h-[64px] sm:gap-4 sm:px-6 sm:py-3">
         {/* Left: count + exit */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={onExit}
             aria-label="Exit selection mode"
@@ -718,7 +739,8 @@ function BulkActionBar({
             <XIcon className="h-4 w-4" />
           </button>
           <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            {count} {count === 1 ? "photo" : "photos"} selected
+            <span className="sm:hidden">{count} selected</span>
+            <span className="hidden sm:inline">{count} {count === 1 ? "photo" : "photos"} selected</span>
           </span>
         </div>
 
@@ -726,19 +748,23 @@ function BulkActionBar({
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-zinc-500">
             <SpinnerIcon className="h-4 w-4" />
-            Working…
+            <span className="hidden sm:inline">Working…</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Assign Group dropdown */}
             <div className="relative" ref={assignRef}>
               <button
                 onClick={() => { setAssignOpen((v) => !v); setDeleteStep(false); }}
                 disabled={groups.length === 0}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                title="Assign Group"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 sm:px-3"
               >
-                Assign Group
-                <svg className="h-3.5 w-3.5 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+                <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" />
+                </svg>
+                <span className="hidden sm:inline">Assign Group</span>
+                <svg className="hidden h-3.5 w-3.5 text-zinc-400 sm:block" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
                 </svg>
               </button>
@@ -768,14 +794,19 @@ function BulkActionBar({
             {/* Remove Group */}
             <button
               onClick={() => { onRemoveGroup(); setDeleteStep(false); }}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              title="Remove Group"
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700 sm:px-3"
             >
-              Remove Group
+              <svg className="h-4 w-4 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.091a4 4 0 0 0-5.557-5.556Z" clipRule="evenodd" />
+                <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.185A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" />
+              </svg>
+              <span className="hidden sm:inline">Remove Group</span>
             </button>
 
             {/* Delete — two-step */}
             {deleteStep ? (
-              <div className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 dark:border-red-800 dark:bg-red-950/40">
+              <div className="flex items-center gap-1.5 rounded-lg border border-red-300 bg-red-50 px-2 py-1.5 dark:border-red-800 dark:bg-red-950/40 sm:px-3">
                 <span className="text-sm font-medium text-red-700 dark:text-red-400">
                   Delete {count}?
                 </span>
@@ -783,22 +814,23 @@ function BulkActionBar({
                   onClick={() => setDeleteStep(false)}
                   className="ml-1 text-xs text-red-500 underline hover:text-red-700"
                 >
-                  Cancel
+                  No
                 </button>
                 <button
                   onClick={() => { setDeleteStep(false); onBulkDelete(); }}
                   className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700"
                 >
-                  Confirm
+                  Yes
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => setDeleteStep(true)}
-                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-950/30"
+                title="Delete"
+                className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-950/30 sm:px-3"
               >
                 <TrashIcon className="h-3.5 w-3.5" />
-                Delete
+                <span className="hidden sm:inline">Delete</span>
               </button>
             )}
           </div>
@@ -1215,23 +1247,27 @@ export function PhotoGrid({
             )}
           </div>
 
-          {/* ── Masonry grid ── */}
-          <div style={{ columns: "4 200px", gap: "14px" }}>
+          {/* ── Photo grid ── */}
+          <div className="grid grid-cols-2 gap-1 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 lg:gap-[14px]">
             {renderedPhotos.map((photo, i) => {
               const group = photo.groupId ? groupMap.get(photo.groupId) : undefined;
               return (
-                <div key={photo.id} style={{ breakInside: "avoid", marginBottom: 14 }}>
-                  <PhotoCard
-                    photo={photo}
-                    selectionMode={selectionMode}
-                    isSelected={selectedIds.has(photo.id)}
-                    onToggleSelect={(shiftKey) => toggleSelect(i, shiftKey)}
-                    groupColor={group?.color ?? null}
-                    groupName={group?.name ?? null}
-                    onDeleted={handleDeleted}
-                    onOpen={() => openLightbox(i)}
-                  />
-                </div>
+                <PhotoCard
+                  key={photo.id}
+                  photo={photo}
+                  selectionMode={selectionMode}
+                  isSelected={selectedIds.has(photo.id)}
+                  onToggleSelect={(shiftKey) => toggleSelect(i, shiftKey)}
+                  groupColor={group?.color ?? null}
+                  groupName={group?.name ?? null}
+                  onDeleted={handleDeleted}
+                  onOpen={() => openLightbox(i)}
+                  onLongPress={() => {
+                    enterSelectionMode();
+                    setSelectedIds(new Set([photo.id]));
+                    lastClickedIndexRef.current = i;
+                  }}
+                />
               );
             })}
           </div>
@@ -1250,8 +1286,8 @@ export function PhotoGrid({
         </>
       )}
 
-      {/* Extra bottom padding in selection mode so the bulk bar doesn't cover photos */}
-      {selectionMode && <div className="h-20" />}
+      {/* Extra bottom padding so the bulk bar doesn't cover photos */}
+      {selectionMode && <div className="h-24 sm:h-20" />}
 
       {/* ── Lightbox ── */}
       {lightboxIndex !== null && (
