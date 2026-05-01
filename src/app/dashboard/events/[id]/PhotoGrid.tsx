@@ -172,9 +172,13 @@ function Lightbox({
   const photo = photos[index];
   const hasPrev = index > 0;
   const hasNext = index < photos.length - 1;
+  const [showInfo, setShowInfo] = useState(false);
+  const [swipeOffset, setSwipeOffset] = useState({ x: 0, y: 0 });
+  const swipeStart = useRef({ x: 0, y: 0 });
+  const swipeActive = useRef(false);
 
-  const prev = useCallback(() => { if (hasPrev) onGo(index - 1); }, [hasPrev, index, onGo]);
-  const next = useCallback(() => { if (hasNext) onGo(index + 1); }, [hasNext, index, onGo]);
+  const prev = useCallback(() => { if (hasPrev) { setShowInfo(false); onGo(index - 1); } }, [hasPrev, index, onGo]);
+  const next = useCallback(() => { if (hasNext) { setShowInfo(false); onGo(index + 1); } }, [hasNext, index, onGo]);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -192,9 +196,60 @@ function Lightbox({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, prev, next]);
 
+  function handleSwipeStart(e: React.PointerEvent) {
+    if (!e.isPrimary) return;
+    swipeStart.current = { x: e.clientX, y: e.clientY };
+    swipeActive.current = true;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function handleSwipeMove(e: React.PointerEvent) {
+    if (!swipeActive.current || !e.isPrimary) return;
+    const dx = e.clientX - swipeStart.current.x;
+    const dy = e.clientY - swipeStart.current.y;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      setSwipeOffset({ x: dx, y: 0 });
+    } else if (dy > 0) {
+      setSwipeOffset({ x: 0, y: dy });
+    }
+  }
+
+  function handleSwipeEnd(e: React.PointerEvent) {
+    if (!swipeActive.current || !e.isPrimary) return;
+    swipeActive.current = false;
+    const dx = e.clientX - swipeStart.current.x;
+    const dy = e.clientY - swipeStart.current.y;
+    setSwipeOffset({ x: 0, y: 0 });
+    const absDx = Math.abs(dx);
+    const absDy = Math.abs(dy);
+    if (absDx < 10 && absDy < 10) { setShowInfo((v) => !v); return; }
+    if (absDx > 50 && absDx > absDy) { if (dx < 0) next(); else prev(); return; }
+    if (dy > 80 && absDy > absDx) onClose();
+  }
+
   return createPortal(
-    <div className="fixed inset-0 z-50 flex flex-col bg-black/95" onClick={onClose}>
-      <div className="flex shrink-0 items-center justify-between px-4 py-3" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[9999] flex flex-col bg-black">
+
+      {/* ── Mobile top bar ── */}
+      <div
+        className="flex shrink-0 items-center sm:hidden"
+        style={{ height: "calc(56px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+      >
+        <div className="flex w-full items-center px-4">
+          <button onClick={onClose} aria-label={t.lightbox.closeAriaLabel} className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/10">
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 10H5M9 5l-5 5 5 5" />
+            </svg>
+          </button>
+          <span className="flex-1 text-center text-sm tabular-nums text-white/70">
+            {t.lightbox.counter(index + 1, photos.length)}
+          </span>
+          <div className="h-10 w-10" aria-hidden="true" />
+        </div>
+      </div>
+
+      {/* ── Desktop top bar ── */}
+      <div className="hidden shrink-0 items-center justify-between px-4 py-3 sm:flex">
         <span className="min-w-[3rem] text-sm tabular-nums text-white/50">
           {t.lightbox.counter(index + 1, photos.length)}
         </span>
@@ -204,37 +259,66 @@ function Lightbox({
         </button>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center" onClick={(e) => e.stopPropagation()}>
-        <button onClick={prev} disabled={!hasPrev} aria-label={t.lightbox.prevAriaLabel} className="absolute left-3 z-10 rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:left-5">
+      {/* ── Image area ── */}
+      <div
+        className="relative flex min-h-0 flex-1 items-center justify-center sm:px-16 sm:py-2"
+        onPointerDown={handleSwipeStart}
+        onPointerMove={handleSwipeMove}
+        onPointerUp={handleSwipeEnd}
+        onPointerCancel={() => { swipeActive.current = false; setSwipeOffset({ x: 0, y: 0 }); }}
+      >
+        <button onClick={prev} disabled={!hasPrev} aria-label={t.lightbox.prevAriaLabel} className="absolute left-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
           <ChevronLeftIcon />
         </button>
 
-        <div className="flex max-h-full max-w-full items-center justify-center px-16 py-2">
-          {isLoadingUrl ? (
-            <SpinnerIcon className="h-10 w-10 text-white/40" />
-          ) : signedUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={photo.id} src={signedUrl} alt={photo.filename} className="max-h-[calc(100vh-10rem)] max-w-full rounded-lg object-contain shadow-2xl" draggable={false} />
-          ) : (
-            <div className={`flex h-64 w-96 max-w-full items-center justify-center rounded-lg bg-gradient-to-br ${cardGradient(photo.id)}`}>
-              <svg className="h-16 w-16 text-white/30" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
-                <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
-              </svg>
-            </div>
-          )}
-        </div>
+        {isLoadingUrl ? (
+          <SpinnerIcon className="h-10 w-10 text-white/40" />
+        ) : signedUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={photo.id}
+            src={signedUrl}
+            alt={photo.filename}
+            className="max-h-full max-w-full object-contain sm:max-h-[calc(100vh-10rem)] sm:rounded-lg sm:shadow-2xl"
+            draggable={false}
+            style={{
+              transform: `translate(${swipeOffset.x}px, ${swipeOffset.y}px)`,
+              touchAction: "pinch-zoom",
+              userSelect: "none",
+            }}
+          />
+        ) : (
+          <div className={`flex h-64 w-96 max-w-full items-center justify-center rounded-lg bg-gradient-to-br ${cardGradient(photo.id)}`}>
+            <svg className="h-16 w-16 text-white/30" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
+              <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
+            </svg>
+          </div>
+        )}
 
-        <button onClick={next} disabled={!hasNext} aria-label={t.lightbox.nextAriaLabel} className="absolute right-3 z-10 rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:right-5">
+        <button onClick={next} disabled={!hasNext} aria-label={t.lightbox.nextAriaLabel} className="absolute right-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
           <ChevronRightIcon />
         </button>
       </div>
 
-      <div className="flex shrink-0 items-center justify-between px-6 py-3" onClick={(e) => e.stopPropagation()}>
+      {/* ── Desktop footer ── */}
+      <div className="hidden shrink-0 items-center justify-between px-6 py-3 sm:flex">
         <span className="text-xs text-white/40">{formatBytes(photo.size)}</span>
         <span className="text-xs text-white/40">{formatDate(photo.createdAt)}</span>
       </div>
-      <p className="shrink-0 pb-3 text-center text-[11px] text-white/20">{t.lightbox.hint}</p>
+      <p className="hidden shrink-0 pb-3 text-center text-[11px] text-white/20 sm:block">{t.lightbox.hint}</p>
+
+      {/* ── Mobile info panel — tap image to toggle ── */}
+      <div className={`shrink-0 overflow-hidden transition-all duration-300 sm:hidden ${showInfo ? "max-h-32" : "max-h-0"}`}>
+        <div className="rounded-t-2xl bg-black/75 px-5 py-4 backdrop-blur-md" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}>
+          <p className="text-sm font-medium text-white">{photo.filename}</p>
+          <div className="mt-1.5 flex items-center gap-3 text-xs text-white/60">
+            <span>{formatBytes(photo.size)}</span>
+            <span>·</span>
+            <span>{formatDate(photo.createdAt)}</span>
+          </div>
+        </div>
+      </div>
     </div>,
     document.body
   );
