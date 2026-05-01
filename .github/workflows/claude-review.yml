@@ -33,4 +33,3 @@ jobs:
             - No direct S3 URLs exposed to client — always use CloudFront signed URLs
             - Prisma query correctness
             - Missing await on params in Next.js App Router pages
-          max_turns: "5"
