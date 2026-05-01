@@ -155,15 +155,20 @@ function UploadingRow({ item }: { item: QueueItem }) {
   const activeChunk = Math.min(item.completedParts.length + 1, totalChunks);
 
   return (
-    <li className="px-4 py-2.5">
+    <li className="min-h-[56px] px-4 py-2.5 sm:min-h-0">
       <div className="flex items-center gap-3">
         <SpinnerIcon />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
             {item.filename}
           </p>
-          <p className="text-xs text-zinc-400">
+          {/* Chunk info — desktop only */}
+          <p className="hidden text-xs text-zinc-400 sm:block">
             {formatBytes(item.size)} · Chunk {activeChunk} of {totalChunks}
+          </p>
+          {/* Size only — mobile */}
+          <p className="text-xs text-zinc-400 sm:hidden">
+            {formatBytes(item.size)}
           </p>
         </div>
         <span className="shrink-0 tabular-nums text-xs text-zinc-400">{item.progress}%</span>
@@ -181,7 +186,7 @@ function UploadingRow({ item }: { item: QueueItem }) {
 function QueuedRow({ item }: { item: QueueItem }) {
   const isPaused = item.status === "PAUSED";
   return (
-    <li className="flex items-center gap-3 px-4 py-2.5">
+    <li className="flex min-h-[56px] items-center gap-3 px-4 py-2.5 sm:min-h-0">
       {isPaused ? <PauseIcon /> : <QueuedDot />}
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
@@ -204,7 +209,7 @@ function FailedRow({
   onRetry: (id: string) => void;
 }) {
   return (
-    <li className="px-4 py-2.5">
+    <li className="min-h-[56px] bg-red-50/50 px-4 py-2.5 dark:bg-red-950/10 sm:min-h-0 sm:bg-transparent sm:dark:bg-transparent">
       <div className="flex items-center gap-3">
         <ErrorIcon />
         <div className="min-w-0 flex-1">
@@ -228,7 +233,7 @@ function FailedRow({
 
 function CompletedRow({ item }: { item: QueueItem }) {
   return (
-    <li className="flex items-center gap-3 px-4 py-2.5">
+    <li className="flex min-h-[56px] items-center gap-3 px-4 py-2.5 sm:min-h-0">
       <CheckIcon />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
@@ -270,12 +275,11 @@ function CreateGroupModal({
   }
 
   return createPortal(
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      onClick={onCancel}
-    >
+    <div className="fixed inset-0 z-[60]" onClick={onCancel}>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="fixed inset-x-0 bottom-0 z-10 animate-in slide-in-from-bottom sm:flex sm:inset-0 sm:items-center sm:justify-center sm:p-4">
       <div
-        className="w-full max-w-xs rounded-2xl bg-white p-5 shadow-2xl dark:bg-zinc-800"
+        className="w-full rounded-t-2xl bg-white p-5 shadow-2xl dark:bg-zinc-800 sm:max-w-xs sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -345,6 +349,7 @@ function CreateGroupModal({
           </button>
         </div>
       </div>
+      </div>
     </div>,
     document.body
   );
@@ -383,13 +388,13 @@ function GroupSelector({
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <span className="shrink-0 text-sm text-zinc-500 dark:text-zinc-400">Upload to:</span>
-        <div className="relative" ref={dropdownRef}>
+      <div className="flex w-full flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+        <span className="shrink-0 text-sm font-medium text-zinc-600 dark:text-zinc-400">Upload to group:</span>
+        <div className="relative w-full sm:w-auto" ref={dropdownRef}>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+            className="flex h-12 w-full items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600 sm:h-auto sm:w-auto sm:py-1.5"
           >
             {selected ? (
               <>
@@ -408,7 +413,7 @@ function GroupSelector({
           </button>
 
           {open && (
-            <div className="absolute left-0 top-[calc(100%+4px)] z-20 min-w-[200px] rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+            <div className="absolute left-0 top-[calc(100%+4px)] z-20 w-full min-w-[200px] rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-800 sm:w-auto">
               {/* No group option */}
               <button
                 className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-700"
@@ -462,7 +467,7 @@ function GroupSelector({
             </div>
           )}
         </div>
-      </div>
+      </div>{/* end GroupSelector wrapper */}
 
       {showCreate && (
         <CreateGroupModal
@@ -496,6 +501,7 @@ export function UploadModal({
 
   const [open, setOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
   // Group selection — persists for the lifetime of the modal session
   const [groups, setGroups] = useState<GroupOption[]>(initialGroups);
@@ -524,6 +530,9 @@ export function UploadModal({
   useEffect(() => {
     getUploadManager(eventId).start().catch(console.error);
   }, [eventId]);
+
+  // ── Touch device detection ────────────────────────────────────────────────────
+  useEffect(() => { setIsTouchDevice("ontouchstart" in window); }, []);
 
   // ── Network status ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -674,22 +683,24 @@ export function UploadModal({
       {/* Modal — portalled to escape the header's backdrop-blur stacking context */}
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-40 overflow-y-auto">
+          <div className="fixed inset-0 z-40">
             {/* Backdrop */}
             <div
               className="fixed inset-0 bg-black/50 backdrop-blur-sm"
               onClick={handleClose}
             />
 
-            {/* Centering wrapper */}
-            <div className="flex min-h-full items-center justify-center p-4">
+            {/* Mobile: bottom sheet | Desktop: centered */}
+            <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col animate-in slide-in-from-bottom sm:inset-0 sm:flex-none sm:items-center sm:justify-center sm:p-4">
               {/* Card */}
               <div
-                className="relative z-50 flex w-full max-w-lg flex-col rounded-2xl bg-white shadow-2xl dark:bg-zinc-800"
+                className="relative flex w-full flex-col rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-800 sm:max-w-lg sm:rounded-2xl"
                 style={{ maxHeight: "90vh" }}
               >
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-700">
+                <div className="relative flex items-center justify-between border-b border-zinc-100 px-6 py-4 dark:border-zinc-700">
+                  {/* Drag handle — mobile only */}
+                  <div className="absolute left-1/2 top-2 h-1 w-10 -translate-x-1/2 rounded-full bg-zinc-200 dark:bg-zinc-600 sm:hidden" />
                   <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
                     {t.uploadModal.title}
                   </h2>
@@ -726,23 +737,27 @@ export function UploadModal({
 
                   {/* Overall progress */}
                   {queue.totalCount > 0 && (
-                    <div>
+                    <div className="sticky top-0 z-10 -mx-6 bg-white px-6 pb-3 pt-1 dark:bg-zinc-800">
                       <div className="mb-1.5 flex items-center justify-between">
-                        <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                        {/* Desktop: full text | Mobile: compact */}
+                        <span className="hidden text-sm text-zinc-500 dark:text-zinc-400 sm:inline">
                           {queue.completedCount} / {queue.totalCount} photos uploaded
+                        </span>
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400 sm:hidden">
+                          {queue.completedCount}/{queue.totalCount}
                         </span>
                         {isActive && (
                           <div className="flex items-center gap-2 text-xs text-zinc-400">
-                            {speedBytesPerSec > 0 && (
-                              <span>{formatSpeed(speedBytesPerSec)}</span>
-                            )}
+                            <span className="hidden sm:inline">
+                              {speedBytesPerSec > 0 && formatSpeed(speedBytesPerSec)}
+                            </span>
                             {etaSeconds > 0 && (
                               <span>{formatEta(etaSeconds)}</span>
                             )}
                           </div>
                         )}
                       </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-600">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-600">
                         <div
                           className="h-full rounded-full bg-blue-500 transition-all duration-300"
                           style={{ width: `${queue.overallProgress}%` }}
@@ -764,7 +779,7 @@ export function UploadModal({
                   <div className="relative">
                     <div
                       {...getRootProps()}
-                      className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-10 transition-colors ${
+                      className={`flex min-h-[160px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 px-6 py-8 transition-colors sm:min-h-[200px] sm:border-dashed sm:py-10 ${
                         isDragActive
                           ? "border-zinc-500 bg-zinc-50 dark:border-zinc-400 dark:bg-zinc-700"
                           : "border-zinc-300 hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-600 dark:hover:border-zinc-500 dark:hover:bg-zinc-700"
@@ -772,7 +787,7 @@ export function UploadModal({
                     >
                       <input {...getInputProps()} />
                       <svg
-                        className="mb-3 h-10 w-10 text-zinc-400"
+                        className="mb-3 h-12 w-12 text-zinc-400 sm:h-10 sm:w-10"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -783,6 +798,10 @@ export function UploadModal({
                       {isDragActive ? (
                         <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                           {t.uploadModal.dropzoneDragActive}
+                        </p>
+                      ) : isTouchDevice ? (
+                        <p className="text-base font-medium text-zinc-700 dark:text-zinc-300 sm:text-sm">
+                          {t.uploadModal.dropzoneTap}
                         </p>
                       ) : (
                         <>

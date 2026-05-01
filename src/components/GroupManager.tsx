@@ -426,18 +426,46 @@ function GroupRowMenu({
   );
 }
 
+// ─── Up/Down arrow icons ──────────────────────────────────────────────────────
+
+function ChevronUpIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M9.47 6.47a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 1 1-1.06 1.06L10 8.06l-3.72 3.72a.75.75 0 0 1-1.06-1.06l4.25-4.25Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 // ─── Sortable row ─────────────────────────────────────────────────────────────
 
 function SortableGroupRow({
   group,
   allGroups,
+  isFirst,
+  isLast,
+  reorderMode,
   onUpdated,
   onDeleted,
+  onMoveUp,
+  onMoveDown,
 }: {
   group: GroupRow;
   allGroups: GroupRow[];
+  isFirst: boolean;
+  isLast: boolean;
+  reorderMode: boolean;
   onUpdated: (id: string, patch: Partial<GroupRow>) => void;
   onDeleted: (id: string) => void;
+  onMoveUp: (id: string) => void;
+  onMoveDown: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: group.id });
@@ -451,21 +479,43 @@ function SortableGroupRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors ${
+      className={`flex min-h-[56px] items-center gap-2 rounded-lg px-2 py-1.5 transition-colors sm:min-h-0 ${
         isDragging
           ? "z-10 bg-zinc-100 shadow-md dark:bg-zinc-700"
           : "hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
       }`}
     >
-      {/* Drag handle */}
+      {/* Drag handle — desktop only */}
       <button
         {...attributes}
         {...listeners}
         aria-label="Drag to reorder"
-        className="shrink-0 cursor-grab touch-none text-zinc-300 hover:text-zinc-500 active:cursor-grabbing dark:text-zinc-600 dark:hover:text-zinc-400"
+        className="hidden shrink-0 cursor-grab touch-none text-zinc-300 hover:text-zinc-500 active:cursor-grabbing dark:text-zinc-600 dark:hover:text-zinc-400 sm:block"
       >
         <DragHandleIcon />
       </button>
+
+      {/* Mobile arrow buttons — shown in reorder mode only */}
+      {reorderMode && (
+        <div className="flex shrink-0 flex-col gap-0.5 sm:hidden">
+          <button
+            onClick={() => onMoveUp(group.id)}
+            disabled={isFirst}
+            aria-label="Move up"
+            className="flex h-5 w-5 items-center justify-center rounded text-zinc-400 disabled:opacity-20 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700"
+          >
+            <ChevronUpIcon />
+          </button>
+          <button
+            onClick={() => onMoveDown(group.id)}
+            disabled={isLast}
+            aria-label="Move down"
+            className="flex h-5 w-5 items-center justify-center rounded text-zinc-400 disabled:opacity-20 hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700"
+          >
+            <ChevronDownIcon />
+          </button>
+        </div>
+      )}
 
       {/* Color dot */}
       <span
@@ -602,12 +652,13 @@ export function GroupManager({ eventId, initialGroups, ungroupedCount }: GroupMa
     [...initialGroups].sort((a, b) => a.sortOrder - b.sortOrder)
   );
   const [showAddForm, setShowAddForm] = useState(false);
+  const [reorderMode, setReorderMode] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   );
 
-  // Callback for drag-end: optimistic reorder + background sync
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
       const { active, over } = event;
@@ -619,14 +670,35 @@ export function GroupManager({ eventId, initialGroups, ungroupedCount }: GroupMa
         return arrayMove(prev, from, to);
       });
 
-      // Capture the new order synchronously inside the setter
       setGroups((next) => {
         reorderGroups(eventId, next.map((g) => g.id)).then(() => router.refresh());
-        return next; // no further state change
+        return next;
       });
     },
     [eventId, router]
   );
+
+  const handleMoveUp = useCallback((id: string) => {
+    setGroups((prev) => {
+      const idx = prev.findIndex((g) => g.id === id);
+      if (idx === 0) return prev;
+      const next = [...prev];
+      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+      reorderGroups(eventId, next.map((g) => g.id)).then(() => router.refresh());
+      return next;
+    });
+  }, [eventId, router]);
+
+  const handleMoveDown = useCallback((id: string) => {
+    setGroups((prev) => {
+      const idx = prev.findIndex((g) => g.id === id);
+      if (idx === prev.length - 1) return prev;
+      const next = [...prev];
+      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+      reorderGroups(eventId, next.map((g) => g.id)).then(() => router.refresh());
+      return next;
+    });
+  }, [eventId, router]);
 
   function handleUpdated(id: string, patch: Partial<GroupRow>) {
     setGroups((prev) =>
@@ -646,13 +718,28 @@ export function GroupManager({ eventId, initialGroups, ungroupedCount }: GroupMa
 
   const existingNames = new Set(groups.map((g) => g.name.toLowerCase()));
 
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
-      {/* Header */}
+  const panelContent = (
+    <>
+      {/* Reorder toggle (mobile) + Add Group */}
       <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3 dark:border-zinc-700">
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          Photo Groups
-        </h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Photo Groups
+          </h2>
+          {/* Reorder mode toggle — mobile only */}
+          {groups.length > 1 && (
+            <button
+              onClick={() => setReorderMode((v) => !v)}
+              className={`rounded-md px-2 py-0.5 text-xs font-medium transition-colors sm:hidden ${
+                reorderMode
+                  ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
+                  : "border border-zinc-300 text-zinc-500 dark:border-zinc-600 dark:text-zinc-400"
+              }`}
+            >
+              {reorderMode ? "Done" : "Reorder"}
+            </button>
+          )}
+        </div>
         {!showAddForm && (
           <button
             onClick={() => setShowAddForm(true)}
@@ -664,8 +751,7 @@ export function GroupManager({ eventId, initialGroups, ungroupedCount }: GroupMa
         )}
       </div>
 
-      <div className="p-2">
-        {/* Sortable group list */}
+      <div className="overflow-y-auto p-2">
         {groups.length > 0 ? (
           <DndContext
             sensors={sensors}
@@ -676,13 +762,18 @@ export function GroupManager({ eventId, initialGroups, ungroupedCount }: GroupMa
               items={groups.map((g) => g.id)}
               strategy={verticalListSortingStrategy}
             >
-              {groups.map((group) => (
+              {groups.map((group, idx) => (
                 <SortableGroupRow
                   key={group.id}
                   group={group}
                   allGroups={groups}
+                  isFirst={idx === 0}
+                  isLast={idx === groups.length - 1}
+                  reorderMode={reorderMode}
                   onUpdated={handleUpdated}
                   onDeleted={handleDeleted}
+                  onMoveUp={handleMoveUp}
+                  onMoveDown={handleMoveDown}
                 />
               ))}
             </SortableContext>
@@ -695,7 +786,6 @@ export function GroupManager({ eventId, initialGroups, ungroupedCount }: GroupMa
           )
         )}
 
-        {/* Add group form */}
         {showAddForm && (
           <AddGroupForm
             eventId={eventId}
@@ -705,8 +795,7 @@ export function GroupManager({ eventId, initialGroups, ungroupedCount }: GroupMa
           />
         )}
 
-        {/* Ungrouped row */}
-        <div className="mt-1 flex items-center gap-2 rounded-lg px-2 py-1.5">
+        <div className="mt-1 flex min-h-[44px] items-center gap-2 rounded-lg px-2 py-1.5 sm:min-h-0">
           <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-zinc-300 dark:bg-zinc-600" />
           <span className="flex-1 text-sm text-zinc-500 dark:text-zinc-400">Ungrouped</span>
           <span className="text-xs tabular-nums text-zinc-400 dark:text-zinc-500">
@@ -714,6 +803,49 @@ export function GroupManager({ eventId, initialGroups, ungroupedCount }: GroupMa
           </span>
         </div>
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop: inline panel */}
+      <div className="hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 sm:block">
+        {panelContent}
+      </div>
+
+      {/* Mobile: trigger + bottom sheet */}
+      <div className="sm:hidden">
+        <button
+          onClick={() => setSheetOpen(true)}
+          className="flex items-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+        >
+          <svg className="h-4 w-4 text-zinc-400" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M5 4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14l-5-2.5L5 18V4Z" />
+          </svg>
+          Manage Groups
+          {groups.length > 0 && (
+            <span className="ml-auto rounded-full bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400">
+              {groups.length}
+            </span>
+          )}
+        </button>
+
+        {sheetOpen && createPortal(
+          <div className="fixed inset-0 z-50">
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+              onClick={() => setSheetOpen(false)}
+            />
+            <div className="fixed inset-x-0 bottom-0 z-10 flex animate-in slide-in-from-bottom flex-col rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-800"
+              style={{ maxHeight: "60vh" }}>
+              {/* Drag handle */}
+              <div className="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-600" />
+              {panelContent}
+            </div>
+          </div>,
+          document.body
+        )}
+      </div>
+    </>
   );
 }

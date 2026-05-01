@@ -165,6 +165,7 @@ export const en = {
     dropzoneBrowse: "browse",
     dropzoneHint: "JPG, PNG, WEBP \u00b7 max 50 MB each",
     dropzoneDragActive: "Drop to add photos\u2026",
+    dropzoneTap: "Tap to select photos",
     statusDone: "Done",
     statusFailed: "Failed",
     summaryNoFiles: "No files selected",
