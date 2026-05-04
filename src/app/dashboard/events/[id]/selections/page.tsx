@@ -5,7 +5,7 @@ import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { getCloudfrontSignedUrl } from "@/lib/cloudfront";
 import { getServerT } from "@/lib/i18n/server";
-import { SelectionCard } from "./SelectionCard";
+import { SelectionsClientShell } from "./SelectionsClientShell";
 
 export default async function SelectionsPage({
   params,
@@ -23,7 +23,6 @@ export default async function SelectionsPage({
 
   if (!event || event.userId !== session.user.id) notFound();
 
-  // Fetch selections separately to keep the query clean and avoid select/include mixing
   const sharedLinks = await db.sharedLink.findMany({
     where: { eventId: id },
     select: {
@@ -58,7 +57,6 @@ export default async function SelectionsPage({
   // Clear the new-selections badge (non-blocking — ignore if column doesn't exist yet)
   db.event.update({ where: { id }, data: { hasNewSelections: false } }).catch(() => {});
 
-  // Flatten selections across all shared links, attach signed URLs, sort newest first
   const selections = (
     await Promise.all(
       sharedLinks.flatMap((link) =>
@@ -85,7 +83,9 @@ export default async function SelectionsPage({
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       {/* Top bar */}
       <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90">
-        <div className="mx-auto max-w-4xl px-6 py-4">
+        <div className="mx-auto max-w-4xl px-4 py-4 sm:px-6">
+
+          {/* Back + title row */}
           <div className="flex items-center gap-3">
             <Link
               href={`/dashboard/events/${id}`}
@@ -96,24 +96,30 @@ export default async function SelectionsPage({
                 <path fillRule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" />
               </svg>
             </Link>
-            <div>
-              <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-                {t.selections.title}
-              </h1>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                {event.name}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                  {t.selections.title}
+                </h1>
+                {/* Submissions count badge */}
+                {selections.length > 0 && (
+                  <span className="inline-flex items-center rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-700 dark:text-zinc-300">
+                    {t.selections.submissionsCount(selections.length)}
+                  </span>
+                )}
                 {pendingCount > 0 && (
-                  <span className="ml-2 inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                  <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">
                     {t.selections.pendingBadge(pendingCount)}
                   </span>
                 )}
-              </p>
+              </div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">{event.name}</p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-8">
+      <main className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8">
         {selections.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-white py-20 dark:border-zinc-700 dark:bg-zinc-800">
             <svg className="mb-4 h-12 w-12 text-zinc-300 dark:text-zinc-600" viewBox="0 0 24 24" fill="currentColor">
@@ -127,11 +133,10 @@ export default async function SelectionsPage({
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {selections.map((sel) => (
-              <SelectionCard key={sel.id} selection={sel} eventId={id} />
-            ))}
-          </div>
+          <SelectionsClientShell
+            selections={selections}
+            eventId={id}
+          />
         )}
       </main>
     </div>

@@ -427,14 +427,16 @@ function Lightbox({
 // ─── Photo card ───────────────────────────────────────────────────────────────
 
 function PhotoCard({
-  photo, slug, selectMode, isSelected, onToggle, onOpen,
+  photo, slug, selectMode, isSelected, hasNote, onToggle, onOpen, onOpenNote,
 }: {
   photo: GalleryPhoto;
   slug: string;
   selectMode: boolean;
   isSelected: boolean;
+  hasNote: boolean;
   onToggle: () => void;
   onOpen: () => void;
+  onOpenNote: () => void;
 }) {
   const t = useT();
   const [downloading, setDownloading] = useState(false);
@@ -455,7 +457,8 @@ function PhotoCard({
     }
   }
 
-  const handleClick = selectMode ? onToggle : onOpen;
+  // In select mode: tapping a selected photo opens the note sheet; unselected → select
+  const handleClick = selectMode ? (isSelected ? onOpenNote : onToggle) : onOpen;
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") handleClick();
   };
@@ -503,18 +506,26 @@ function PhotoCard({
           </div>
         )}
 
-        {/* Select mode: checkbox overlay */}
+        {/* Select mode: checkbox overlay — always visible on mobile when selected */}
         {selectMode && (
           <div className={`absolute inset-0 transition-colors duration-150 ${isSelected ? "bg-blue-500/10" : "bg-transparent group-hover:bg-black/10"}`}>
             <div
-              className={`absolute left-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-150 ${
+              className={`absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all duration-150 ${
                 isSelected
-                  ? "border-blue-500 bg-blue-500"
+                  ? "border-blue-500 bg-blue-500 opacity-100"
                   : "border-white/80 bg-black/20 opacity-0 group-hover:opacity-100"
               }`}
             >
               {isSelected && <CheckIcon className="h-3.5 w-3.5 text-white" />}
             </div>
+            {/* Note indicator dot */}
+            {isSelected && hasNote && (
+              <div className="absolute bottom-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500">
+                <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M2 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5Zm3 1a1 1 0 0 0 0 2h10a1 1 0 1 0 0-2H5Zm0 4a1 1 0 0 0 0 2h6a1 1 0 1 0 0-2H5Z" clipRule="evenodd" />
+                </svg>
+              </div>
+            )}
           </div>
         )}
 
@@ -574,6 +585,14 @@ export function Gallery({
   // Group filter
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
+  // Per-photo notes
+  const [photoNotes, setPhotoNotes] = useState<Map<string, string>>(new Map());
+  const [noteSheetPhotoId, setNoteSheetPhotoId] = useState<string | null>(null);
+  const [noteSheetDraft, setNoteSheetDraft] = useState("");
+
+  // Submission bar collapsed/expanded
+  const [barExpanded, setBarExpanded] = useState(false);
+
   // Form fields for submission
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -606,6 +625,7 @@ export function Gallery({
   function switchMode(next: GalleryMode) {
     setMode(next);
     setLightboxIndex(null);
+    setBarExpanded(false);
   }
 
   function handleGroupSelect(groupId: string | null) {
@@ -677,7 +697,7 @@ export function Gallery({
     const result = await submitPhotoSelectionAction(
       slug,
       sharedLinkId,
-      [...selectedIds].map((photoId) => ({ photoId, note: "" })),
+      [...selectedIds].map((photoId) => ({ photoId, note: photoNotes.get(photoId) ?? "" })),
       customerName,
       customerEmail,
       customerNote
@@ -687,6 +707,8 @@ export function Gallery({
     saveIds(slug, new Set());
     markSubmitted(slug);
     setSelectedIds(new Set());
+    setPhotoNotes(new Map());
+    setBarExpanded(false);
     setSubmitted(true);
     setMode("view");
   }
@@ -777,7 +799,7 @@ export function Gallery({
 
       {/* ── Mode toggle + Download buttons bar ── */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        {/* Mode pills */}
+        {/* Mode pills — desktop: shows both View/Select; mobile: only View pill (Select is FAB) */}
         <div className="inline-flex self-start rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
           <button
             onClick={() => switchMode("view")}
@@ -792,7 +814,7 @@ export function Gallery({
           {!submitted && (
             <button
               onClick={() => switchMode("select")}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+              className={`hidden rounded-md px-4 py-1.5 text-sm font-medium transition-colors sm:block ${
                 mode === "select"
                   ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
                   : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
@@ -884,7 +906,7 @@ export function Gallery({
         )}
       </div>
 
-      {/* ── Find My Photos FAB (mobile only) ── */}
+      {/* ── Find My Photos FAB (mobile only, bottom-right) ── */}
       {faceSearchEnabled && mode === "view" && (
         <button
           onClick={() => setShowFaceSearch(true)}
@@ -899,6 +921,26 @@ export function Gallery({
           <svg className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
           </svg>
+        </button>
+      )}
+
+      {/* ── Select Photos FAB (mobile only, bottom-left) ── */}
+      {!submitted && mode === "view" && (
+        <button
+          onClick={() => switchMode("select")}
+          aria-label={t.gallery.modeSelect}
+          style={{ bottom: "calc(16px + env(safe-area-inset-bottom))", left: "16px" }}
+          className="fixed z-30 flex h-14 items-center gap-2 rounded-full bg-zinc-900 px-5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 dark:bg-zinc-50 dark:text-zinc-900 sm:hidden"
+        >
+          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+          </svg>
+          {t.gallery.modeSelect}
+          {selectedIds.size > 0 && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-bold text-white">
+              {selectedIds.size}
+            </span>
+          )}
         </button>
       )}
 
@@ -956,8 +998,13 @@ export function Gallery({
               slug={slug}
               selectMode={mode === "select"}
               isSelected={selectedIds.has(photo.id)}
+              hasNote={photoNotes.has(photo.id) && (photoNotes.get(photo.id) ?? "").length > 0}
               onToggle={() => toggleSelect(photo.id)}
               onOpen={() => setLightboxIndex(i)}
+              onOpenNote={() => {
+                setNoteSheetPhotoId(photo.id);
+                setNoteSheetDraft(photoNotes.get(photo.id) ?? "");
+              }}
             />
           ))}
         </div>
@@ -986,69 +1033,178 @@ export function Gallery({
 
       {/* Sticky selection bar (select mode) */}
       {mode === "select" && createPortal(
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 shadow-2xl shadow-black/10 backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-900/95">
-          <div className="mx-auto max-w-3xl px-4 py-4">
-
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                {selectedIds.size === 0
-                  ? t.gallery.noPhotosSelected
-                  : t.gallery.photosSelected(selectedIds.size)}
-              </p>
-              {submitError && (
-                <p className="text-xs text-red-500">{submitError}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                  {t.gallery.nameLabel} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder={t.gallery.namePlaceholder}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
-                />
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 shadow-2xl shadow-black/10 backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-900/95"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div className="mx-auto max-w-3xl px-4">
+            {/* ── Collapsed bar: count + submit button ── */}
+            {!barExpanded && (
+              <div className="flex items-center gap-3 py-3">
+                <button
+                  onClick={() => setBarExpanded(true)}
+                  className="flex-1 text-left text-sm font-semibold text-zinc-900 dark:text-zinc-50"
+                >
+                  {selectedIds.size === 0
+                    ? t.gallery.noPhotosSelected
+                    : t.gallery.photosSelected(selectedIds.size)}
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || selectedIds.size === 0}
+                  className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50 sm:hidden"
+                >
+                  {submitting && <SpinnerIcon className="h-4 w-4 animate-spin" />}
+                  {submitting ? t.gallery.submitting : t.gallery.submitButton}
+                </button>
+                {/* Desktop: show expand button */}
+                <button
+                  onClick={() => setBarExpanded(true)}
+                  className="hidden rounded-lg border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800 sm:block"
+                >
+                  Add details
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || selectedIds.size === 0}
+                  className="hidden items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50 sm:flex"
+                >
+                  {submitting && <SpinnerIcon className="h-4 w-4 animate-spin" />}
+                  {submitting ? t.gallery.submitting : t.gallery.submitButton}
+                </button>
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                  {t.gallery.emailLabel} <span className="text-zinc-400">({t.common.optional})</span>
-                </label>
-                <input
-                  type="email"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder={t.gallery.emailPlaceholder}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                  {t.gallery.noteLabel} <span className="text-zinc-400">({t.common.optional})</span>
-                </label>
-                <input
-                  type="text"
-                  value={customerNote}
-                  onChange={(e) => setCustomerNote(e.target.value)}
-                  placeholder={t.gallery.notePlaceholder}
-                  className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
-                />
-              </div>
-            </div>
+            )}
 
-            <div className="mt-3 flex justify-end">
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || selectedIds.size === 0}
-                className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
-              >
-                {submitting && <SpinnerIcon className="h-4 w-4 animate-spin" />}
-                {submitting ? t.gallery.submitting : t.gallery.submitButton}
-              </button>
-            </div>
+            {/* ── Expanded bar: full inputs ── */}
+            {barExpanded && (
+              <div className="py-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                    {selectedIds.size === 0
+                      ? t.gallery.noPhotosSelected
+                      : t.gallery.photosSelected(selectedIds.size)}
+                  </p>
+                  <button
+                    onClick={() => setBarExpanded(false)}
+                    className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  >
+                    Collapse
+                  </button>
+                </div>
+
+                {submitError && (
+                  <p className="mb-2 text-xs text-red-500">{submitError}</p>
+                )}
+
+                <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3">
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                      {t.gallery.nameLabel} <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder={t.gallery.namePlaceholder}
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                      {t.gallery.emailLabel} <span className="text-zinc-400">({t.common.optional})</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder={t.gallery.emailPlaceholder}
+                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                      {t.gallery.noteLabel} <span className="text-zinc-400">({t.common.optional})</span>
+                    </label>
+                    <div className="relative">
+                      <textarea
+                        value={customerNote}
+                        onChange={(e) => setCustomerNote(e.target.value.slice(0, 300))}
+                        placeholder={t.gallery.notePlaceholder}
+                        rows={2}
+                        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
+                      />
+                      <span className="absolute bottom-1.5 right-2 text-[10px] text-zinc-400">
+                        {customerNote.length}/300
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleSubmit}
+                  disabled={submitting || selectedIds.size === 0}
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-50 sm:ml-auto sm:w-auto sm:px-6"
+                >
+                  {submitting && <SpinnerIcon className="h-4 w-4 animate-spin" />}
+                  {submitting ? t.gallery.submitting : t.gallery.submitButton}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Per-photo note bottom sheet */}
+      {noteSheetPhotoId !== null && createPortal(
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center"
+          onClick={() => setNoteSheetPhotoId(null)}
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="relative z-10 w-full rounded-t-2xl bg-white px-4 pb-6 pt-5 shadow-2xl dark:bg-zinc-800 sm:max-w-sm sm:rounded-2xl"
+            style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              {t.gallery.addPhotoNote}
+            </p>
+            <textarea
+              value={noteSheetDraft}
+              onChange={(e) => setNoteSheetDraft(e.target.value.slice(0, 200))}
+              placeholder={t.gallery.notePlaceholder}
+              rows={3}
+              style={{ height: 100 }}
+              className="w-full resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:placeholder-zinc-500"
+            />
+            <p className="mb-4 mt-1 text-right text-[10px] text-zinc-400">{noteSheetDraft.length}/200</p>
+            <button
+              onClick={() => {
+                const pid = noteSheetPhotoId;
+                setPhotoNotes((prev) => {
+                  const next = new Map(prev);
+                  if (noteSheetDraft.trim()) next.set(pid, noteSheetDraft.trim());
+                  else next.delete(pid);
+                  return next;
+                });
+                setNoteSheetPhotoId(null);
+              }}
+              className="mb-3 w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+            >
+              {t.gallery.saveNote}
+            </button>
+            <button
+              onClick={() => {
+                const pid = noteSheetPhotoId;
+                toggleSelect(pid);
+                setPhotoNotes((prev) => { const next = new Map(prev); next.delete(pid); return next; });
+                setNoteSheetPhotoId(null);
+              }}
+              className="w-full text-center text-sm font-medium text-red-500 hover:text-red-600"
+            >
+              {t.gallery.removeSelection}
+            </button>
           </div>
         </div>,
         document.body

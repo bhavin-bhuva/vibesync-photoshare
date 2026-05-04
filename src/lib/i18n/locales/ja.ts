@@ -66,11 +66,13 @@ export const ja: Translations = {
   // ─── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
     welcome: (name: string) => `こんにちは、${name}`,
+    welcomeShort: (name: string) => `ようこそ、${name} 👋`,
     subtitle: "ギャラリーの概要です。",
     stats: {
       events: "イベント",
       photos: "写真",
       storage: "ストレージ",
+      links: "Links",
       storageDetail: (used: string, limit: string) => `${used} / ${limit}`,
       storagePercent: (pct: number) => `${pct}% 使用中`,
       atEventLimit: "イベント上限に達しました — アップグレードして追加してください。",
@@ -145,6 +147,9 @@ export const ja: Translations = {
     loadingPhotos: "写真を読み込み中\u2026",
     backToPeople: "ピープルに戻る",
     unknownPerson: "不明な人物",
+    viewPhotos: "写真を見る",
+    renamePerson: "名前を変更",
+    hideFromGallery: "ギャラリーから非表示",
     deleteFaceDataButton: "すべての顔データを削除",
     deleteFaceDataTitle: "すべての顔データを削除しますか?",
     deleteFaceDataBody: "このイベントのすべての顔、クラスター、埋め込みが完全に削除されます。",
@@ -160,6 +165,7 @@ export const ja: Translations = {
     dropzoneBrowse: "ファイルを選択",
     dropzoneHint: "JPG・PNG・WEBP · 1枚最大 50 MB",
     dropzoneDragActive: "ドロップして写真を追加…",
+    dropzoneTap: "タップして写真を選択",
     statusDone: "完了",
     statusFailed: "失敗",
     summaryNoFiles: "ファイルが選択されていません",
@@ -326,13 +332,18 @@ export const ja: Translations = {
     title: "クライアント セレクション",
     backAriaLabel: "イベントに戻る",
     pendingBadge: (n: number) => `${n} 件 未確認`,
+    submissionsCount: (n: number) => `${n} 件の送信`,
     emptyTitle: "セレクションはまだありません",
     emptySubtitle: "クライアントは共有ギャラリーからお気に入りの写真を選択できます。",
     statusPending: "未確認",
     statusReviewed: "確認済み",
     statusDelivered: "納品済み",
     downloadZip: "ZIPダウンロード",
+    downloadAll: "すべてのセレクションをダウンロード",
     clientNoteLabel: "クライアントからのメモ",
+    filterAll: "すべて",
+    viewDetails: "詳細を見る",
+    hideDetails: "詳細を隠す",
   },
 
   // ─── Find My Photos (face search on share page) ───────────────────────────
@@ -395,6 +406,9 @@ export const ja: Translations = {
     thankYouTitle: "セレクションが送信されました！",
     thankYouSubtitle: "カメラマンより近日中にご連絡いたします。",
     browseGallery: "ギャラリーに戻る",
+    addPhotoNote: "この写真へのメモを追加（任意）",
+    saveNote: "メモを保存",
+    removeSelection: "選択を解除",
   },
 
   // ─── Billing page ──────────────────────────────────────────────────────────
