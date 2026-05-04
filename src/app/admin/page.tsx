@@ -49,13 +49,13 @@ function StatCard({
 }) {
   const { bg, icon: iconColor } = COLOR_MAP[color];
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${bg} ${iconColor}`}>
+    <div className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white p-3 text-center shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-5 sm:text-left">
+      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${bg} ${iconColor}`}>
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="truncate text-xs font-medium text-zinc-500">{label}</p>
-        <p className="mt-0.5 text-2xl font-bold tracking-tight text-zinc-900">{value}</p>
+        <p className="truncate text-[11px] font-medium text-zinc-500 sm:text-xs">{label}</p>
+        <p className="mt-0.5 text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">{value}</p>
       </div>
     </div>
   );
@@ -204,14 +204,14 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
         {stats.map((s) => (
           <StatCard key={s.label} {...s} />
         ))}
       </div>
 
       {/* ── Tables ── */}
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
         {/* Recent Signups */}
         <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">

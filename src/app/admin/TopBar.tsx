@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n";
 
-export function TopBar() {
+export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const t = useT();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
@@ -12,13 +12,24 @@ export function TopBar() {
   const title = t.admin.pageTitles[pathname] ?? t.admin.pageTitles["/admin"];
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-6">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-zinc-200 bg-white px-4 sm:px-6">
+
+      {/* Hamburger — mobile only */}
+      <button
+        onClick={onMenuClick}
+        aria-label="Open navigation"
+        className="shrink-0 rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 sm:hidden"
+      >
+        <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75ZM2 10a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 10Zm0 5.25a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+        </svg>
+      </button>
 
       {/* Page title */}
-      <h1 className="text-base font-semibold text-zinc-900">{title}</h1>
+      <h1 className="flex-1 truncate text-sm font-semibold text-zinc-900 sm:text-base">{title}</h1>
 
-      {/* Global search */}
-      <div className="relative w-72">
+      {/* Global search — hidden on mobile to save space */}
+      <div className="relative hidden w-72 sm:block">
         <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-400">
           <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />

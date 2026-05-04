@@ -523,10 +523,10 @@ export function PhotographersClient({
     <div className="space-y-4">
 
       {/* ── Filters ── */}
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-2 sm:gap-3">
 
         {/* Search */}
-        <div className="relative min-w-[240px] flex-1">
+        <div className="relative w-full flex-1 sm:min-w-[240px]">
           <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-zinc-400">
             <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" /></svg>
           </span>
@@ -585,8 +585,48 @@ export function PhotographersClient({
         </span>
       </div>
 
-      {/* ── Table ── */}
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+      {/* ── Mobile card list — shows on small screens ── */}
+      <div className="space-y-2 sm:hidden">
+        {rows.length === 0 ? (
+          <p className="rounded-xl border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-400">
+            No photographers match your filters.
+          </p>
+        ) : rows.map((row) => {
+          const badge = PLAN_BADGE[row.planTier];
+          return (
+            <div
+              key={row.id}
+              onClick={() => router.push(`/admin/photographers/${row.id}`)}
+              className={`flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3.5 transition-colors active:bg-zinc-50 ${row.isSuspended ? "border-red-200 bg-red-50/30" : ""}`}
+            >
+              {/* Avatar */}
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-sm font-semibold text-zinc-600">
+                {(row.name ?? row.email)[0].toUpperCase()}
+              </div>
+              {/* Name + email */}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-zinc-900">
+                  {row.name ?? <span className="italic text-zinc-400">No name</span>}
+                </p>
+                <p className="truncate text-xs text-zinc-400">{row.email}</p>
+              </div>
+              {/* Plan badge */}
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${badge.cls}`}>
+                {badge.label}
+              </span>
+              {/* Status dot */}
+              <div className={`h-2 w-2 shrink-0 rounded-full ${row.isSuspended ? "bg-red-500" : "bg-emerald-500"}`} />
+              {/* Chevron */}
+              <svg className="h-4 w-4 shrink-0 text-zinc-300" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+              </svg>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Desktop table — hidden on mobile ── */}
+      <div className="hidden overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm sm:block">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50">
