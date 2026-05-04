@@ -85,11 +85,35 @@ function ChangePasswordSection() {
       </Field>
       <div className="flex justify-end">
         <button type="submit" disabled={pending}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200">
+          className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 sm:w-auto sm:py-2">
           {pending ? m.submitting : m.submit}
         </button>
       </div>
     </form>
+  );
+}
+
+// ─── Avatar placeholder ───────────────────────────────────────────────────────
+
+function AvatarSection({ name }: { name: string }) {
+  const initials = name.trim()
+    ? name.trim().split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+    : "?";
+
+  return (
+    <div className="flex flex-col items-center gap-3 pb-4 sm:items-start">
+      <div className="flex h-24 w-24 items-center justify-center rounded-full bg-zinc-200 text-2xl font-bold text-zinc-600 ring-4 ring-zinc-100 dark:bg-zinc-600 dark:text-zinc-200 dark:ring-zinc-700">
+        {initials}
+      </div>
+      <button
+        type="button"
+        disabled
+        className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-400 dark:border-zinc-600 dark:text-zinc-500"
+        title="Photo upload coming soon"
+      >
+        Change Photo
+      </button>
+    </div>
   );
 }
 
@@ -102,8 +126,11 @@ export function PersonalInfoForm({ name, email }: { name: string; email: string 
 
   return (
     <div className="space-y-6">
+      {/* Avatar */}
+      <AvatarSection name={name} />
+
       {/* Name + Email */}
-      <form action={formAction} className="space-y-4">
+      <form id="personal-info-form" action={formAction} className="space-y-4">
         <Field label={p.nameLabel}>
           <input type="text" name="name" defaultValue={name}
             placeholder={p.namePlaceholder} required className={inputCls} />
@@ -121,14 +148,18 @@ export function PersonalInfoForm({ name, email }: { name: string; email: string 
           </p>
         )}
 
-        <div className="flex items-center justify-end gap-3">
-          {state && "success" in state && (
-            <span className="text-sm text-emerald-600 dark:text-emerald-400">{t.profile.saved}</span>
-          )}
-          <button type="submit" disabled={pending}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200">
-            {pending ? t.profile.saving : p.saveButton}
-          </button>
+        {/* Save bar — sticky on mobile */}
+        <div className="sticky bottom-0 -mx-6 -mb-6 mt-4 border-t border-zinc-100 bg-white/95 px-6 py-3 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/95 sm:static sm:mx-0 sm:mb-0 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none sm:dark:bg-transparent"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}>
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
+            {state && "success" in state && (
+              <span className="text-sm text-emerald-600 dark:text-emerald-400">{t.profile.saved}</span>
+            )}
+            <button type="submit" disabled={pending}
+              className="flex-1 rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 sm:flex-none sm:py-2">
+              {pending ? t.profile.saving : p.saveButton}
+            </button>
+          </div>
         </div>
       </form>
 

@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { createPortalSessionAction } from "./actions";
 import { useT } from "@/lib/i18n";
 
-export function ManageBillingButton() {
+export function ManageBillingButton({ fullWidthMobile }: { fullWidthMobile?: boolean }) {
   const t = useT();
   const [pending, startTransition] = useTransition();
 
@@ -12,7 +12,7 @@ export function ManageBillingButton() {
     <button
       onClick={() => startTransition(() => createPortalSessionAction())}
       disabled={pending}
-      className="flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+      className={`flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 sm:py-2.5 ${fullWidthMobile ? "w-full sm:w-auto" : ""}`}
     >
       {pending ? (
         <>

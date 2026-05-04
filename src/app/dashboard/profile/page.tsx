@@ -26,7 +26,7 @@ export default async function ProfilePage() {
 
       {/* ── Header ── */}
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
-        <div className="mx-auto flex max-w-3xl items-center gap-3 px-6 py-4">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-4 sm:px-6">
           <Link
             href="/dashboard"
             className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
@@ -42,43 +42,47 @@ export default async function ProfilePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-6 px-6 py-8">
+      <main className="mx-auto max-w-5xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
 
-        {/* ── Personal info ── */}
-        <section className="rounded-2xl bg-white p-6 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
-          <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            {t.profile.personalInfo.title}
-          </h2>
-          <PersonalInfoForm
-            name={user.name ?? ""}
-            email={user.email}
-          />
-        </section>
+        {/* ── Two-column layout: personal info + studio branding ── */}
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
 
-        {/* ── Studio branding ── */}
-        <section className="rounded-2xl bg-white p-6 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
-          <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-            {t.profile.studio.title}
-          </h2>
-          <StudioBrandingForm
-            profile={{
-              studioName:        sp?.studioName        ?? "",
-              tagline:           sp?.tagline           ?? null,
-              website:           sp?.website           ?? null,
-              phone:             sp?.phone             ?? null,
-              address:           sp?.address           ?? null,
-              brandColor:        sp?.brandColor        ?? null,
-              logoUrl,
-              watermarkEnabled:  sp?.watermarkEnabled  ?? true,
-              watermarkPosition: sp?.watermarkPosition ?? "BOTTOM_RIGHT",
-              watermarkOpacity:  sp?.watermarkOpacity  ?? 55,
-            }}
-          />
-        </section>
+          {/* Personal info */}
+          <section className="overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+            <h2 className="mb-6 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              {t.profile.personalInfo.title}
+            </h2>
+            <PersonalInfoForm
+              name={user.name ?? ""}
+              email={user.email}
+            />
+          </section>
 
-        {/* ── Watermark settings ── */}
-        <section className="rounded-2xl bg-white p-6 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
-          <h2 className="mb-6 text-sm font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+          {/* Studio branding */}
+          <section className="overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+            <h2 className="mb-6 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+              {t.profile.studio.title}
+            </h2>
+            <StudioBrandingForm
+              profile={{
+                studioName:        sp?.studioName        ?? "",
+                tagline:           sp?.tagline           ?? null,
+                website:           sp?.website           ?? null,
+                phone:             sp?.phone             ?? null,
+                address:           sp?.address           ?? null,
+                brandColor:        sp?.brandColor        ?? null,
+                logoUrl,
+                watermarkEnabled:  sp?.watermarkEnabled  ?? true,
+                watermarkPosition: sp?.watermarkPosition ?? "BOTTOM_RIGHT",
+                watermarkOpacity:  sp?.watermarkOpacity  ?? 55,
+              }}
+            />
+          </section>
+        </div>
+
+        {/* ── Watermark settings — full width ── */}
+        <section className="overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+          <h2 className="mb-6 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
             {t.profile.watermark.title}
           </h2>
           <WatermarkSettings
