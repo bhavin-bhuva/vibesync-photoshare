@@ -136,6 +136,13 @@ model Photo {
   status          PhotoStatus     @default(READY)
   width           Int?
   height          Int?
+  exifCameraMake  String?
+  exifCameraModel String?
+  exifFocalLength Float?
+  exifAperture    Float?
+  exifShutterSpeed String?
+  exifIso         Int?
+  exifShootDate   DateTime?
   createdAt       DateTime        @default(now())
   eventId         String
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -181,6 +188,7 @@ model SharedLink {
   photoSelections          PhotoSelection[]
   faceSearchEnabled        Boolean              @default(false)
   groupVisibilityOverrides Json?                // map of groupId → boolean; null means use PhotoGroup.isVisible
+  defaultGridDensity       String               @default("default")
 }
 
 model PhotoSelection {

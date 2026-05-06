@@ -190,7 +190,7 @@ export function MobileNav({ name, email }: { name: string | null; email: string 
       {/* ── Bottom tab bar ────────────────────────────────────────────────────── */}
       <nav
         aria-label="Main navigation"
-        className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 lg:hidden"
+        className="fixed bottom-0 left-0 right-0 z-50 flex border-t border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 lg:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {NAV_LINKS.map((link) => {

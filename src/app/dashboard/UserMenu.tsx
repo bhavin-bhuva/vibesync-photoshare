@@ -69,7 +69,7 @@ function ChangePasswordModal({ onClose }: { onClose: () => void }) {
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-60 overflow-y-auto" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative z-50 w-full max-w-sm rounded-2xl bg-white shadow-2xl dark:bg-zinc-800">

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "storage:sync": "tsx scripts/sync-storage.ts",
-    "links:migrate": "tsx scripts/migrate-shared-links.ts"
+    "links:migrate": "tsx scripts/migrate-shared-links.ts",
+    "exif:backfill": "tsx scripts/backfill-exif.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -30,6 +31,7 @@
     "archiver": "^7.0.1",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
+    "exif-reader": "^2.0.3",
     "next": "16.1.6",
     "next-auth": "^4.24.13",
     "pg": "^8.20.0",

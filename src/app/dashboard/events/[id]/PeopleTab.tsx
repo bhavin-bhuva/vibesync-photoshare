@@ -253,7 +253,7 @@ function ClusterCard({
 
       {/* Mobile action sheet */}
       {showActionSheet && createPortal(
-        <div className="fixed inset-0 z-50 sm:hidden" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-60 sm:hidden" role="dialog" aria-modal="true">
           <div className="fixed inset-0 bg-black/50" onClick={() => setShowActionSheet(false)} />
           <div
             className="fixed inset-x-0 bottom-0 animate-in slide-in-from-bottom rounded-t-2xl bg-white dark:bg-zinc-800"

@@ -54,27 +54,35 @@ export default async function SharePage({
   const { slug } = await params;
   const t = await getServerT();
 
-  const link = await db.sharedLink.findUnique({
-    where: { slug },
-    include: {
-      event: {
-        include: {
-          photos: { orderBy: { createdAt: "desc" } },
-          photoGroups: {
-            where: { photoCount: { gt: 0 } },
-            orderBy: { sortOrder: "asc" },
-            select: { id: true, name: true, color: true, photoCount: true, isVisible: true },
-          },
-          user: {
-            include: { subscription: true, studioProfile: true },
+  const [link, linkExtraRows] = await Promise.all([
+    db.sharedLink.findUnique({
+      where: { slug },
+      include: {
+        event: {
+          include: {
+            photos: { orderBy: { createdAt: "desc" } },
+            photoGroups: {
+              where: { photoCount: { gt: 0 } },
+              orderBy: { sortOrder: "asc" },
+              select: { id: true, name: true, color: true, photoCount: true, isVisible: true },
+            },
+            user: {
+              include: { subscription: true, studioProfile: true },
+            },
           },
         },
       },
-    },
-  });
+    }),
+    // Raw query for fields not yet in the generated Prisma model
+    db.$queryRaw<{ defaultGridDensity: string; faceSearchEnabled: boolean; groupVisibilityOverrides: unknown }[]>`
+      SELECT "defaultGridDensity", "faceSearchEnabled", "groupVisibilityOverrides"
+      FROM "SharedLink" WHERE slug = ${slug}
+    `,
+  ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const linkAny = link as any;
+  const linkExtra = linkExtraRows[0] ?? { defaultGridDensity: "default", faceSearchEnabled: false, groupVisibilityOverrides: null };
 
   if (!link) notFound();
 
@@ -142,7 +150,7 @@ export default async function SharePage({
   const { event } = link;
 
   // Resolve effective group visibility: per-link overrides take precedence over PhotoGroup.isVisible
-  const groupOverrides = (linkAny?.groupVisibilityOverrides ?? null) as Record<string, boolean> | null;
+  const groupOverrides = (linkExtra.groupVisibilityOverrides ?? null) as Record<string, boolean> | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const visibleGroups = ((event as any).photoGroups as Array<{ id: string; name: string; color: string | null; photoCount: number; isVisible: boolean }>)
     .filter((g) => {
@@ -158,7 +166,7 @@ export default async function SharePage({
   //   1. The shared link has faceSearchEnabled = true
   //   2. The event has faceIndexingEnabled = true
   //   3. At least one FaceCluster exists (i.e. indexing has completed)
-  const linkFaceSearchEnabled: boolean = linkAny?.faceSearchEnabled ?? false;
+  const linkFaceSearchEnabled: boolean = linkExtra.faceSearchEnabled ?? false;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const eventFaceIndexingEnabled: boolean = (event as any).faceIndexingEnabled ?? false;
   let faceSearchEnabled = false;
@@ -173,8 +181,25 @@ export default async function SharePage({
         id: photo.id,
         filename: photo.filename,
         size: photo.size,
+        createdAt: photo.createdAt,
+        width: photo.width ?? null,
+        height: photo.height ?? null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         groupId: (photo as any).groupId ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifCameraMake:   (photo as any).exifCameraMake   ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifCameraModel:  (photo as any).exifCameraModel  ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifFocalLength:  (photo as any).exifFocalLength  ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifAperture:     (photo as any).exifAperture     ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifShutterSpeed: (photo as any).exifShutterSpeed ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifIso:          (photo as any).exifIso          ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifShootDate:    (photo as any).exifShootDate    ?? null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         thumbnailUrl: (photo as any).thumbS3Key
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -287,6 +312,7 @@ export default async function SharePage({
           groups={visibleGroups}
           eventName={event.name}
           brandColor={brandColor}
+          serverDefaultDensity={(linkExtra.defaultGridDensity ?? "default") as string}
         />
       </main>
 

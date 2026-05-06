@@ -251,7 +251,7 @@ export function SelectionCard({ selection, eventId }: Props) {
       {/* Lightbox */}
       {currentPhoto && lightboxIndex !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/90"
           onClick={() => setLightboxIndex(null)}
           onKeyDown={(e) => {
             if (e.key === "Escape") setLightboxIndex(null);

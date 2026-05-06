@@ -137,7 +137,7 @@ export default async function EventPage({
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
 
       {/* ── Top bar ── */}
-      <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90">
+      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90">
 
         {/* ── Desktop header (sm+) ── */}
         <div className="mx-auto hidden max-w-6xl px-6 py-4 sm:block">

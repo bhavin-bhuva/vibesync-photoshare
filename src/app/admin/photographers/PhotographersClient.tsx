@@ -96,12 +96,12 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
   }, [onClose]);
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
           <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
-          <button onClick={onClose} className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600">
+          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600">
             <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
           </button>
         </div>
@@ -241,7 +241,7 @@ function SuspendModal({ userId, userName, onClose, onDone }: {
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Policy violation, spam, etc."
-          className="mt-1.5 block w-full resize-none rounded-lg border border-zinc-300 px-3 py-2 text-sm placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500"
+          className="mt-1.5 block w-full resize-none rounded-lg border border-zinc-300 px-3 py-2 text-base placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:text-sm"
         />
       </div>
       <ModalActions
@@ -327,7 +327,7 @@ function DeleteModal({ userId, userName, onClose, onDone }: {
           onChange={(e) => setConfirm(e.target.value)}
           placeholder="DELETE"
           autoComplete="off"
-          className="mt-1.5 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono placeholder-zinc-300 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+          className="mt-1.5 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-base font-mono placeholder-zinc-300 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500 sm:text-sm"
         />
       </div>
       <ModalActions
@@ -535,7 +535,7 @@ export function PhotographersClient({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Search by name or email…"
-            className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
           />
         </div>
 
@@ -543,7 +543,7 @@ export function PhotographersClient({
         <select
           value={planFilter}
           onChange={(e) => updateParams({ plan: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
         >
           <option value="">All plans</option>
           <option value="FREE">Free</option>
@@ -555,7 +555,7 @@ export function PhotographersClient({
         <select
           value={statusFilter}
           onChange={(e) => updateParams({ status: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
         >
           <option value="">All statuses</option>
           <option value="active">Active</option>
@@ -568,14 +568,14 @@ export function PhotographersClient({
             type="date"
             value={dateFrom}
             onChange={(e) => updateParams({ from: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
           />
           <span className="text-xs text-zinc-400">to</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => updateParams({ to: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
           />
         </div>
 

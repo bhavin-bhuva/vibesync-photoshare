@@ -19,7 +19,7 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   }, [onDone]);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl bg-zinc-900 px-5 py-3.5 text-sm font-medium text-white shadow-lg animate-in fade-in slide-in-from-bottom-4 dark:bg-zinc-50 dark:text-zinc-900">
+    <div className="fixed bottom-6 right-6 z-80 flex items-center gap-3 rounded-xl bg-zinc-900 px-5 py-3.5 text-sm font-medium text-white shadow-lg animate-in fade-in slide-in-from-bottom-4 dark:bg-zinc-50 dark:text-zinc-900">
       <svg className="h-4 w-4 shrink-0 text-emerald-400 dark:text-emerald-600" viewBox="0 0 20 20" fill="currentColor">
         <path fillRule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm3.857-9.809a.75.75 0 0 0-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 1 0-1.06 1.061l2.5 2.5a.75.75 0 0 0 1.137-.089l4-5.5Z" clipRule="evenodd" />
       </svg>
@@ -176,7 +176,7 @@ export function CreateEventModal({
 
 function UpgradePrompt({ t, onClose }: { t: ReturnType<typeof useT>; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-40 overflow-y-auto" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-60 overflow-y-auto" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative z-50 w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl dark:bg-zinc-800">
@@ -228,7 +228,7 @@ function EventModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-40"
+      className="fixed inset-0 z-60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -237,7 +237,7 @@ function EventModal({
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Mobile: bottom sheet | Desktop: centered */}
-      <div className="fixed inset-x-0 bottom-0 z-50 animate-in slide-in-from-bottom sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
+      <div className="fixed inset-x-0 bottom-0 z-60 animate-in slide-in-from-bottom sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
         <div className="relative w-full rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-800 sm:max-w-md sm:rounded-2xl">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-700 sm:px-6">

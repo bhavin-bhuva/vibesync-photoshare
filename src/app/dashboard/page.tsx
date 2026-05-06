@@ -117,7 +117,7 @@ export default async function DashboardPage({
       {error === "access_denied" && <AccessDeniedToast />}
 
       {/* ── Header (desktop only — mobile uses MobileNav in layout) ── */}
-      <header className="sticky top-0 z-10 hidden border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90 lg:block">
+      <header className="sticky top-0 z-40 hidden border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90 lg:block">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <span className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             {t.app.name}

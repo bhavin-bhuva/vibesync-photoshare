@@ -82,7 +82,7 @@ export default async function SelectionsPage({
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       {/* Top bar */}
-      <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90">
+      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90">
         <div className="mx-auto max-w-4xl px-4 py-4 sm:px-6">
 
           {/* Back + title row */}

@@ -8,6 +8,7 @@ import { deleteS3Object, deleteS3Objects } from "@/lib/s3";
 import { checkStorageLimit } from "@/lib/storage";
 import { getCloudfrontPreviewUrl, getCloudfrontSignedUrl } from "@/lib/cloudfront";
 import { createThumbnail } from "@/lib/thumbnail";
+import { parseExifBuffer } from "@/lib/exif";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
 import {
@@ -60,8 +61,17 @@ export async function savePhotoRecord(
   // Generate thumbnail before the DB write so we can store the key atomically.
   // Best-effort: a failure here doesn't block the photo from being saved.
   let thumbS3Key: string | null = null;
+  let width: number | null = null;
+  let height: number | null = null;
+  let exifFields: ReturnType<typeof parseExifBuffer> = null;
   try {
-    thumbS3Key = await createThumbnail(s3Key);
+    const result = await createThumbnail(s3Key);
+    thumbS3Key = result.thumbKey;
+    width = result.width;
+    height = result.height;
+    if (result.exifBuffer) {
+      exifFields = parseExifBuffer(result.exifBuffer);
+    }
   } catch (err) {
     console.error("[savePhotoRecord] Thumbnail generation failed:", (err as Error).message);
   }
@@ -69,7 +79,17 @@ export async function savePhotoRecord(
   await db.$transaction([
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (db.photo.create as any)({
-      data: { eventId, s3Key, thumbS3Key, filename, size },
+      data: {
+        eventId, s3Key, thumbS3Key, filename, size,
+        width, height,
+        exifCameraMake:   exifFields?.exifCameraMake   ?? null,
+        exifCameraModel:  exifFields?.exifCameraModel  ?? null,
+        exifFocalLength:  exifFields?.exifFocalLength  ?? null,
+        exifAperture:     exifFields?.exifAperture     ?? null,
+        exifShutterSpeed: exifFields?.exifShutterSpeed ?? null,
+        exifIso:          exifFields?.exifIso          ?? null,
+        exifShootDate:    exifFields?.exifShootDate    ?? null,
+      },
     }),
     db.user.update({
       where: { id: session.user.id },
@@ -194,7 +214,8 @@ export async function createSharedLinkAction(
   credential: string | null,
   expiresAt: string | null,
   faceSearchEnabled = false,
-  groupVisibilityOverrides: Record<string, boolean> | null = null
+  groupVisibilityOverrides: Record<string, boolean> | null = null,
+  defaultGridDensity = "default"
 ): Promise<{ slug?: string; error?: string }> {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Unauthorized." };
@@ -222,6 +243,7 @@ export async function createSharedLinkAction(
     eventId,
     expiresAt: expiresAt ? new Date(expiresAt) : null,
     faceSearchEnabled,
+    defaultGridDensity,
     ...(groupVisibilityOverrides && Object.keys(groupVisibilityOverrides).length > 0
       ? { groupVisibilityOverrides }
       : {}),

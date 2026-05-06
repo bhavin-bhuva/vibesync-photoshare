@@ -25,7 +25,7 @@ export function AdminShell({
 
       {/* Mobile drawer */}
       {navOpen && (
-        <div className="fixed inset-0 z-[60] sm:hidden">
+        <div className="fixed inset-0 z-50 sm:hidden">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setNavOpen(false)}

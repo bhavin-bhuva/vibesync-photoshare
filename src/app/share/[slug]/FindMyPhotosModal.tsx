@@ -152,7 +152,7 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
   }
 
   const modal = (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center sm:p-4">
+    <div className="fixed inset-0 z-60 flex flex-col justify-end sm:items-center sm:justify-center sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"

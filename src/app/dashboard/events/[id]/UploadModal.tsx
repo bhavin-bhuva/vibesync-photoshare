@@ -275,7 +275,7 @@ function CreateGroupModal({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[60]" onClick={onCancel}>
+    <div className="fixed inset-0 z-60" onClick={onCancel}>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" />
       <div className="fixed inset-x-0 bottom-0 z-10 animate-in slide-in-from-bottom sm:flex sm:inset-0 sm:items-center sm:justify-center sm:p-4">
       <div
@@ -683,7 +683,7 @@ export function UploadModal({
       {/* Modal — portalled to escape the header's backdrop-blur stacking context */}
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-40">
+          <div className="fixed inset-0 z-60">
             {/* Backdrop */}
             <div
               className="fixed inset-0 bg-black/50 backdrop-blur-sm"
@@ -691,7 +691,7 @@ export function UploadModal({
             />
 
             {/* Mobile: bottom sheet | Desktop: centered */}
-            <div className="fixed inset-x-0 bottom-0 z-50 flex flex-col animate-in slide-in-from-bottom sm:inset-0 sm:flex-none sm:items-center sm:justify-center sm:p-4">
+            <div className="fixed inset-x-0 bottom-0 z-60 flex flex-col animate-in slide-in-from-bottom sm:inset-0 sm:flex-none sm:items-center sm:justify-center sm:p-4">
               {/* Card */}
               <div
                 className="relative flex w-full flex-col rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-800 sm:max-w-lg sm:rounded-2xl"

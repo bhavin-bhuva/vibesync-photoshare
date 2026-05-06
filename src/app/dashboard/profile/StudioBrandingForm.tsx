@@ -13,7 +13,7 @@ type WatermarkPosition = "BOTTOM_RIGHT" | "BOTTOM_LEFT" | "BOTTOM_CENTER";
 // ─── Shared input class ───────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:placeholder-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-600";
+  "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-base text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 sm:text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:placeholder-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-600";
 
 function Field({
   label,
@@ -96,7 +96,7 @@ function BrandColorPicker({ color, onChange }: { color: string; onChange: (c: st
             if (/^#[0-9a-fA-F]{6}$/.test(v)) onChange(v);
           }}
           placeholder="#18181b"
-          className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 font-mono text-sm text-zinc-700 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
+          className="flex-1 rounded-lg border border-zinc-200 bg-white px-3 py-2.5 font-mono text-base text-zinc-700 sm:text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-300"
         />
       </div>
     </Field>

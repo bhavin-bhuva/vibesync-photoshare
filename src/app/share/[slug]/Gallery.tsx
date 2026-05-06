@@ -1,10 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { GridDensityControl, type GridDensity, useGridDensity } from "@/components/GridDensityControl";
 import { createPortal } from "react-dom";
 import { useT } from "@/lib/i18n";
 import { submitPhotoSelectionAction } from "./actions";
 import { FindMyPhotosModal } from "./FindMyPhotosModal";
+import { useInfoPanelState } from "@/hooks/useInfoPanelState";
+import { LightboxInfoPanel } from "@/components/LightboxInfoPanel";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -12,7 +15,17 @@ export interface GalleryPhoto {
   id: string;
   filename: string;
   size: number;
+  createdAt: Date;
   groupId: string | null;
+  width?: number | null;
+  height?: number | null;
+  exifCameraMake?: string | null;
+  exifCameraModel?: string | null;
+  exifFocalLength?: number | null;
+  exifAperture?: number | null;
+  exifShutterSpeed?: string | null;
+  exifIso?: number | null;
+  exifShootDate?: Date | null;
   thumbnailUrl: string | null; // grid cards — resized preview (~800 px)
   signedUrl: string | null;    // lightbox — large preview (~1920 px), not original
 }
@@ -34,6 +47,10 @@ function formatBytes(bytes: number) {
   return `${(bytes / 1024 ** 3).toFixed(2)} GB`;
 }
 
+function formatShortDate(date: Date | string): string {
+  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
 const GRADIENTS = [
   "from-rose-300 to-orange-200",
   "from-sky-300 to-blue-200",
@@ -44,10 +61,7 @@ const GRADIENTS = [
   "from-indigo-300 to-blue-200",
   "from-cyan-300 to-sky-200",
 ];
-const HEIGHTS = [180, 240, 200, 260, 160, 220, 290, 195, 250, 175, 235, 215];
-
 function cardGradient(id: string) { return GRADIENTS[id.charCodeAt(0) % GRADIENTS.length]; }
-function cardHeight(id: string)   { return HEIGHTS[id.charCodeAt(id.length - 1) % HEIGHTS.length]; }
 
 function selectionKey(slug: string)  { return `selection-${slug}`; }
 function submittedKey(slug: string)  { return `submitted-${slug}`; }
@@ -135,6 +149,14 @@ function XIcon() {
   );
 }
 
+function InfoIcon() {
+  return (
+    <svg className="h-[18px] w-[18px]" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 // ─── Download helper ──────────────────────────────────────────────────────────
 
 async function triggerDownload(slug: string, photoId: string, filename: string) {
@@ -163,11 +185,15 @@ function GroupFilterBar({
   activeGroupId,
   totalCount,
   onSelect,
+  density,
+  onDensityChange,
 }: {
   groups: GalleryGroup[];
   activeGroupId: string | null;
   totalCount: number;
   onSelect: (groupId: string | null) => void;
+  density: GridDensity;
+  onDensityChange: (d: GridDensity) => void;
 }) {
   const displayCount = activeGroupId
     ? (groups.find((g) => g.id === activeGroupId)?.photoCount ?? 0)
@@ -175,9 +201,11 @@ function GroupFilterBar({
 
   return (
     <div className="mb-6">
+      {/* Pills + density control row */}
+      <div className="flex items-center gap-2">
       {/* Scrollable pill row — hide scrollbar on all browsers */}
       <div
-        className="flex gap-2 overflow-x-auto pb-1"
+        className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
       >
         {/* All Photos */}
@@ -212,7 +240,17 @@ function GroupFilterBar({
             </button>
           );
         })}
-      </div>
+      </div>{/* end scrollable pills */}
+
+        {/* Density control — fixed right */}
+        <div className="shrink-0 pb-1">
+          <GridDensityControl
+            value={density}
+            onChange={onDensityChange}
+            hideMobile={["comfortable"]}
+          />
+        </div>
+      </div>{/* end pills + density row */}
 
       {/* Photo count */}
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
@@ -225,13 +263,15 @@ function GroupFilterBar({
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
 
 function Lightbox({
-  photos, index, slug, onClose, onGo,
+  photos, index, slug, onClose, onGo, brandColor, group,
 }: {
   photos: GalleryPhoto[];
   index: number;
   slug: string;
   onClose: () => void;
   onGo: (i: number) => void;
+  brandColor?: string | null;
+  group?: { name: string; color?: string | null } | null;
 }) {
   const t = useT();
   const photo = photos[index];
@@ -239,7 +279,7 @@ function Lightbox({
   const hasNext = index < photos.length - 1;
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
-  const [showInfo, setShowInfo] = useState(false);
+  const [showInfo, toggleInfo] = useInfoPanelState();
   const [swipeOffset, setSwipeOffset] = useState({ x: 0, y: 0 });
   const swipeStart = useRef({ x: 0, y: 0 });
   const swipeActive = useRef(false);
@@ -250,8 +290,8 @@ function Lightbox({
     return () => { document.body.style.overflow = prev; };
   }, []);
 
-  const prev = useCallback(() => { if (hasPrev) { setDownloadError(""); setShowInfo(false); onGo(index - 1); } }, [hasPrev, index, onGo]);
-  const next = useCallback(() => { if (hasNext) { setDownloadError(""); setShowInfo(false); onGo(index + 1); } }, [hasNext, index, onGo]);
+  const prev = useCallback(() => { if (hasPrev) { setDownloadError(""); onGo(index - 1); } }, [hasPrev, index, onGo]);
+  const next = useCallback(() => { if (hasNext) { setDownloadError(""); onGo(index + 1); } }, [hasNext, index, onGo]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -302,33 +342,48 @@ function Lightbox({
     setSwipeOffset({ x: 0, y: 0 });
     const absDx = Math.abs(dx);
     const absDy = Math.abs(dy);
-    if (absDx < 10 && absDy < 10) { setShowInfo((v) => !v); return; }
+    if (absDx < 10 && absDy < 10) return;
     if (absDx > 50 && absDx > absDy) { if (dx < 0) next(); else prev(); return; }
     if (dy > 80 && absDy > absDx) onClose();
   }
 
+  const infoBtnStyle = showInfo
+    ? (brandColor ? { backgroundColor: brandColor } : { backgroundColor: "rgba(255,255,255,0.15)" })
+    : undefined;
+  const infoBtnCls = `flex h-9 w-9 items-center justify-center rounded-lg transition-colors duration-150 ${
+    showInfo ? "text-white" : "text-white/50 hover:bg-white/10 hover:text-white"
+  }`;
+
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex flex-col bg-black">
+    <div className="fixed inset-0 z-70 flex flex-col bg-black">
 
       {/* ── Mobile top bar ── */}
       <div
         className="flex shrink-0 items-center sm:hidden"
         style={{ height: "calc(56px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
       >
-        <div className="flex w-full items-center px-4">
-          <button onClick={onClose} aria-label={t.lightbox.closeAriaLabel} className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/10">
-            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 10H5M9 5l-5 5 5 5" />
-            </svg>
+        <div className="flex w-full items-center px-3">
+          <button onClick={onClose} aria-label={t.lightbox.closeAriaLabel} className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10">
+            <XIcon />
           </button>
           <span className="flex-1 text-center text-sm tabular-nums text-white/70">
             {t.lightbox.counter(index + 1, photos.length)}
           </span>
           <button
+            onClick={toggleInfo}
+            title={showInfo ? "Hide details" : "Show details"}
+            aria-label={showInfo ? "Hide details" : "Show details"}
+            aria-pressed={showInfo}
+            style={infoBtnStyle}
+            className={infoBtnCls}
+          >
+            <InfoIcon />
+          </button>
+          <button
             onClick={() => handleDownload()}
             disabled={downloading}
             aria-label={t.common.download}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-white/80 hover:bg-white/10 disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10 disabled:opacity-50"
           >
             {downloading ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : <DownloadIcon className="h-4 w-4" />}
           </button>
@@ -337,90 +392,226 @@ function Lightbox({
 
       {/* ── Desktop top bar ── */}
       <div className="hidden shrink-0 items-center justify-between px-4 py-3 sm:flex">
-        <span className="min-w-[3rem] text-sm tabular-nums text-white/50">
-          {t.lightbox.counter(index + 1, photos.length)}
-        </span>
-        <p className="mx-4 max-w-xs truncate text-center text-sm font-medium text-white/80">{photo.filename}</p>
-        <button onClick={onClose} aria-label={t.lightbox.closeAriaLabel} className="rounded-lg p-1.5 text-white/60 transition-colors hover:bg-white/10 hover:text-white">
-          <XIcon />
-        </button>
+        <div className="flex min-w-0 flex-1 items-center gap-2 text-sm">
+          <span className="shrink-0 tabular-nums text-white/50">
+            {t.lightbox.counter(index + 1, photos.length)}
+          </span>
+          {group && (
+            <>
+              <span className="select-none text-white/30" aria-hidden="true">·</span>
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: group.color ?? "#6366f1" }}
+                />
+                <span className="truncate text-white/70">{group.name}</span>
+              </span>
+            </>
+          )}
+          <span className="select-none text-white/30" aria-hidden="true">·</span>
+          <span className="shrink-0 text-white/50">
+            {formatShortDate(photo.exifShootDate ?? photo.createdAt)}
+          </span>
+        </div>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <button
+            onClick={toggleInfo}
+            title={showInfo ? "Hide details" : "Show details"}
+            aria-label={showInfo ? "Hide details" : "Show details"}
+            aria-pressed={showInfo}
+            style={infoBtnStyle}
+            className={infoBtnCls}
+          >
+            <InfoIcon />
+          </button>
+          <button
+            onClick={() => handleDownload()}
+            disabled={downloading}
+            aria-label={t.common.download}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
+          >
+            {downloading ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : <DownloadIcon className="h-4 w-4" />}
+          </button>
+          <button onClick={onClose} aria-label={t.lightbox.closeAriaLabel} className="flex h-9 w-9 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white">
+            <XIcon />
+          </button>
+        </div>
       </div>
 
-      {/* ── Image area ── */}
-      <div
-        className="relative flex min-h-0 flex-1 items-center justify-center sm:px-16 sm:py-2"
-        onPointerDown={handleSwipeStart}
-        onPointerMove={handleSwipeMove}
-        onPointerUp={handleSwipeEnd}
-        onPointerCancel={() => { swipeActive.current = false; setSwipeOffset({ x: 0, y: 0 }); }}
-      >
-        <button onClick={prev} disabled={!hasPrev} aria-label={t.lightbox.prevAriaLabel} className="absolute left-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
-          <ChevronLeftIcon />
-        </button>
+      {/* ── Main content area ── */}
+      <div className="flex min-h-0 flex-1 flex-col sm:flex-row">
 
-        {photo.signedUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={photo.id}
-            src={photo.signedUrl}
-            alt={photo.filename}
-            className="max-h-full max-w-full object-contain sm:max-h-[calc(100vh-10rem)] sm:rounded-lg sm:shadow-2xl"
-            draggable={false}
+        {/* Image + swipe area */}
+        <div
+          className="relative flex min-h-0 flex-1 items-center justify-center sm:px-16 sm:py-2"
+          onPointerDown={handleSwipeStart}
+          onPointerMove={handleSwipeMove}
+          onPointerUp={handleSwipeEnd}
+          onPointerCancel={() => { swipeActive.current = false; setSwipeOffset({ x: 0, y: 0 }); }}
+        >
+          <button onClick={prev} disabled={!hasPrev} aria-label={t.lightbox.prevAriaLabel} className="absolute left-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
+            <ChevronLeftIcon />
+          </button>
+
+          {photo.signedUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={photo.id}
+              src={photo.signedUrl}
+              alt={photo.filename}
+              className="max-h-full max-w-full object-contain sm:max-h-[calc(100vh-10rem)] sm:rounded-lg sm:shadow-2xl"
+              draggable={false}
+              style={{
+                transform: `translate(${swipeOffset.x}px, ${swipeOffset.y}px)`,
+                touchAction: "pinch-zoom",
+                userSelect: "none",
+              }}
+            />
+          ) : (
+            <div className={`flex h-64 w-96 max-w-full items-center justify-center rounded-lg bg-gradient-to-br ${cardGradient(photo.id)}`}>
+              <svg className="h-16 w-16 text-white/30" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
+                <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
+              </svg>
+            </div>
+          )}
+
+          <button onClick={next} disabled={!hasNext} aria-label={t.lightbox.nextAriaLabel} className="absolute right-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
+            <ChevronRightIcon />
+          </button>
+        </div>
+
+        {/* Mobile info panel — slides up from bottom */}
+        <div
+          className="shrink-0 overflow-hidden sm:hidden"
+          style={{
+            height: showInfo ? "40vh" : 0,
+            transition: "height 200ms ease-out",
+          }}
+        >
+          <div
+            className="overflow-y-auto"
             style={{
-              transform: `translate(${swipeOffset.x}px, ${swipeOffset.y}px)`,
-              touchAction: "pinch-zoom",
-              userSelect: "none",
+              height: "40vh",
+              transform: showInfo ? "translateY(0)" : "translateY(100%)",
+              transition: "transform 200ms ease-out",
             }}
-          />
-        ) : (
-          <div className={`flex h-64 w-96 max-w-full items-center justify-center rounded-lg bg-gradient-to-br ${cardGradient(photo.id)}`}>
-            <svg className="h-16 w-16 text-white/30" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
-              <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
-            </svg>
+          >
+            <LightboxInfoPanel
+              filename={photo.filename}
+              size={photo.size}
+              createdAt={photo.createdAt}
+              width={photo.width}
+              height={photo.height}
+              group={group}
+              exifData={{
+                cameraMake: photo.exifCameraMake,
+                cameraModel: photo.exifCameraModel,
+                focalLength: photo.exifFocalLength,
+                aperture: photo.exifAperture,
+                shutterSpeed: photo.exifShutterSpeed,
+                iso: photo.exifIso,
+              }}
+              onDownload={() => handleDownload()}
+              downloading={downloading}
+            />
           </div>
-        )}
+        </div>
 
-        <button onClick={next} disabled={!hasNext} aria-label={t.lightbox.nextAriaLabel} className="absolute right-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
-          <ChevronRightIcon />
-        </button>
+        {/* Desktop info panel — slides in from right */}
+        <div
+          className="hidden shrink-0 overflow-hidden border-l border-white/10 sm:block"
+          style={{
+            width: showInfo ? 260 : 0,
+            transition: "width 200ms ease-out",
+          }}
+        >
+          <div
+            className="h-full overflow-y-auto"
+            style={{
+              width: 260,
+              minWidth: 260,
+              transform: showInfo ? "translateX(0)" : "translateX(260px)",
+              transition: "transform 200ms ease-out",
+            }}
+          >
+            <LightboxInfoPanel
+              filename={photo.filename}
+              size={photo.size}
+              createdAt={photo.createdAt}
+              width={photo.width}
+              height={photo.height}
+              group={group}
+              exifData={{
+                cameraMake: photo.exifCameraMake,
+                cameraModel: photo.exifCameraModel,
+                focalLength: photo.exifFocalLength,
+                aperture: photo.exifAperture,
+                shutterSpeed: photo.exifShutterSpeed,
+                iso: photo.exifIso,
+              }}
+              onDownload={() => handleDownload()}
+              downloading={downloading}
+            />
+          </div>
+        </div>
+
       </div>
 
       {/* ── Desktop footer ── */}
-      <div className="hidden shrink-0 items-center justify-between px-6 py-3 sm:flex">
-        <span className="text-xs text-white/40">{formatBytes(photo.size)}</span>
-        <div className="flex flex-col items-end gap-1">
-          <button onClick={handleDownload} disabled={downloading} className="flex items-center gap-2 rounded-lg bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:opacity-60">
-            {downloading ? <SpinnerIcon /> : <DownloadIcon />}
-            {downloading ? t.common.downloadPreparing : t.common.download}
-          </button>
-          {downloadError && <p className="text-xs text-red-400">{downloadError}</p>}
-        </div>
+      <div className="hidden shrink-0 items-center gap-3 px-6 py-3 sm:flex">
+        {!showInfo && <span className="text-xs text-white/40">{formatBytes(photo.size)}</span>}
+        {downloadError && <p className="text-xs text-red-400">{downloadError}</p>}
       </div>
       <p className="hidden shrink-0 pb-3 text-center text-[11px] text-white/20 sm:block">{t.lightbox.hint}</p>
 
-      {/* ── Mobile info panel — tap image to toggle ── */}
-      <div className={`shrink-0 overflow-hidden transition-all duration-300 sm:hidden ${showInfo ? "max-h-24" : "max-h-0"}`}>
-        <div className="bg-black/75 px-5 py-3 backdrop-blur-md">
-          <p className="text-sm font-medium text-white">{photo.filename}</p>
-          <p className="mt-0.5 text-xs text-white/60">{formatBytes(photo.size)}</p>
-        </div>
-      </div>
-
-      {/* ── Mobile download button ── */}
-      <div className="shrink-0 sm:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-        <button
-          onClick={() => handleDownload()}
-          disabled={downloading}
-          className="flex h-12 w-full items-center justify-center gap-2 bg-white/10 text-sm font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20 disabled:opacity-60"
-        >
-          {downloading ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : <DownloadIcon className="h-4 w-4" />}
-          {downloading ? t.common.downloadPreparing : "Download Photo"}
-        </button>
-        {downloadError && <p className="bg-black/75 pb-2 text-center text-xs text-red-400">{downloadError}</p>}
-      </div>
+      {/* ── Mobile download error ── */}
+      {downloadError && (
+        <p className="shrink-0 bg-red-900/90 px-4 py-2 text-center text-xs text-red-200 sm:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+          {downloadError}
+        </p>
+      )}
     </div>,
     document.body
+  );
+}
+
+// ─── Grid density classes ─────────────────────────────────────────────────────
+
+const GRID_CLASSES: Record<GridDensity, string> = {
+  comfortable: "grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2",
+  default:     "grid gap-1 grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-[14px]",
+  compact:     "grid gap-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
+  dense:       "grid gap-px grid-cols-3 sm:grid-cols-4 lg:grid-cols-6",
+};
+
+// ─── Group dot ────────────────────────────────────────────────────────────────
+
+function GroupDot({ color, name }: { color: string; name: string }) {
+  return (
+    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
+    <div className="group/dot absolute bottom-2 left-2 z-10" role="tooltip" aria-label={name}>
+      <div
+        className="h-2 w-2 rounded-full shadow ring-1 ring-black/20"
+        style={{ backgroundColor: color }}
+      />
+      {/* CSS tooltip — desktop only, no tooltip on mobile */}
+      <div className="pointer-events-none absolute bottom-full left-0 mb-1 hidden whitespace-nowrap rounded-lg bg-zinc-900/90 px-2 py-1 text-xs text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover/dot:opacity-100 dark:bg-zinc-700/90 sm:block">
+        {name}
+      </div>
+    </div>
+  );
+}
+
+// ─── New badge ────────────────────────────────────────────────────────────────
+
+function NewBadge({ createdAt }: { createdAt: Date }) {
+  const isNew = Date.now() - new Date(createdAt).getTime() < 24 * 60 * 60 * 1000;
+  if (!isNew) return null;
+  return (
+    <div className="absolute right-1.5 top-1.5 z-10 rounded-full bg-green-500 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white">
+      New
+    </div>
   );
 }
 
@@ -428,12 +619,15 @@ function Lightbox({
 
 function PhotoCard({
   photo, slug, selectMode, isSelected, hasNote, onToggle, onOpen, onOpenNote,
+  groupColor, groupName,
 }: {
   photo: GalleryPhoto;
   slug: string;
   selectMode: boolean;
   isSelected: boolean;
   hasNote: boolean;
+  groupColor: string | null;
+  groupName: string | null;
   onToggle: () => void;
   onOpen: () => void;
   onOpenNote: () => void;
@@ -441,7 +635,6 @@ function PhotoCard({
   const t = useT();
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
-  const h = cardHeight(photo.id);
   const gradient = cardGradient(photo.id);
 
   async function handleDownload(e: React.MouseEvent) {
@@ -465,7 +658,7 @@ function PhotoCard({
 
   return (
     <div
-      className={`group overflow-hidden rounded-xl bg-white ring-2 transition-shadow dark:bg-zinc-800 ${
+      className={`group overflow-hidden rounded-[4px] bg-zinc-100 ring-2 transition-shadow dark:bg-zinc-800 ${
         isSelected
           ? "ring-blue-500 shadow-lg shadow-blue-500/20"
           : "ring-zinc-200 hover:shadow-lg dark:ring-zinc-700 dark:hover:shadow-zinc-900/50"
@@ -474,10 +667,9 @@ function PhotoCard({
       <div
         role="button"
         tabIndex={0}
-        className={`relative block w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 ${
+        className={`relative block aspect-square w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 ${
           selectMode ? "cursor-pointer" : "cursor-zoom-in"
         }`}
-        style={{ height: h }}
         onClick={handleClick}
         onKeyDown={handleKey}
         aria-label={
@@ -506,7 +698,7 @@ function PhotoCard({
           </div>
         )}
 
-        {/* Select mode: checkbox overlay — always visible on mobile when selected */}
+        {/* Select mode: checkbox overlay */}
         {selectMode && (
           <div className={`absolute inset-0 transition-colors duration-150 ${isSelected ? "bg-blue-500/10" : "bg-transparent group-hover:bg-black/10"}`}>
             <div
@@ -529,6 +721,14 @@ function PhotoCard({
           </div>
         )}
 
+        {/* Group color dot */}
+        {groupColor && groupName && (
+          <GroupDot color={groupColor} name={groupName} />
+        )}
+
+        {/* New badge */}
+        <NewBadge createdAt={photo.createdAt} />
+
         {/* View mode: hover download overlay */}
         {!selectMode && (
           <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/50 via-transparent to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -543,13 +743,13 @@ function PhotoCard({
             </button>
           </div>
         )}
-      </div>
 
-      {/* Metadata */}
-      <div className="px-3 py-2.5">
-        <p className="truncate text-xs font-medium text-zinc-700 dark:text-zinc-300">{photo.filename}</p>
-        <span className="text-xs text-zinc-400">{formatBytes(photo.size)}</span>
-        {downloadError && <p className="mt-1 text-xs text-red-500">{downloadError}</p>}
+        {/* Download error overlay */}
+        {downloadError && (
+          <div className="absolute inset-x-0 bottom-0 z-20 bg-red-600/90 px-2 py-1 text-center text-[10px] text-white">
+            {downloadError}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -562,6 +762,7 @@ export function Gallery({
   groups = [],
   eventName = "",
   brandColor = null,
+  serverDefaultDensity = "default",
 }: {
   photos: GalleryPhoto[];
   slug: string;
@@ -571,6 +772,7 @@ export function Gallery({
   groups?: GalleryGroup[];
   eventName?: string;
   brandColor?: string | null;
+  serverDefaultDensity?: string;
 }) {
   const t = useT();
   const [mode, setMode] = useState<GalleryMode>("view");
@@ -584,6 +786,13 @@ export function Gallery({
   const [matchedPhotoIds, setMatchedPhotoIds] = useState<string[] | null>(null);
   // Group filter
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const groupMap = useMemo(() => new Map(groups.map((g) => [g.id, g])), [groups]);
+
+  // Grid density — localStorage per gallery, falls back to photographer's server default
+  const [density, setDensity] = useGridDensity(
+    `grid-density-gallery-${slug}`,
+    (serverDefaultDensity as GridDensity) ?? "default"
+  );
 
   // Per-photo notes
   const [photoNotes, setPhotoNotes] = useState<Map<string, string>>(new Map());
@@ -794,13 +1003,17 @@ export function Gallery({
           activeGroupId={activeGroupId}
           totalCount={photos.length}
           onSelect={handleGroupSelect}
+          density={density}
+          onDensityChange={setDensity}
         />
       )}
 
       {/* ── Mode toggle + Download buttons bar ── */}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        {/* Left: Mode pills + density control (density only shown here when no group filter bar) */}
+        <div className="flex items-center gap-2 self-start">
         {/* Mode pills — desktop: shows both View/Select; mobile: only View pill (Select is FAB) */}
-        <div className="inline-flex self-start rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
           <button
             onClick={() => switchMode("view")}
             className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
@@ -828,7 +1041,17 @@ export function Gallery({
               )}
             </button>
           )}
-        </div>
+        </div>{/* end mode pills */}
+
+          {/* Density control — only shown here when no group filter bar */}
+          {!showGroupFilter && (
+            <GridDensityControl
+              value={density}
+              onChange={setDensity}
+              hideMobile={["comfortable"]}
+            />
+          )}
+        </div>{/* end left: mode pills + density */}
 
         {/* Right-side action buttons (view mode) */}
         {mode === "view" && (
@@ -946,7 +1169,7 @@ export function Gallery({
 
       {/* ZIP upgrade prompt */}
       {showZipPrompt && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowZipPrompt(false)} />
           <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl dark:bg-zinc-800">
             <p className="text-2xl">🔒</p>
@@ -990,7 +1213,7 @@ export function Gallery({
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-1 sm:gap-3 lg:grid-cols-3 lg:gap-[14px]">
+        <div className={GRID_CLASSES[density]}>
           {displayPhotos.map((photo, i) => (
             <PhotoCard
               key={photo.id}
@@ -999,6 +1222,8 @@ export function Gallery({
               selectMode={mode === "select"}
               isSelected={selectedIds.has(photo.id)}
               hasNote={photoNotes.has(photo.id) && (photoNotes.get(photo.id) ?? "").length > 0}
+              groupColor={photo.groupId ? (groupMap.get(photo.groupId)?.color ?? null) : null}
+              groupName={photo.groupId ? (groupMap.get(photo.groupId)?.name ?? null) : null}
               onToggle={() => toggleSelect(photo.id)}
               onOpen={() => setLightboxIndex(i)}
               onOpenNote={() => {
@@ -1018,6 +1243,10 @@ export function Gallery({
           slug={slug}
           onClose={() => setLightboxIndex(null)}
           onGo={setLightboxIndex}
+          brandColor={brandColor}
+          group={displayPhotos[lightboxIndex]?.groupId
+            ? (groupMap.get(displayPhotos[lightboxIndex]!.groupId!) ?? null)
+            : null}
         />
       )}
 
@@ -1158,7 +1387,7 @@ export function Gallery({
       {/* Per-photo note bottom sheet */}
       {noteSheetPhotoId !== null && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center"
+          className="fixed inset-0 z-60 flex items-end sm:items-center sm:justify-center"
           onClick={() => setNoteSheetPhotoId(null)}
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />

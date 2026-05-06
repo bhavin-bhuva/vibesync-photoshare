@@ -148,7 +148,7 @@ function TagInput({
         }}
         onBlur={() => { if (input.trim()) addTag(input); }}
         placeholder="Type a feature, press Enter"
-        className="w-full bg-transparent text-sm outline-none placeholder:text-zinc-400"
+        className="w-full bg-transparent text-base outline-none placeholder:text-zinc-400 sm:text-sm"
       />
     </div>
   );
@@ -284,11 +284,11 @@ function EditModal({
 
   const labelCls = "block text-sm font-medium text-zinc-700 mb-1";
   const inputCls =
-    "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
+    "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-base text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm";
 
   const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="edit-modal-title"
@@ -297,7 +297,9 @@ function EditModal({
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+      <div className="fixed inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
+        <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-w-lg sm:max-h-[90vh] sm:rounded-2xl">
+          <div className="mx-auto mt-3 mb-1 h-1 w-10 rounded-full bg-zinc-300 sm:hidden" />
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
           <div>
@@ -518,6 +520,7 @@ function EditModal({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
@@ -549,7 +552,7 @@ function SyncModal({
 
   const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-60 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="sync-modal-title"
@@ -796,17 +799,19 @@ function CreatePlanModal({
 
   const labelCls = "block text-sm font-medium text-zinc-700 mb-1";
   const inputCls =
-    "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500";
+    "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-base text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm";
 
   const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="create-modal-title"
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+      <div className="fixed inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
+        <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-w-lg sm:max-h-[90vh] sm:rounded-2xl">
+          <div className="mx-auto mt-3 mb-1 h-1 w-10 rounded-full bg-zinc-300 sm:hidden" />
 
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
@@ -1022,6 +1027,7 @@ function CreatePlanModal({
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

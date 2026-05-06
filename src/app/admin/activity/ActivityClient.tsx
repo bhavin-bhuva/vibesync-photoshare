@@ -246,7 +246,7 @@ export function ActivityClient({
           <select
             value={adminFilter}
             onChange={(e) => updateParams({ admin: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
           >
             <option value="">All admins</option>
             {admins.map((a) => (
@@ -259,7 +259,7 @@ export function ActivityClient({
         <select
           value={actionFilter}
           onChange={(e) => updateParams({ action: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
         >
           <option value="">All actions</option>
           {distinctActions.map((a) => (
@@ -271,7 +271,7 @@ export function ActivityClient({
         <select
           value={targetTypeFilter}
           onChange={(e) => updateParams({ type: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
         >
           <option value="">All targets</option>
           {distinctTargetTypes.map((t) => (
@@ -285,14 +285,14 @@ export function ActivityClient({
             type="date"
             value={dateFrom}
             onChange={(e) => updateParams({ from: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none sm:text-sm"
           />
           <span className="text-xs text-zinc-400">to</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => updateParams({ to: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none sm:text-sm"
           />
         </div>
 
@@ -309,7 +309,7 @@ export function ActivityClient({
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search metadata…"
-              className="w-52 rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none"
+              className="w-52 rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none sm:text-sm"
             />
           </div>
           <button
@@ -359,7 +359,7 @@ export function ActivityClient({
                 <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-zinc-800">{ts.date} · {ts.time}</p>
                 </div>
-                <span className={`shrink-0 rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${actionBadgeCls(row.action)}`}>
+                <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${actionBadgeCls(row.action)}`}>
                   {actionLabel(row.action)}
                 </span>
                 <svg
@@ -379,7 +379,7 @@ export function ActivityClient({
                   </div>
                   <div className="flex gap-2">
                     <span className="w-20 shrink-0 text-zinc-400">Target</span>
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${TARGET_TYPE_CLS[row.targetType] ?? "bg-zinc-100 text-zinc-600"}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TARGET_TYPE_CLS[row.targetType] ?? "bg-zinc-100 text-zinc-600"}`}>
                       {row.targetType}
                     </span>
                     {link ? (
@@ -398,7 +398,7 @@ export function ActivityClient({
                   )}
                   {hasMetadata && (
                     <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200">
-                      <div className="bg-zinc-800 px-3 py-1.5 text-[11px] text-zinc-400">metadata</div>
+                      <div className="bg-zinc-800 px-3 py-1.5 text-xs text-zinc-400">metadata</div>
                       <div style={{ maxHeight: 150, overflowY: "auto" }}>
                         <JsonViewer value={row.metadata} />
                       </div>
@@ -450,35 +450,35 @@ export function ActivityClient({
                         <button
                           onClick={() => toggleExpand(row.id)}
                           aria-label={isExpanded ? "Collapse" : "Expand"}
-                          className="flex h-5 w-5 items-center justify-center rounded text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
+                          className="flex h-9 w-9 items-center justify-center rounded text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
                         >
                           <svg className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`} viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
                           </svg>
                         </button>
                       ) : (
-                        <span className="block h-5 w-5" />
+                        <span className="block h-9 w-9" />
                       )}
                     </td>
                     {/* Timestamp */}
                     <td className="whitespace-nowrap px-4 py-3">
                       <p className="text-xs font-medium text-zinc-800">{ts.date}</p>
-                      <p className="text-[11px] text-zinc-400">{ts.time}</p>
+                      <p className="text-xs text-zinc-400">{ts.time}</p>
                     </td>
                     {/* Admin */}
                     <td className="px-4 py-3">
                       <p className="text-xs font-medium text-zinc-800">{row.adminName ?? "—"}</p>
-                      <p className="text-[11px] text-zinc-400">{row.adminEmail}</p>
+                      <p className="text-xs text-zinc-400">{row.adminEmail}</p>
                     </td>
                     {/* Action */}
                     <td className="px-4 py-3">
-                      <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${actionBadgeCls(row.action)}`}>
+                      <span className={`rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${actionBadgeCls(row.action)}`}>
                         {actionLabel(row.action)}
                       </span>
                     </td>
                     {/* Target Type */}
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${TARGET_TYPE_CLS[row.targetType] ?? "bg-zinc-100 text-zinc-600"}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TARGET_TYPE_CLS[row.targetType] ?? "bg-zinc-100 text-zinc-600"}`}>
                         {row.targetType}
                       </span>
                     </td>
@@ -507,7 +507,7 @@ export function ActivityClient({
                       {hasMetadata ? (
                         <button
                           onClick={() => toggleExpand(row.id)}
-                          className="max-w-[200px] truncate rounded bg-zinc-100 px-2 py-0.5 text-left text-[11px] font-mono text-zinc-500 hover:bg-zinc-200"
+                          className="max-w-[200px] truncate rounded bg-zinc-100 px-2 py-0.5 text-left text-xs font-mono text-zinc-500 hover:bg-zinc-200"
                           title="Click to expand"
                         >
                           {JSON.stringify(row.metadata).slice(0, 60)}
@@ -526,10 +526,10 @@ export function ActivityClient({
                       <td colSpan={7} className="px-4 pb-4 pt-1">
                         <div className="overflow-hidden rounded-xl border border-zinc-200">
                           <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-800 px-4 py-2">
-                            <span className="text-[11px] font-medium text-zinc-400">metadata · {row.action}</span>
+                            <span className="text-xs font-medium text-zinc-400">metadata · {row.action}</span>
                             <button
                               onClick={() => { navigator.clipboard.writeText(JSON.stringify(row.metadata, null, 2)); }}
-                              className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-300"
+                              className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300"
                               title="Copy to clipboard"
                             >
                               <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">

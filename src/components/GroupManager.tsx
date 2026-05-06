@@ -161,7 +161,7 @@ function DeleteModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={onCancel}
     >
       <div
@@ -186,7 +186,7 @@ function DeleteModal({
               Move photos to
             </label>
             <select
-              className="mt-1.5 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100"
+              className="mt-1.5 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 sm:text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100"
               value={reassignId}
               onChange={(e) => setReassignId(e.target.value)}
             >
@@ -370,7 +370,7 @@ function GroupRowMenu({
               if (e.key === "Enter") { e.preventDefault(); submitRename(); }
               if (e.key === "Escape") setMenu({ type: "closed" });
             }}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100"
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-base text-zinc-900 outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500 sm:text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100"
           />
           {renameError && (
             <p className="mt-1 text-xs text-red-500">{renameError}</p>
@@ -831,7 +831,7 @@ export function GroupManager({ eventId, initialGroups, ungroupedCount }: GroupMa
         </button>
 
         {sheetOpen && createPortal(
-          <div className="fixed inset-0 z-50">
+          <div className="fixed inset-0 z-60">
             <div
               className="fixed inset-0 bg-black/50 backdrop-blur-sm"
               onClick={() => setSheetOpen(false)}

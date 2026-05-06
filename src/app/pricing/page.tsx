@@ -85,7 +85,7 @@ export default async function PricingPage() {
 
       {/* ── Nav ── */}
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 dark:bg-zinc-50">
               <svg className="h-4 w-4 text-white dark:text-zinc-900" viewBox="0 0 24 24" fill="currentColor">
@@ -121,8 +121,8 @@ export default async function PricingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <div className="px-6 py-10 text-center sm:py-16">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
+      <div className="px-4 py-10 text-center sm:px-6 sm:py-16">
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
           {t.pricing.title}
         </h1>
         <p className="mt-3 text-base text-zinc-500 dark:text-zinc-400 sm:text-lg">

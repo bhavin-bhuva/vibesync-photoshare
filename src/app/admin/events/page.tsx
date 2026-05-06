@@ -123,7 +123,7 @@ export default async function AdminEventsPage({
             name="q"
             defaultValue={search}
             placeholder="Search by event name or photographer…"
-            className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
           />
           {/* Preserve sort params */}
           {sortBy !== "createdAt" && <input type="hidden" name="sort" value={sortBy} />}
