@@ -321,7 +321,22 @@ async function main() {
     console.log(`  Skipped (already seeded — ${oldPhotos3.length} photos exist)`);
   }
 
-  // ── 5. Sync storage ───────────────────────────────────────────────────────
+  // ── 5. Docs admin account ─────────────────────────────────────────────────
+
+  const adminHash = await bcrypt.hash("AdminDocs@123", 12);
+  const docsAdmin = await db.user.upsert({
+    where:  { email: "admin@photohouse.test" },
+    update: { passwordHash: adminHash },
+    create: {
+      email:        "admin@photohouse.test",
+      passwordHash: adminHash,
+      name:         "Docs Admin",
+      role:         "SUPER_ADMIN",
+    },
+  });
+  console.log(`\n✓ Docs admin:   ${docsAdmin.email} (${docsAdmin.id})`);
+
+  // ── 6. Sync storage ───────────────────────────────────────────────────────
 
   const storageSum = await db.photo.aggregate({
     where: { event: { userId: user.id } },
@@ -339,6 +354,7 @@ async function main() {
 ${"─".repeat(52)}
 Records created / verified:
   1  photographer account  (docs@photohouse.test)
+  1  docs admin account    (admin@photohouse.test)
   1  STUDIO subscription
   1  studio profile
   3  events

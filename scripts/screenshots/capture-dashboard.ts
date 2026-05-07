@@ -1,7 +1,7 @@
 import { launchBrowser, newPage, loginAs, takeScreenshot } from "./browser";
 import { SCREENSHOT_CONFIG } from "./config";
 
-async function captureDashboard() {
+export async function captureDashboard() {
   const browser = await launchBrowser();
 
   try {
@@ -119,4 +119,7 @@ async function captureDashboard() {
   }
 }
 
-captureDashboard().catch(console.error);
+import { fileURLToPath } from "url";
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  captureDashboard().catch(console.error);
+}

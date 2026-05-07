@@ -89,7 +89,7 @@ async function authenticateGallery(browser: Browser, slug: string): Promise<void
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-async function captureGallery() {
+export async function captureGallery() {
   const browser = await launchBrowser();
 
   try {
@@ -320,4 +320,7 @@ async function captureGallery() {
   }
 }
 
-captureGallery().catch(console.error);
+import { fileURLToPath } from "url";
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  captureGallery().catch(console.error);
+}

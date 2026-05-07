@@ -30,7 +30,7 @@ async function clickButtonByText(page: Page, text: string): Promise<boolean> {
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-async function captureEvents() {
+export async function captureEvents() {
   const browser = await launchBrowser();
 
   try {
@@ -261,4 +261,7 @@ async function captureEvents() {
   }
 }
 
-captureEvents().catch(console.error);
+import { fileURLToPath } from "url";
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  captureEvents().catch(console.error);
+}

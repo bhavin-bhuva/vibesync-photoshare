@@ -3,6 +3,8 @@ export const SCREENSHOT_CONFIG = {
   outputDir: "./docs/screenshots",
   testEmail:    "docs@photohouse.test",
   testPassword: "DocsTest@123",
+  adminEmail:    "admin@photohouse.test",
+  adminPassword: "AdminDocs@123",
 
   viewports: {
     desktop: { width: 1440, height: 900  },

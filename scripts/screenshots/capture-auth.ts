@@ -1,7 +1,7 @@
 import { launchBrowser, newPage, takeScreenshot } from "./browser";
 import { SCREENSHOT_CONFIG } from "./config";
 
-async function captureAuth() {
+export async function captureAuth() {
   const browser = await launchBrowser();
 
   try {
@@ -41,4 +41,7 @@ async function captureAuth() {
   }
 }
 
-captureAuth().catch(console.error);
+import { fileURLToPath } from "url";
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  captureAuth().catch(console.error);
+}
