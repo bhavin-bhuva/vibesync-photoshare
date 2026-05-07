@@ -16,7 +16,8 @@
     "screenshots:dashboard": "tsx scripts/screenshots/capture-dashboard.ts",
     "screenshots:events": "tsx scripts/screenshots/capture-events.ts",
     "screenshots:gallery": "tsx scripts/screenshots/capture-gallery.ts",
-    "screenshots:settings": "tsx scripts/screenshots/capture-settings.ts"
+    "screenshots:settings": "tsx scripts/screenshots/capture-settings.ts",
+    "docs:serve": "npx serve docs -p 4000"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
