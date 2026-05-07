@@ -1,107 +1,214 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Uploading Photos — PhotoHouse Docs</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css">
+  <style>@import url('style.css');</style>
 </head>
 <body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <div class="sidebar-logo-mark"><svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg></div>
-    <div><div class="sidebar-logo-name">PhotoHouse</div><div class="sidebar-logo-label">Documentation</div></div>
+    <div class="sidebar-logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-name">PhotoHouse</div>
+      <div class="sidebar-logo-label">Documentation</div>
+    </div>
   </div>
-  <nav class="sidebar-nav"><div class="nav-section"><div class="nav-section-title">📖 User Guide</div><ul>
-    <li><a href="getting-started.html"   class="nav-link">Getting Started</a></li>
-    <li><a href="events.html"            class="nav-link">Managing Events</a></li>
-    <li><a href="uploading-photos.html"  class="nav-link">Uploading Photos</a></li>
-    <li><a href="sharing-galleries.html" class="nav-link">Sharing Galleries</a></li>
-    <li><a href="photo-selection.html"   class="nav-link">Photo Selection</a></li>
-    <li><a href="face-recognition.html"  class="nav-link">AI Face Search</a></li>
-    <li><a href="watermarking.html"      class="nav-link">Watermarking</a></li>
-    <li><a href="billing.html"           class="nav-link">Billing &amp; Plans</a></li>
-  </ul></div></nav>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">📖 User Guide</div>
+      <ul>
+        <li><a href="getting-started.html"    class="nav-link">Getting Started</a></li>
+        <li><a href="events.html"             class="nav-link">Managing Events</a></li>
+        <li><a href="uploading-photos.html"   class="nav-link">Uploading Photos</a></li>
+        <li><a href="sharing-galleries.html"  class="nav-link">Sharing Galleries</a></li>
+        <li><a href="photo-selection.html"    class="nav-link">Photo Selection</a></li>
+        <li><a href="face-recognition.html"   class="nav-link">AI Face Search</a></li>
+        <li><a href="watermarking.html"       class="nav-link">Watermarking</a></li>
+        <li><a href="billing.html"            class="nav-link">Billing &amp; Plans</a></li>
+      </ul>
+    </div>
+  </nav>
 </aside>
 <div class="sidebar-overlay"></div>
+
+<!-- ── Top bar ────────────────────────────────────────────────────────────── -->
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px">
-    <button class="hamburger" aria-label="Open navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <nav class="breadcrumb"><span>PhotoHouse Docs</span><span class="breadcrumb-sep">›</span><span>User Guide</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">Uploading Photos</span></nav>
-  </div>
-  <div class="topbar-right"><div class="search-wrap">
-    <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>
-    <input class="search-input" type="search" placeholder="Search docs…"><span class="search-kbd">⌘K</span>
-    <div class="search-results"></div>
-  </div></div>
-</div>
-<div class="main-wrapper"><div class="page-layout">
-  <main class="content-col">
-    <h1 class="page-title">Uploading Photos</h1>
-    <p class="page-intro">PhotoHouse uploads photos directly to Amazon S3 using multipart upload — meaning large files are sent in chunks and can resume after an interruption. The upload queue persists in your browser so you can close the tab and come back.</p>
-    <div class="content-body">
-
-      <h2 id="how-to-upload">How to Upload</h2>
-      <ol class="step-list">
-        <li><div><strong>Open an event and click "Upload Photos"</strong><p>The upload modal slides up from the bottom.</p></div></li>
-        <li><div><strong>Drag files or click to browse</strong><p>Select one or more JPEG, PNG, WebP, or TIFF files. You can select an entire folder.</p></div></li>
-        <li><div><strong>Optionally assign a group</strong><p>Pick a group from the dropdown before uploading to automatically file photos into that group.</p></div></li>
-        <li><div><strong>Click Upload</strong><p>Files are queued and uploaded in parallel. A progress bar shows bytes transferred per file.</p></div></li>
-      </ol>
-
-      <figure class="docs-screenshot">
-        <img src="./screenshots/event-upload-zone.png" alt="Upload modal">
-        <figcaption>The upload modal with the drag-and-drop zone. Drag files anywhere on the zone to begin.</figcaption>
-      </figure>
-
-      <h2 id="formats">Supported Formats</h2>
-      <p>PhotoHouse accepts the following image formats:</p>
-      <ul>
-        <li><strong>JPEG / JPG</strong> — recommended for delivery (smallest file size)</li>
-        <li><strong>PNG</strong> — for images with transparency</li>
-        <li><strong>WebP</strong> — modern format, excellent compression</li>
-        <li><strong>TIFF</strong> — archival quality; thumbnails are generated as JPEG</li>
-      </ul>
-      <div class="callout callout--warning">
-        <span class="callout-icon">⚠️</span>
-        <div><strong>RAW files not supported</strong><p>CR2, NEF, ARW and other RAW formats are not accepted. Export from Lightroom or Capture One to JPEG or TIFF before uploading.</p></div>
-      </div>
-
-      <h2 id="upload-queue">The Upload Queue</h2>
-      <p>Every file you add enters a persistent browser-side queue backed by IndexedDB. This means:</p>
-      <ul>
-        <li>You can close the upload modal and the queue keeps running in the background.</li>
-        <li>If you navigate away or the network drops, uploads resume automatically when you return to the page.</li>
-        <li>Each file shows its own progress bar and status: <strong>Pending → Uploading → Done</strong>.</li>
-      </ul>
-
-      <h3>Pausing and resuming</h3>
-      <p>Use the pause button in the upload modal to temporarily halt the queue. Click resume to continue. Individual failed files can be retried with the retry button.</p>
-
-      <h2 id="thumbnails">Thumbnails &amp; EXIF</h2>
-      <p>When a photo is saved, PhotoHouse automatically generates a compressed thumbnail (≈ 600 px wide) used for the photo grid. EXIF metadata — camera model, focal length, aperture, shutter speed, ISO, and capture date — is extracted and stored for display in the lightbox info panel.</p>
-
-      <h2 id="storage">Storage Limits</h2>
-      <p>Your storage bar on the dashboard tracks total photo size across all events. When you approach your limit a warning banner appears. To see a breakdown, visit <strong>Dashboard → Storage</strong> in the admin panel.</p>
-
-      <table class="plan-table">
-        <thead><tr><th>Plan</th><th>Storage</th></tr></thead>
-        <tbody>
-          <tr><td><span class="badge badge--free">Free</span></td><td>1 GB</td></tr>
-          <tr><td><span class="badge badge--pro">Pro</span></td><td>50 GB</td></tr>
-          <tr><td><span class="badge badge--studio">Studio</span></td><td>500 GB</td></tr>
-        </tbody>
-      </table>
-
-    </div>
-    <nav class="page-nav">
-      <a href="events.html" class="page-nav-btn prev"><span class="page-nav-label">← Previous</span><span class="page-nav-title">Managing Events</span></a>
-      <a href="sharing-galleries.html" class="page-nav-btn next"><span class="page-nav-label">Next →</span><span class="page-nav-title">Sharing Galleries</span></a>
+    <button class="hamburger" aria-label="Open navigation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <nav class="breadcrumb">
+      <span>PhotoHouse Docs</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>User Guide</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">Uploading Photos</span>
     </nav>
-  </main>
-  <aside class="toc-col"><div class="toc-inner"><div class="toc-title">On this page</div><ul class="toc-list"></ul></div></aside>
-</div></div>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/>
+      </svg>
+      <input class="search-input" type="search" placeholder="Search docs…" aria-label="Search documentation">
+      <span class="search-kbd">⌘K</span>
+      <div class="search-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<div class="main-wrapper">
+  <div class="page-layout">
+    <main class="content-col">
+      <h1 class="page-title">Uploading Photos</h1>
+      <p class="page-intro">PhotoHouse uploads photos directly to Amazon S3 using a resilient, browser-side queue. Files are split into chunks, progress is saved at every step, and uploads survive dropped connections, page refreshes, and closed tabs. You never lose work in progress.</p>
+
+      <div class="content-body">
+
+        <!-- ── 1. How Uploading Works ─────────────────────────────────── -->
+        <h2 id="how-uploading-works">How Uploading Works</h2>
+        <p>When you add photos to the upload queue, PhotoHouse breaks each file into chunks and sends them in parallel directly to S3 — your photos never pass through the PhotoHouse server. This keeps uploads fast and avoids any server-side file size limits.</p>
+
+        <h3>IndexedDB queue</h3>
+        <p>The upload queue is stored in your browser's <strong>IndexedDB</strong> database — a persistent, local store that survives page closes and browser restarts. Every file in the queue has a record tracking its upload ID, which chunks have completed, and the current status (<code>PENDING</code>, <code>UPLOADING</code>, <code>PAUSED</code>, <code>DONE</code>, or <code>FAILED</code>).</p>
+
+        <h3>Chunked multipart upload</h3>
+        <p>Each file is divided into chunks (default 8 MB each). S3 receives the chunks and assembles them once all parts arrive. If a chunk fails, only that chunk is retried — not the whole file. This is especially valuable for large JPEGs and TIFFs over slow connections.</p>
+
+        <h3>Auto-resume</h3>
+        <p>When you return to the event page, PhotoHouse reads the queue from IndexedDB and resumes any interrupted uploads from exactly where they stopped — no re-uploading chunks that already succeeded.</p>
+
+        <h3>No data loss</h3>
+        <p>The queue is only cleared after a file reaches <code>DONE</code> status and its Photo record is confirmed in the database. A file is never removed from the queue mid-upload.</p>
+
+        <!-- ── 2. Selecting Photos to Upload ──────────────────────────── -->
+        <h2 id="selecting-photos">Selecting Photos to Upload</h2>
+        <p>Open an event and click <strong>Upload Photos</strong> in the event header. The upload modal slides up from the bottom of the screen.</p>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/event-upload-zone.png"
+               alt="Upload modal showing drag-and-drop zone and file picker"
+               loading="lazy">
+          <figcaption>The upload modal — drag files onto the zone or click "Browse" to open the system file picker.</figcaption>
+        </figure>
+
+        <h3>Drag and drop</h3>
+        <p>Drag one or more image files directly onto the upload zone. The zone highlights when files are hovering over it. You can drag files from Finder (macOS), File Explorer (Windows), or any file manager on Linux.</p>
+
+        <h3>Click to select</h3>
+        <p>Click inside the upload zone or the <strong>Browse files</strong> button to open the system file picker. Hold <span class="kbd">⌘</span> (Mac) or <span class="kbd">Ctrl</span> (Windows) while clicking to select multiple files. To select an entire folder, right-click and choose <em>Select all</em> before dragging to the modal.</p>
+
+        <h3>Selecting a group before uploading</h3>
+        <p>If your event has photo groups, a <strong>Add to group</strong> dropdown appears in the upload modal. Select a group before clicking Upload and every file in the current batch is automatically assigned to that group when it finishes uploading. This saves you having to bulk-reassign photos after the fact.</p>
+
+        <div class="callout callout--tip">
+          <span class="callout-icon">💡</span>
+          <div>
+            <strong>Upload in batches per group</strong>
+            <p>Rather than uploading all ceremony and reception photos at once, upload the ceremony batch with "Ceremony" selected, then switch to the reception batch with "Reception" selected. Both batches can run in parallel.</p>
+          </div>
+        </div>
+
+        <!-- ── 3. Upload Progress ──────────────────────────────────────── -->
+        <h2 id="upload-progress">Upload Progress</h2>
+        <p>Once files are added to the queue, the upload modal switches to a progress view. Each file has its own row showing:</p>
+        <ul>
+          <li><strong>Filename</strong> — the original file name.</li>
+          <li><strong>Progress bar</strong> — fills left-to-right as chunks upload. Colour changes from blue (uploading) to green (done) or red (failed).</li>
+          <li><strong>Bytes transferred</strong> — e.g. <code>4.2 MB / 11.8 MB</code>.</li>
+          <li><strong>Status badge</strong> — <code>UPLOADING</code>, <code>DONE</code>, <code>FAILED</code>, or <code>PAUSED</code>.</li>
+        </ul>
+
+        <h3>Overall progress</h3>
+        <p>At the top of the queue view, a summary bar shows how many files are done out of the total — e.g. <em>Uploading… 14 / 38</em>. This counter persists in the background tab so you can work elsewhere while uploads continue.</p>
+
+        <h3>Retrying failed files</h3>
+        <p>A file that fails after three retries shows a red <strong>Retry</strong> button. Click it to re-queue just that file without affecting the rest of the batch. Common causes of failure: file size exceeded your plan's storage limit, or the S3 presigned URL expired (happens if the tab was left open for more than 10 minutes before starting the upload).</p>
+
+        <!-- ── 4. If Your Internet Drops ──────────────────────────────── -->
+        <h2 id="internet-drops">If Your Internet Drops</h2>
+
+        <div class="callout callout--tip">
+          <span class="callout-icon">🟢</span>
+          <div>
+            <strong>PhotoHouse automatically pauses uploads when internet disconnects and resumes exactly where it left off when you're back online. You will never lose upload progress.</strong>
+            <p>A network monitor watches for connectivity changes in real time. When a drop is detected, all in-flight chunk requests are paused gracefully. When the connection returns, a 2-second stabilisation delay runs before uploads resume — giving the connection time to settle before hammering S3 again.</p>
+          </div>
+        </div>
+
+        <p>You'll see an <strong>Offline</strong> banner appear at the top of the upload modal during the interruption, and a <strong>Resuming…</strong> message once the connection is restored. No files need to be re-selected.</p>
+
+        <!-- ── 5. Uploading from Mobile ────────────────────────────────── -->
+        <h2 id="uploading-from-mobile">Uploading from Mobile</h2>
+        <p>The upload flow works on mobile browsers, though with some differences:</p>
+        <ul>
+          <li><strong>Tap to select</strong> — tapping the upload zone on iOS or Android opens the standard system picker. On iOS you can choose from your Camera Roll, iCloud Drive, or take a new photo directly. On Android you get Photos, Files, or Camera.</li>
+          <li><strong>No drag-and-drop</strong> — dragging files is not supported on most mobile browsers. Use the tap-to-select flow instead.</li>
+          <li><strong>Stay on the page</strong> — mobile browsers may suspend JavaScript when you switch to another app. If uploads pause unexpectedly, return to the PhotoHouse tab and they will resume within a few seconds.</li>
+        </ul>
+
+        <div class="callout callout--info">
+          <span class="callout-icon">ℹ️</span>
+          <div>
+            <strong>Desktop is recommended for large batches</strong>
+            <p>For events with hundreds of photos, uploading from a desktop browser on a wired or stable Wi-Fi connection is significantly faster and more reliable than mobile upload.</p>
+          </div>
+        </div>
+
+        <!-- ── 6. After Upload ────────────────────────────────────────── -->
+        <h2 id="after-upload">After Upload</h2>
+        <p>Once a photo finishes uploading, PhotoHouse performs three background operations automatically — you don't need to trigger them manually.</p>
+
+        <h3>Thumbnail generation</h3>
+        <p>A compressed JPEG thumbnail (≈ 600 px wide) is generated using the Sharp image library and stored alongside the original in S3. The photo grid always loads thumbnails — not originals — keeping the grid fast even for 30 MB TIFF files. Originals are only fetched when a photo is opened in the lightbox.</p>
+
+        <h3>EXIF data extraction</h3>
+        <p>EXIF metadata is read from the uploaded file and stored in the database. The following fields are extracted when present:</p>
+        <ul>
+          <li>Camera make and model (e.g. <em>Canon EOS R5</em>)</li>
+          <li>Focal length (e.g. <em>85 mm</em>)</li>
+          <li>Aperture (e.g. <em>f/1.8</em>)</li>
+          <li>Shutter speed (e.g. <em>1/500 s</em>)</li>
+          <li>ISO (e.g. <em>400</em>)</li>
+          <li>Original capture date and time</li>
+        </ul>
+        <p>This data appears in the lightbox info panel when you click the <strong>ⓘ</strong> button inside any photo.</p>
+
+        <h3>Face detection (if enabled)</h3>
+        <p>If <a href="face-recognition.html">Face Detection</a> is enabled for the event and the platform allows new indexing jobs to start automatically, newly uploaded photos are queued for face analysis. Each detected face generates an embedding stored for future Find My Photos searches. See <a href="face-recognition.html">AI Face Search</a> for the full details.</p>
+
+      </div><!-- /.content-body -->
+
+      <nav class="page-nav">
+        <a href="events.html" class="page-nav-btn prev">
+          <span class="page-nav-label">← Previous</span>
+          <span class="page-nav-title">Managing Events</span>
+        </a>
+        <a href="sharing-galleries.html" class="page-nav-btn next">
+          <span class="page-nav-label">Next →</span>
+          <span class="page-nav-title">Sharing Galleries</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="toc-col">
+      <div class="toc-inner">
+        <div class="toc-title">On this page</div>
+        <ul class="toc-list"></ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>
