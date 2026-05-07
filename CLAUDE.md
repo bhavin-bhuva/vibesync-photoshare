@@ -22,7 +22,7 @@ No test runner is configured.
 
 ## Architecture
 
-**PhotoShare** — a photographer client gallery app built on Next.js App Router with TypeScript and Tailwind CSS v4.
+**PhotoHouse** — a photographer client gallery app built on Next.js App Router with TypeScript and Tailwind CSS v4.
 
 ### Stack
 

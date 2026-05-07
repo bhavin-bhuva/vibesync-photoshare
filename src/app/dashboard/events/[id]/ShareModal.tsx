@@ -7,6 +7,7 @@ import { createSharedLinkAction, revokeSharedLinkAction, getSharedLinkPin } from
 import { useT } from "@/lib/i18n";
 import { OtpInput } from "@/components/OtpInput";
 import { generateSecurePin } from "@/lib/pin";
+import { GridDensityControl, type GridDensity } from "@/components/GridDensityControl";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -252,6 +253,7 @@ export function ShareModal({
   faceIndexingDone = false,
   peopleIndexed = 0,
   groups = [],
+  triggerClassName,
 }: {
   eventId: string;
   initialLinks: SharedLinkRow[];
@@ -259,6 +261,7 @@ export function ShareModal({
   faceIndexingDone?: boolean;
   peopleIndexed?: number;
   groups?: EventGroup[];
+  triggerClassName?: string;
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -282,6 +285,7 @@ export function ShareModal({
   const [newPinDisplay, setNewPinDisplay] = useState<string | null>(null);
   const [faceSearchEnabled, setFaceSearchEnabled] = useState(false);
   const [groupOverrides, setGroupOverrides] = useState<Record<string, boolean>>({});
+  const [defaultGridDensity, setDefaultGridDensity] = useState<GridDensity>("default");
 
   const router = useRouter();
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -305,6 +309,7 @@ export function ShareModal({
     setNewPinDisplay(null);
     setFaceSearchEnabled(false);
     setGroupOverrides({});
+    setDefaultGridDensity("default");
   }
 
   useEffect(() => {
@@ -353,7 +358,8 @@ export function ShareModal({
       credential,
       expiresAt || null,
       faceSearchEnabled,
-      Object.keys(groupOverrides).length > 0 ? groupOverrides : null
+      Object.keys(groupOverrides).length > 0 ? groupOverrides : null,
+      defaultGridDensity
     );
     setSubmitting(false);
 
@@ -389,7 +395,7 @@ export function ShareModal({
       {/* Trigger */}
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+        className={triggerClassName ?? "flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"}
       >
         <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
           <path d="M13 4.5a2.5 2.5 0 1 1 .702 1.737L6.97 9.604a2.518 2.518 0 0 1 0 .792l6.733 3.367a2.5 2.5 0 1 1-.671 1.341l-6.733-3.367a2.5 2.5 0 1 1 0-3.474l6.733-3.366A2.52 2.52 0 0 1 13 4.5Z" />
@@ -400,7 +406,7 @@ export function ShareModal({
       {/* Modal — portalled to escape header stacking context */}
       {open &&
         createPortal(
-          <div className="fixed inset-0 z-40 overflow-y-auto">
+          <div className="fixed inset-0 z-60 overflow-y-auto">
             {/* Backdrop */}
             <div
               className="fixed inset-0 bg-black/50 backdrop-blur-sm"
@@ -557,7 +563,7 @@ export function ShareModal({
                               onChange={(e) => setPassword(e.target.value)}
                               placeholder={t.shareModal.passwordPlaceholder}
                               required
-                              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:placeholder-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-600"
+                              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 sm:text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:placeholder-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-600"
                             />
                           </div>
                           <div>
@@ -570,7 +576,7 @@ export function ShareModal({
                               onChange={(e) => setConfirm(e.target.value)}
                               placeholder={t.shareModal.confirmPlaceholder}
                               required
-                              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:placeholder-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-600"
+                              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 sm:text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:placeholder-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-600"
                             />
                           </div>
                         </div>
@@ -587,7 +593,7 @@ export function ShareModal({
                           value={expiresAt}
                           onChange={(e) => setExpiresAt(e.target.value)}
                           min={new Date().toISOString().split("T")[0]}
-                          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:focus:border-zinc-400 dark:focus:ring-zinc-600"
+                          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-200 sm:text-sm dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:focus:border-zinc-400 dark:focus:ring-zinc-600"
                         />
                       </div>
 
@@ -684,6 +690,20 @@ export function ShareModal({
                           </div>
                         </div>
                       )}
+
+                      {/* ── Default grid density ── */}
+                      <div>
+                        <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                          Default view for customers
+                        </label>
+                        <GridDensityControl
+                          value={defaultGridDensity}
+                          onChange={setDefaultGridDensity}
+                        />
+                        <p className="mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+                          Customers can change this themselves
+                        </p>
+                      </div>
 
                       {formError && (
                         <p className="text-sm text-red-500">{formError}</p>

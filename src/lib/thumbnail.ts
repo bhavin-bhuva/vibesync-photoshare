@@ -23,13 +23,20 @@ export function thumbKeyFor(s3Key: string): string {
   return `${dir}/thumbs/${baseName}-thumb.jpg`;
 }
 
+export interface ThumbnailResult {
+  thumbKey: string;
+  width: number | null;
+  height: number | null;
+  exifBuffer: Buffer | null;
+}
+
 /**
  * Fetches the original from S3, resizes to 800 px wide (JPEG q80),
- * uploads the thumbnail to S3, and returns the thumb S3 key.
+ * uploads the thumbnail to S3, and returns the thumb key plus image metadata.
  *
  * Throws on any error — callers should handle failures as best-effort.
  */
-export async function createThumbnail(s3Key: string): Promise<string> {
+export async function createThumbnail(s3Key: string): Promise<ThumbnailResult> {
   const bucket = process.env.AWS_S3_BUCKET_NAME!;
 
   const { Body } = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: s3Key }));
@@ -39,6 +46,16 @@ export async function createThumbnail(s3Key: string): Promise<string> {
     chunks.push(Buffer.from(chunk));
   }
   const original = Buffer.concat(chunks);
+
+  // Extract metadata before rotation (exif buffer is stripped by .rotate())
+  const meta = await sharp(original).metadata();
+  let width: number | null = meta.width ?? null;
+  let height: number | null = meta.height ?? null;
+  // Orientations 5–8 involve 90°/270° rotation — swap reported dimensions
+  if (meta.orientation && meta.orientation >= 5 && meta.orientation <= 8) {
+    [width, height] = [height, width];
+  }
+  const exifBuffer = (meta.exif as Buffer | undefined) ?? null;
 
   const thumbnail = await sharp(original)
     .rotate()                                        // apply EXIF orientation, then strip the tag
@@ -57,5 +74,5 @@ export async function createThumbnail(s3Key: string): Promise<string> {
     })
   );
 
-  return thumbKey;
+  return { thumbKey, width, height, exifBuffer };
 }

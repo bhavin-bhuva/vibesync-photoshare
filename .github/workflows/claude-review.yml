@@ -30,7 +30,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Review this pull request for the PhotoShare Next.js app. Focus on:
+            Review this pull request for the PhotoHouse Next.js app. Focus on:
             - Logic errors and bugs
             - Security vulnerabilities (auth bypass, missing cookie checks, XSS, SQL injection)
             - Plan gating correctness (watermark and ZIP download must be PRO/STUDIO only)

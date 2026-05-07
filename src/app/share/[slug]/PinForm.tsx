@@ -106,11 +106,11 @@ export function PinForm({
             <img
               src={logoUrl}
               alt={studioName ?? ""}
-              className="h-14 w-14 rounded-xl object-cover shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700"
+              className="max-h-[120px] w-auto max-w-[160px] rounded-xl object-contain shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700"
             />
           ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900 dark:bg-zinc-50">
-              <svg className="h-7 w-7 text-white dark:text-zinc-900" viewBox="0 0 24 24" fill="currentColor">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900 dark:bg-zinc-50">
+              <svg className="h-8 w-8 text-white dark:text-zinc-900" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
                 <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
               </svg>

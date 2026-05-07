@@ -139,7 +139,7 @@ function ExportCsvButton({ filters }: { filters: ActivityFilters }) {
       <button
         onClick={handleExport}
         disabled={exporting}
-        className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-50 sm:w-auto sm:justify-start"
       >
         {exporting ? (
           <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -246,7 +246,7 @@ export function ActivityClient({
           <select
             value={adminFilter}
             onChange={(e) => updateParams({ admin: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
           >
             <option value="">All admins</option>
             {admins.map((a) => (
@@ -259,7 +259,7 @@ export function ActivityClient({
         <select
           value={actionFilter}
           onChange={(e) => updateParams({ action: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
         >
           <option value="">All actions</option>
           {distinctActions.map((a) => (
@@ -271,7 +271,7 @@ export function ActivityClient({
         <select
           value={targetTypeFilter}
           onChange={(e) => updateParams({ type: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
         >
           <option value="">All targets</option>
           {distinctTargetTypes.map((t) => (
@@ -285,14 +285,14 @@ export function ActivityClient({
             type="date"
             value={dateFrom}
             onChange={(e) => updateParams({ from: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none sm:text-sm"
           />
           <span className="text-xs text-zinc-400">to</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => updateParams({ to: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none sm:text-sm"
           />
         </div>
 
@@ -309,7 +309,7 @@ export function ActivityClient({
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search metadata…"
-              className="w-52 rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none"
+              className="w-52 rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none sm:text-sm"
             />
           </div>
           <button
@@ -330,7 +330,7 @@ export function ActivityClient({
         </form>
 
         {/* Result count + Export */}
-        <div className="ml-auto flex items-center gap-3">
+        <div className="flex w-full flex-col gap-2 sm:ml-auto sm:w-auto sm:flex-row sm:items-center sm:gap-3">
           <span className="text-xs text-zinc-400">
             {total.toLocaleString()} result{total !== 1 ? "s" : ""}
           </span>
@@ -338,8 +338,81 @@ export function ActivityClient({
         </div>
       </div>
 
-      {/* ── Table ── */}
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+      {/* ── Mobile card list ── */}
+      <div className="space-y-2 sm:hidden">
+        {rows.length === 0 ? (
+          <p className="rounded-xl border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-400">
+            No activity found matching your filters.
+          </p>
+        ) : rows.map((row) => {
+          const ts = formatTs(row.createdAt);
+          const isExpanded = expanded.has(row.id);
+          const hasMetadata = row.metadata !== null && row.metadata !== undefined;
+          const link = targetLink(row.targetType, row.targetId);
+          return (
+            <div key={row.id} className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+              {/* Row: Time + Action */}
+              <button
+                onClick={() => toggleExpand(row.id)}
+                className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium text-zinc-800">{ts.date} · {ts.time}</p>
+                </div>
+                <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${actionBadgeCls(row.action)}`}>
+                  {actionLabel(row.action)}
+                </span>
+                <svg
+                  className={`h-4 w-4 shrink-0 text-zinc-300 transition-transform ${isExpanded ? "rotate-90" : ""}`}
+                  viewBox="0 0 20 20" fill="currentColor"
+                >
+                  <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                </svg>
+              </button>
+
+              {/* Expanded: full details */}
+              {isExpanded && (
+                <div className="border-t border-zinc-100 px-4 pb-4 pt-3 space-y-2 text-xs">
+                  <div className="flex gap-2">
+                    <span className="w-20 shrink-0 text-zinc-400">Admin</span>
+                    <span className="text-zinc-700">{row.adminName ?? row.adminEmail}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="w-20 shrink-0 text-zinc-400">Target</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TARGET_TYPE_CLS[row.targetType] ?? "bg-zinc-100 text-zinc-600"}`}>
+                      {row.targetType}
+                    </span>
+                    {link ? (
+                      <Link href={link} className="font-mono text-blue-600 hover:underline" title={row.targetId}>
+                        {shortId(row.targetId)}
+                      </Link>
+                    ) : (
+                      <code className="rounded bg-zinc-100 px-1 text-zinc-600" title={row.targetId}>{shortId(row.targetId)}</code>
+                    )}
+                  </div>
+                  {row.ipAddress && (
+                    <div className="flex gap-2">
+                      <span className="w-20 shrink-0 text-zinc-400">IP</span>
+                      <code className="text-zinc-500">{row.ipAddress}</code>
+                    </div>
+                  )}
+                  {hasMetadata && (
+                    <div className="mt-2 overflow-hidden rounded-xl border border-zinc-200">
+                      <div className="bg-zinc-800 px-3 py-1.5 text-xs text-zinc-400">metadata</div>
+                      <div style={{ maxHeight: 150, overflowY: "auto" }}>
+                        <JsonViewer value={row.metadata} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Desktop table — hidden on mobile ── */}
+      <div className="hidden overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm sm:block">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50">
@@ -370,77 +443,58 @@ export function ActivityClient({
 
               return (
                 <React.Fragment key={row.id}>
-                  <tr
-                    className={`transition-colors ${isExpanded ? "bg-zinc-50" : "hover:bg-zinc-50/60"}`}
-                  >
+                  <tr className={`transition-colors ${isExpanded ? "bg-zinc-50" : "hover:bg-zinc-50/60"}`}>
                     {/* Expand toggle */}
                     <td className="px-3 py-3">
                       {hasMetadata ? (
                         <button
                           onClick={() => toggleExpand(row.id)}
                           aria-label={isExpanded ? "Collapse" : "Expand"}
-                          className="flex h-5 w-5 items-center justify-center rounded text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
+                          className="flex h-9 w-9 items-center justify-center rounded text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
                         >
-                          <svg
-                            className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`}
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
+                          <svg className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`} viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
                           </svg>
                         </button>
                       ) : (
-                        <span className="block h-5 w-5" />
+                        <span className="block h-9 w-9" />
                       )}
                     </td>
-
                     {/* Timestamp */}
                     <td className="whitespace-nowrap px-4 py-3">
                       <p className="text-xs font-medium text-zinc-800">{ts.date}</p>
-                      <p className="text-[11px] text-zinc-400">{ts.time}</p>
+                      <p className="text-xs text-zinc-400">{ts.time}</p>
                     </td>
-
                     {/* Admin */}
                     <td className="px-4 py-3">
                       <p className="text-xs font-medium text-zinc-800">{row.adminName ?? "—"}</p>
-                      <p className="text-[11px] text-zinc-400">{row.adminEmail}</p>
+                      <p className="text-xs text-zinc-400">{row.adminEmail}</p>
                     </td>
-
                     {/* Action */}
                     <td className="px-4 py-3">
-                      <span className={`rounded-md px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${actionBadgeCls(row.action)}`}>
+                      <span className={`rounded-md px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${actionBadgeCls(row.action)}`}>
                         {actionLabel(row.action)}
                       </span>
                     </td>
-
                     {/* Target Type */}
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${TARGET_TYPE_CLS[row.targetType] ?? "bg-zinc-100 text-zinc-600"}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${TARGET_TYPE_CLS[row.targetType] ?? "bg-zinc-100 text-zinc-600"}`}>
                         {row.targetType}
                       </span>
                     </td>
-
                     {/* Target ID */}
                     <td className="px-4 py-3">
                       {link ? (
-                        <Link
-                          href={link}
-                          className="font-mono text-xs text-blue-600 hover:underline"
-                          title={row.targetId}
-                        >
+                        <Link href={link} className="font-mono text-xs text-blue-600 hover:underline" title={row.targetId}>
                           {shortId(row.targetId)}
                         </Link>
                       ) : (
-                        <code
-                          className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600"
-                          title={row.targetId}
-                        >
+                        <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs text-zinc-600" title={row.targetId}>
                           {shortId(row.targetId)}
                         </code>
                       )}
                     </td>
-
-                    {/* IP Address */}
+                    {/* IP */}
                     <td className="px-4 py-3">
                       {row.ipAddress ? (
                         <code className="text-xs text-zinc-500">{row.ipAddress}</code>
@@ -448,13 +502,12 @@ export function ActivityClient({
                         <span className="text-zinc-300">—</span>
                       )}
                     </td>
-
                     {/* Metadata preview */}
                     <td className="px-4 py-3">
                       {hasMetadata ? (
                         <button
                           onClick={() => toggleExpand(row.id)}
-                          className="max-w-[200px] truncate rounded bg-zinc-100 px-2 py-0.5 text-left text-[11px] font-mono text-zinc-500 hover:bg-zinc-200"
+                          className="max-w-[200px] truncate rounded bg-zinc-100 px-2 py-0.5 text-left text-xs font-mono text-zinc-500 hover:bg-zinc-200"
                           title="Click to expand"
                         >
                           {JSON.stringify(row.metadata).slice(0, 60)}
@@ -471,14 +524,12 @@ export function ActivityClient({
                     <tr className="bg-zinc-50">
                       <td />
                       <td colSpan={7} className="px-4 pb-4 pt-1">
-                        <div className="rounded-xl border border-zinc-200 overflow-hidden">
+                        <div className="overflow-hidden rounded-xl border border-zinc-200">
                           <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-800 px-4 py-2">
-                            <span className="text-[11px] font-medium text-zinc-400">metadata · {row.action}</span>
+                            <span className="text-xs font-medium text-zinc-400">metadata · {row.action}</span>
                             <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(JSON.stringify(row.metadata, null, 2));
-                              }}
-                              className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-300"
+                              onClick={() => { navigator.clipboard.writeText(JSON.stringify(row.metadata, null, 2)); }}
+                              className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300"
                               title="Copy to clipboard"
                             >
                               <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">

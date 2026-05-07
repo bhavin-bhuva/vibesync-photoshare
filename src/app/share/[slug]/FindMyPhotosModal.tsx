@@ -152,7 +152,7 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
   }
 
   const modal = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-60 flex flex-col justify-end sm:items-center sm:justify-center sm:p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -160,8 +160,8 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
         aria-hidden="true"
       />
 
-      {/* Panel */}
-      <div className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-zinc-900">
+      {/* Panel — bottom sheet on mobile (90vh), centered modal on sm+ */}
+      <div className="relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-900 sm:max-w-sm sm:rounded-2xl">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
@@ -184,29 +184,29 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
             <div className="space-y-5">
               {/* Selfie preview (if already picked a file) */}
               {previewUrl && (
-                <div className="overflow-hidden rounded-xl">
+                <div className="overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-800">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={previewUrl}
                     alt="Your selfie"
-                    className="h-48 w-full object-cover"
+                    className="mx-auto max-h-[280px] w-full object-contain"
                   />
                 </div>
               )}
 
-              {/* Camera / Upload buttons */}
+              {/* Camera / Upload buttons — always side-by-side */}
               {!previewUrl && (
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => cameraInputRef.current?.click()}
-                    className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 px-4 py-5 text-sm font-medium text-zinc-700 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
+                    className="flex min-h-[64px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 px-3 py-4 text-sm font-medium text-zinc-700 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
                   >
                     <CameraIcon />
                     {fs.cameraButton}
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 px-4 py-5 text-sm font-medium text-zinc-700 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
+                    className="flex min-h-[64px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 px-3 py-4 text-sm font-medium text-zinc-700 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
                   >
                     <UploadIcon />
                     {fs.uploadButton}
@@ -246,12 +246,12 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 {fs.previewTitle}
               </p>
-              <div className="overflow-hidden rounded-xl">
+              <div className="overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-800">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
                   alt="Your selfie preview"
-                  className="h-52 w-full object-cover"
+                  className="mx-auto max-h-[280px] w-full object-contain"
                 />
               </div>
               <p className="text-xs text-zinc-400 dark:text-zinc-500">{fs.previewHint}</p>
@@ -262,7 +262,7 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
               )}
               <button
                 onClick={handleSearch}
-                className="w-full rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                className="flex h-12 w-full items-center justify-center rounded-xl bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
               >
                 {fs.searchButton}
               </button>
@@ -292,23 +292,23 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
 
           {/* ── Step 4: Results (found or empty) ── */}
           {step === "results" && (
-            <div className="space-y-4">
-              <div className="text-center">
-                <p className="text-2xl">
+            <div className="space-y-5">
+              <div className="py-2 text-center">
+                <p className="text-4xl">
                   {matchCount > 0 ? "\uD83C\uDF89" : "\uD83D\uDD0D"}
                 </p>
-                <p className="mt-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                <p className="mt-3 text-xl font-bold text-zinc-900 dark:text-zinc-50">
                   {fs.resultsTitle(matchCount)}
                 </p>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                   {fs.resultsSubtitle(matchCount)}
                 </p>
               </div>
               {matchCount > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <button
                     onClick={onClose}
-                    className="w-full rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                    className="flex h-12 w-full items-center justify-center rounded-xl bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
                   >
                     {fs.viewMatched}
                   </button>
@@ -322,7 +322,7 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
               ) : (
                 <button
                   onClick={handleTryAgain}
-                  className="w-full rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                  className="flex h-12 w-full items-center justify-center rounded-xl bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
                 >
                   {fs.tryAgain}
                 </button>
@@ -332,19 +332,19 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
 
           {/* ── No face detected ── */}
           {step === "no-face" && (
-            <div className="space-y-4">
-              <div className="text-center">
-                <p className="text-2xl">\u274C</p>
-                <p className="mt-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            <div className="space-y-5">
+              <div className="py-2 text-center">
+                <p className="text-4xl">\u274C</p>
+                <p className="mt-3 text-lg font-bold text-zinc-900 dark:text-zinc-50">
                   {fs.noFaceTitle}
                 </p>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                   {fs.noFaceBody}
                 </p>
               </div>
               <button
                 onClick={handleTryAgain}
-                className="w-full rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                className="flex h-12 w-full items-center justify-center rounded-xl bg-blue-600 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
               >
                 {fs.tryAgain}
               </button>

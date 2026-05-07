@@ -21,7 +21,7 @@ export function AccessDeniedToast() {
   return (
     <div
       role="alert"
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-xl bg-red-600 px-5 py-3 text-sm font-medium text-white shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-300"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-80 flex items-center gap-3 rounded-xl bg-red-600 px-5 py-3 text-sm font-medium text-white shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-300"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"

@@ -43,10 +43,21 @@ const STATUS_COLORS: Record<Status, string> = {
   DELIVERED: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
 };
 
+function formatDate(d: Date) {
+  return new Date(d).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 export function SelectionCard({ selection, eventId }: Props) {
   const t = useT();
   const [status, setStatus] = useState<Status>(selection.status);
   const [updating, setUpdating] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   async function handleStatusChange(next: Status) {
@@ -63,37 +74,34 @@ export function SelectionCard({ selection, eventId }: Props) {
   return (
     <>
       <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
-        {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-3 p-5">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+
+        {/* ── Collapsed: Desktop (horizontal single row) ── */}
+        <div className="hidden items-center gap-4 p-4 sm:flex">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                 {selection.customerName}
               </h3>
               <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status]}`}>
                 {t.selections[STATUS_LABEL_KEY[status]]}
               </span>
+              {selection.customerEmail && (
+                <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                  {selection.customerEmail}
+                </span>
+              )}
             </div>
-            {selection.customerEmail && (
-              <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
-                {selection.customerEmail}
-              </p>
-            )}
-            <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
-              {photos.length} photo{photos.length !== 1 ? "s" : ""} selected
-              {" · "}
-              {new Date(selection.createdAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-              })}
+            <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
+              {photos.length} photo{photos.length !== 1 ? "s" : ""} · {formatDate(selection.createdAt)}
+              {selection.customerNote && (
+                <span className="ml-2 italic text-zinc-400 dark:text-zinc-500">
+                  "{selection.customerNote.slice(0, 60)}{selection.customerNote.length > 60 ? "…" : ""}"
+                </span>
+              )}
             </p>
           </div>
 
-          {/* Actions */}
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <a
               href={`/api/download/selection/${selection.id}`}
               className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
@@ -104,7 +112,6 @@ export function SelectionCard({ selection, eventId }: Props) {
               </svg>
               {t.selections.downloadZip}
             </a>
-
             <select
               value={status}
               disabled={updating}
@@ -115,49 +122,128 @@ export function SelectionCard({ selection, eventId }: Props) {
               <option value="REVIEWED">{t.selections.statusReviewed}</option>
               <option value="DELIVERED">{t.selections.statusDelivered}</option>
             </select>
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+            >
+              {expanded ? t.selections.hideDetails : t.selections.viewDetails}
+            </button>
           </div>
         </div>
 
-        {/* Customer note */}
-        {selection.customerNote && (
-          <div className="mx-5 mb-4 rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-700/50">
-            <p className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-              {t.selections.clientNoteLabel}
-            </p>
-            <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">
-              {selection.customerNote}
-            </p>
+        {/* ── Collapsed: Mobile (vertical rows) ── */}
+        <div className="p-4 sm:hidden">
+          {/* Row 1: Name + status badge */}
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="min-w-0 truncate text-base font-semibold text-zinc-900 dark:text-zinc-50">
+              {selection.customerName}
+            </h3>
+            <span className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status]}`}>
+              {t.selections[STATUS_LABEL_KEY[status]]}
+            </span>
           </div>
-        )}
 
-        {/* Photo thumbnails */}
-        {photos.length > 0 && (
-          <div className="px-5 pb-5">
-            <div className="flex flex-wrap gap-2">
-              {photos.map((sp, idx) => (
-                <div key={sp.id} className="group relative">
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setLightboxIndex(idx)}
-                    onKeyDown={(e) => e.key === "Enter" && setLightboxIndex(idx)}
-                    className="h-20 w-20 cursor-pointer overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-600"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={sp.photo.signedUrl ?? ""}
-                      alt={sp.photo.filename}
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                    />
-                  </div>
-                  {sp.note && (
-                    <div className="absolute -bottom-1 left-0 right-0 hidden rounded-b-lg bg-black/70 px-1 py-0.5 group-hover:block">
-                      <p className="truncate text-[10px] text-white">{sp.note}</p>
+          {/* Row 2: Date + photo count */}
+          <p className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-500">
+            {formatDate(selection.createdAt)} · {photos.length} photo{photos.length !== 1 ? "s" : ""}
+          </p>
+
+          {/* Row 3: Note preview */}
+          {selection.customerNote && (
+            <p className="mt-1.5 line-clamp-2 text-xs italic text-zinc-500 dark:text-zinc-400">
+              "{selection.customerNote}"
+            </p>
+          )}
+
+          {/* Row 4: View Details button */}
+          {!expanded && (
+            <button
+              onClick={() => setExpanded(true)}
+              className="mt-3 w-full rounded-lg border border-zinc-300 bg-white py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600"
+            >
+              {t.selections.viewDetails}
+            </button>
+          )}
+        </div>
+
+        {/* ── Expanded: Photo grid + actions ── */}
+        {expanded && (
+          <div className="border-t border-zinc-100 dark:border-zinc-700">
+            {/* Customer note (full) */}
+            {selection.customerNote && (
+              <div className="mx-4 mt-4 rounded-lg bg-zinc-50 px-4 py-3 dark:bg-zinc-700/50">
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                  {t.selections.clientNoteLabel}
+                </p>
+                <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-200">
+                  {selection.customerNote}
+                </p>
+              </div>
+            )}
+
+            {/* Thumbnail grid */}
+            {photos.length > 0 && (
+              <div className="px-4 pt-4">
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-2">
+                  {photos.map((sp, idx) => (
+                    <div key={sp.id} className="flex flex-col">
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setLightboxIndex(idx)}
+                        onKeyDown={(e) => e.key === "Enter" && setLightboxIndex(idx)}
+                        className="aspect-square cursor-pointer overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-600 sm:h-20 sm:w-20 sm:aspect-auto"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={sp.photo.signedUrl ?? ""}
+                          alt={sp.photo.filename}
+                          className="h-full w-full object-cover transition-transform hover:scale-105"
+                        />
+                      </div>
+                      {sp.note && (
+                        <p className="mt-1 line-clamp-2 text-[11px] italic text-zinc-400 dark:text-zinc-500">
+                          {sp.note}
+                        </p>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-              ))}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="mt-4 flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-end">
+              <select
+                value={status}
+                disabled={updating}
+                onChange={(e) => handleStatusChange(e.target.value as Status)}
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 sm:w-auto sm:px-2 sm:py-1.5 sm:text-xs"
+              >
+                <option value="PENDING">{t.selections.statusPending}</option>
+                <option value="REVIEWED">{t.selections.statusReviewed}</option>
+                <option value="DELIVERED">{t.selections.statusDelivered}</option>
+              </select>
+
+              <a
+                href={`/api/download/selection/${selection.id}`}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-600 sm:w-auto sm:py-1.5 sm:text-xs"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
+                  <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+                </svg>
+                {t.selections.downloadZip}
+              </a>
             </div>
+
+            {/* Hide Details */}
+            <button
+              onClick={() => setExpanded(false)}
+              className="mt-3 mb-4 flex w-full items-center justify-center text-sm text-zinc-400 transition-colors hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
+            >
+              {t.selections.hideDetails}
+            </button>
           </div>
         )}
       </div>
@@ -165,7 +251,7 @@ export function SelectionCard({ selection, eventId }: Props) {
       {/* Lightbox */}
       {currentPhoto && lightboxIndex !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/90"
           onClick={() => setLightboxIndex(null)}
           onKeyDown={(e) => {
             if (e.key === "Escape") setLightboxIndex(null);
@@ -173,7 +259,6 @@ export function SelectionCard({ selection, eventId }: Props) {
             if (e.key === "ArrowRight") setLightboxIndex((i) => (i !== null && i < photos.length - 1 ? i + 1 : i));
           }}
           tabIndex={-1}
-          // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
           role="dialog"
         >
           <button

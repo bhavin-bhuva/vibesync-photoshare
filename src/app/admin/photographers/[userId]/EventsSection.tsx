@@ -67,7 +67,7 @@ function PhotoGrid({ photos, loading, error }: { photos: Photo[]; loading: boole
               </svg>
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 truncate bg-black/50 px-1 py-0.5 text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute inset-x-0 bottom-0 truncate bg-black/50 px-1 py-0.5 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
             {p.filename}
           </div>
         </div>

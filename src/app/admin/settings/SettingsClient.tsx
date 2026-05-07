@@ -153,7 +153,7 @@ export function PlatformSettingsSection({
             type="text"
             value={appName}
             onChange={(e) => setAppName(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-base text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
           />
         </Field>
 
@@ -165,7 +165,7 @@ export function PlatformSettingsSection({
             value={supportEmail}
             onChange={(e) => setSupportEmail(e.target.value)}
             placeholder="support@yourcompany.com"
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
           />
         </Field>
 
@@ -249,7 +249,7 @@ function GbInput({
           step="1"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-24 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none"
+          className="w-24 rounded-lg border border-zinc-300 px-3 py-1.5 text-base text-zinc-900 focus:border-blue-500 focus:outline-none sm:text-sm"
         />
         <span className="text-sm text-zinc-500">GB</span>
       </div>
@@ -328,7 +328,7 @@ export function PlanLimitsSection({
                 <input
                   type="number" min="1" step="1" value={evFree}
                   onChange={(e) => setEvFree(e.target.value)}
-                  className="w-24 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none"
+                  className="w-24 rounded-lg border border-zinc-300 px-3 py-1.5 text-base text-zinc-900 focus:border-blue-500 focus:outline-none sm:text-sm"
                 />
                 <span className="text-sm text-zinc-500">events</span>
               </div>
@@ -342,7 +342,7 @@ export function PlanLimitsSection({
                 <input
                   type="number" min="1" step="1" value={evPro}
                   onChange={(e) => setEvPro(e.target.value)}
-                  className="w-24 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none"
+                  className="w-24 rounded-lg border border-zinc-300 px-3 py-1.5 text-base text-zinc-900 focus:border-blue-500 focus:outline-none sm:text-sm"
                 />
                 <span className="text-sm text-zinc-500">events</span>
               </div>
@@ -454,7 +454,7 @@ export function EmailSettingsSection({
               value={fromEmail}
               onChange={(e) => setFromEmail(e.target.value)}
               placeholder={process.env.NEXT_PUBLIC_SES_FROM_EMAIL ?? "noreply@yourdomain.com"}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
             />
           </Field>
 
@@ -464,7 +464,7 @@ export function EmailSettingsSection({
               value={awsRegion}
               onChange={(e) => setAwsRegion(e.target.value)}
               placeholder="us-east-1"
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-base font-mono text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
             />
           </Field>
 
@@ -474,7 +474,7 @@ export function EmailSettingsSection({
               value={awsKeyId}
               onChange={(e) => setAwsKeyId(e.target.value)}
               placeholder="AKIAIOSFODNN7EXAMPLE"
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-base font-mono text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
             />
           </Field>
 
@@ -498,7 +498,7 @@ export function EmailSettingsSection({
                 }}
                 onChange={(e) => setAwsSecret(e.target.value)}
                 placeholder={initialSes.hasSecret ? "Enter new key to replace…" : "Paste secret access key"}
-                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-base font-mono text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
               />
               {initialSes.hasSecret && awsSecret === SECRET_MASK && (
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">
@@ -853,7 +853,7 @@ export function FaceSettingsSection({
                 step="1000"
                 value={maxPerEvent}
                 onChange={(e) => setMaxPerEvent(e.target.value)}
-                className="w-28 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none"
+                className="w-28 rounded-lg border border-zinc-300 px-3 py-1.5 text-base text-zinc-900 focus:border-blue-500 focus:outline-none sm:text-sm"
               />
               <span className="text-sm text-zinc-500">faces</span>
             </div>
@@ -1008,7 +1008,7 @@ export function FaceSettingsSection({
                       step="100"
                       value={value}
                       onChange={(e) => setValue(e.target.value)}
-                      className="w-24 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none"
+                      className="w-24 rounded-lg border border-zinc-300 px-3 py-1.5 text-base text-zinc-900 focus:border-blue-500 focus:outline-none sm:text-sm"
                     />
                     <span className="text-xs text-zinc-400">/mo</span>
                   </div>

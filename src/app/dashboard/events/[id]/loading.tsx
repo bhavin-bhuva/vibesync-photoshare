@@ -11,7 +11,7 @@ export default function EventPageLoading() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       {/* Sticky header */}
-      <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90">
+      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/90 backdrop-blur dark:border-zinc-700 dark:bg-zinc-800/90">
         <div className="mx-auto max-w-6xl px-6 py-4">
           <div className="flex items-center gap-4">
             <Bone className="h-8 w-8 shrink-0 rounded-lg" />

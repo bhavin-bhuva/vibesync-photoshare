@@ -13,6 +13,7 @@ import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkStorageLimit, incrementStorage } from "@/lib/storage";
 import { createThumbnail } from "@/lib/thumbnail";
+import { parseExifBuffer } from "@/lib/exif";
 import { processSinglePhotoFaces } from "@/lib/faceIndexing";
 
 // ─── S3 client ────────────────────────────────────────────────────────────────
@@ -200,11 +201,28 @@ export async function completeMultipartUpload(
   }
 
   // Thumbnail generation is intentionally fire-and-forget:
-  // the photo is already usable; the thumb appears once S3 processing finishes.
+  // the photo is already usable; the thumb + EXIF appear once processing finishes.
   createThumbnail(s3Key)
-    .then((thumbKey) =>
-      db.photo.update({ where: { id: photoId }, data: { thumbS3Key: thumbKey } })
-    )
+    .then(({ thumbKey, width: tw, height: th, exifBuffer }) => {
+      const exif = exifBuffer ? parseExifBuffer(exifBuffer) : null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (db.photo.update as any)({
+        where: { id: photoId },
+        data: {
+          thumbS3Key: thumbKey,
+          // Overwrite with orientation-corrected dimensions from sharp
+          ...(tw != null ? { width: tw } : {}),
+          ...(th != null ? { height: th } : {}),
+          exifCameraMake:   exif?.exifCameraMake   ?? null,
+          exifCameraModel:  exif?.exifCameraModel  ?? null,
+          exifFocalLength:  exif?.exifFocalLength  ?? null,
+          exifAperture:     exif?.exifAperture     ?? null,
+          exifShutterSpeed: exif?.exifShutterSpeed ?? null,
+          exifIso:          exif?.exifIso          ?? null,
+          exifShootDate:    exif?.exifShootDate    ?? null,
+        },
+      });
+    })
     .catch((err: Error) =>
       console.error("[completeMultipartUpload] Thumbnail failed:", err.message)
     );

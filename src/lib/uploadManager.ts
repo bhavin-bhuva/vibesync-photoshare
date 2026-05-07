@@ -20,14 +20,14 @@ const RESUME_DELAY_MS = 2_000;
 type ToastType = "info" | "success" | "warning" | "error";
 
 /**
- * Dispatches a `photoshare:toast` CustomEvent on window.
+ * Dispatches a `photohouse:toast` CustomEvent on window.
  * The UI layer (e.g. a <Toaster> component) listens for this event and renders
  * the notification — keeping UploadManager fully decoupled from React.
  */
 function showToast(message: string, type: ToastType = "info"): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(
-    new CustomEvent("photoshare:toast", { detail: { message, type } })
+    new CustomEvent("photohouse:toast", { detail: { message, type } })
   );
 }
 

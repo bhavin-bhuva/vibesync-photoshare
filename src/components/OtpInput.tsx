@@ -101,7 +101,7 @@ export function OtpInput({
         className={shaking ? "otp-shake" : ""}
         onAnimationEnd={() => setShaking(false)}
       >
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           {digits.map((digit, i) => (
             <input
               key={i}
@@ -116,7 +116,7 @@ export function OtpInput({
               onKeyDown={(e) => handleKeyDown(i, e)}
               onPaste={i === 0 ? handlePaste : undefined}
               className={[
-                "h-11 w-11 rounded-lg border text-center text-lg font-bold",
+                "h-16 w-16 rounded-xl border text-center text-2xl font-bold",
                 "transition-colors focus:outline-none focus:ring-2",
                 "disabled:cursor-not-allowed disabled:opacity-40",
                 isError

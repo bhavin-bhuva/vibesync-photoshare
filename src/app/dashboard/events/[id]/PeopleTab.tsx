@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
@@ -125,9 +126,9 @@ function ClusterCard({
   const [labelInput, setLabelInput] = useState(initial.label ?? "");
   const [savingLabel, setSavingLabel] = useState(false);
   const [togglingHidden, setTogglingHidden] = useState(false);
+  const [showActionSheet, setShowActionSheet] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Keep local state in sync if parent re-renders with new data
   useEffect(() => { setCluster(initial); }, [initial]);
 
   function startEditing() {
@@ -140,7 +141,6 @@ function ClusterCard({
     if (savingLabel) return;
     setEditing(false);
     const trimmed = labelInput.trim();
-    // Optimistic update
     setCluster((c) => ({ ...c, label: trimmed || null }));
     setSavingLabel(true);
     await setClusterLabelAction(cluster.id, trimmed);
@@ -149,7 +149,6 @@ function ClusterCard({
 
   async function toggleHidden() {
     if (togglingHidden) return;
-    // Optimistic update
     setCluster((c) => ({ ...c, isHidden: !c.isHidden }));
     setTogglingHidden(true);
     const result = await toggleClusterHiddenAction(cluster.id);
@@ -160,34 +159,47 @@ function ClusterCard({
   }
 
   return (
-    <div className={`group relative flex flex-col overflow-hidden rounded-xl bg-white ring-1 transition-shadow hover:shadow-md dark:bg-zinc-800 ${cluster.isHidden ? "ring-zinc-200 opacity-60 dark:ring-zinc-700" : "ring-zinc-200 dark:ring-zinc-700"}`}>
-      {/* Cover image — click opens photos modal */}
-      <button
-        className="relative block overflow-hidden bg-zinc-100 dark:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400"
-        style={{ height: 180 }}
-        onClick={() => onShowPhotos(cluster.id, cluster.label, cluster.photoCount)}
-        aria-label={`View photos of ${cluster.label ?? "this person"}`}
+    <>
+      <div
+        className={`group relative overflow-hidden rounded-xl bg-white ring-1 transition-shadow hover:shadow-md dark:bg-zinc-800 ${
+          cluster.isHidden ? "opacity-60 ring-zinc-200 dark:ring-zinc-700" : "ring-zinc-200 dark:ring-zinc-700"
+        }`}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={cluster.coverCropUrl}
-          alt={cluster.label ?? "Person"}
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+        {/* Mobile: transparent overlay → action sheet */}
+        <div
+          className="absolute inset-0 z-10 cursor-pointer sm:hidden"
+          onClick={() => setShowActionSheet(true)}
+          role="button"
+          aria-label={`Options for ${cluster.label ?? t.peoplePage.unknownPerson}`}
         />
-        {cluster.isHidden && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/80">
-              {t.peoplePage.hiddenBadge}
-            </span>
-          </div>
-        )}
-      </button>
 
-      {/* Metadata */}
-      <div className="flex flex-1 flex-col gap-2 px-3 py-2.5">
-        {/* Label row */}
-        {editing ? (
-          <div className="flex items-center gap-1">
+        {/* Square face image */}
+        <div className="relative aspect-square overflow-hidden bg-zinc-100 dark:bg-zinc-700">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={cluster.coverCropUrl}
+            alt={cluster.label ?? "Person"}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+          {cluster.isHidden && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+              <span className="rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/80">
+                {t.peoplePage.hiddenBadge}
+              </span>
+            </div>
+          )}
+          {/* Desktop: click image → view photos */}
+          <button
+            className="absolute inset-0 hidden bg-black/0 transition-colors hover:bg-black/10 focus-visible:outline-none sm:block"
+            onClick={() => onShowPhotos(cluster.id, cluster.label, cluster.photoCount)}
+            aria-label={`View photos of ${cluster.label ?? t.peoplePage.unknownPerson}`}
+          />
+        </div>
+
+        {/* Metadata */}
+        <div className="px-2 py-1.5 sm:px-3 sm:py-2.5">
+          {/* Label row */}
+          {editing ? (
             <input
               ref={inputRef}
               value={labelInput}
@@ -198,44 +210,99 @@ function ClusterCard({
                 if (e.key === "Escape") { setEditing(false); setLabelInput(cluster.label ?? ""); }
               }}
               placeholder={t.peoplePage.addNamePlaceholder}
-              className="min-w-0 flex-1 rounded border border-zinc-300 bg-white px-2 py-0.5 text-xs text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100"
+              className="w-full rounded border border-zinc-300 bg-white px-2 py-0.5 text-xs text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-100"
             />
-          </div>
-        ) : (
-          <button
-            onClick={startEditing}
-            className="flex items-center gap-1.5 text-left"
-            aria-label="Edit name"
-          >
-            <span className={`text-xs font-medium ${cluster.label ? "text-zinc-800 dark:text-zinc-100" : "text-zinc-400 dark:text-zinc-500"}`}>
-              {savingLabel ? <SpinnerIcon className="h-3 w-3 animate-spin" /> : (cluster.label ?? t.peoplePage.addNamePlaceholder)}
-            </span>
-            <PencilIcon />
-          </button>
-        )}
-
-        {/* Photo count */}
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          {t.peoplePage.photoCount(cluster.photoCount)}
-        </p>
-
-        {/* Show / Hide toggle */}
-        <button
-          onClick={toggleHidden}
-          disabled={togglingHidden}
-          className="flex items-center gap-1.5 self-start rounded-md px-1.5 py-1 text-xs text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-50 dark:hover:bg-zinc-700 dark:hover:text-zinc-300"
-        >
-          {togglingHidden ? (
-            <SpinnerIcon className="h-3.5 w-3.5 animate-spin" />
-          ) : cluster.isHidden ? (
-            <EyeSlashIcon />
           ) : (
-            <EyeIcon />
+            <>
+              {/* Mobile: static, non-interactive */}
+              <p className="truncate text-[12px] font-medium sm:hidden">
+                <span className={cluster.label ? "text-zinc-800 dark:text-zinc-100" : "text-zinc-400 dark:text-zinc-500"}>
+                  {cluster.label ?? t.peoplePage.addNamePlaceholder}
+                </span>
+              </p>
+              {/* Desktop: click to rename */}
+              <button
+                onClick={startEditing}
+                className="hidden w-full items-center gap-1 text-left sm:flex"
+                aria-label="Edit name"
+              >
+                <span className={`truncate text-xs font-medium ${cluster.label ? "text-zinc-800 dark:text-zinc-100" : "text-zinc-400 dark:text-zinc-500"}`}>
+                  {savingLabel ? <SpinnerIcon className="h-3 w-3 animate-spin" /> : (cluster.label ?? t.peoplePage.addNamePlaceholder)}
+                </span>
+                <PencilIcon />
+              </button>
+            </>
           )}
-          {cluster.isHidden ? t.peoplePage.showLabel : t.peoplePage.hideLabel}
-        </button>
+
+          {/* Photo count */}
+          <p className="mt-0.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+            {t.peoplePage.photoCount(cluster.photoCount)}
+          </p>
+
+          {/* Show/Hide — desktop only */}
+          <button
+            onClick={toggleHidden}
+            disabled={togglingHidden}
+            className="mt-1 hidden items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-50 dark:hover:bg-zinc-700 dark:hover:text-zinc-300 sm:flex"
+          >
+            {togglingHidden ? <SpinnerIcon className="h-3.5 w-3.5 animate-spin" /> : cluster.isHidden ? <EyeSlashIcon /> : <EyeIcon />}
+            {cluster.isHidden ? t.peoplePage.showLabel : t.peoplePage.hideLabel}
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Mobile action sheet */}
+      {showActionSheet && createPortal(
+        <div className="fixed inset-0 z-60 sm:hidden" role="dialog" aria-modal="true">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setShowActionSheet(false)} />
+          <div
+            className="fixed inset-x-0 bottom-0 animate-in slide-in-from-bottom rounded-t-2xl bg-white dark:bg-zinc-800"
+            style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          >
+            <div className="mx-auto mt-2.5 h-1 w-10 rounded-full bg-zinc-200 dark:bg-zinc-600" />
+            {/* Person header */}
+            <div className="flex items-center gap-3 border-b border-zinc-100 px-5 py-3 dark:border-zinc-700">
+              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-700">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={cluster.coverCropUrl} alt="" className="h-full w-full object-cover" />
+              </div>
+              <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">
+                {cluster.label ?? t.peoplePage.unknownPerson}
+              </p>
+            </div>
+            {/* Action list */}
+            <div className="py-2">
+              <button
+                onClick={() => { setShowActionSheet(false); onShowPhotos(cluster.id, cluster.label, cluster.photoCount); }}
+                className="flex h-14 w-full items-center px-5 text-left text-base font-semibold text-zinc-900 hover:bg-zinc-50 dark:text-zinc-50 dark:hover:bg-zinc-700"
+              >
+                {t.peoplePage.viewPhotos}
+              </button>
+              <button
+                onClick={() => { setShowActionSheet(false); startEditing(); }}
+                className="flex h-14 w-full items-center px-5 text-left text-base text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              >
+                {t.peoplePage.renamePerson}
+              </button>
+              <button
+                onClick={() => { setShowActionSheet(false); toggleHidden(); }}
+                className="flex h-14 w-full items-center px-5 text-left text-base text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              >
+                {cluster.isHidden ? t.peoplePage.showLabel : t.peoplePage.hideFromGallery}
+              </button>
+              <div className="my-1 border-t border-zinc-100 dark:border-zinc-700" />
+              <button
+                onClick={() => setShowActionSheet(false)}
+                className="flex h-14 w-full items-center px-5 text-left text-base font-medium text-zinc-400 hover:bg-zinc-50 dark:text-zinc-500 dark:hover:bg-zinc-700"
+              >
+                {t.common.cancel}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
@@ -381,7 +448,7 @@ export function PeopleTab({
           <div className="mb-6 flex flex-wrap items-center gap-2 text-sm">
             <button
               onClick={goBackToPeople}
-              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-2 py-1 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
             >
               <ChevronLeftIcon />
               {t.peoplePage.backToPeople}
@@ -478,7 +545,7 @@ export function PeopleTab({
                       activeJob.totalPhotos || totalPhotoCount
                     )}
                   </p>
-                  <div className="mx-auto mt-4 h-2 w-64 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-700">
+                  <div className="mx-auto mt-4 h-2 w-full max-w-xs overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-700">
                     <div
                       className="h-full rounded-full bg-zinc-900 transition-all duration-500 dark:bg-zinc-200"
                       style={{
@@ -525,14 +592,27 @@ export function PeopleTab({
           {/* ── Clusters ── */}
           {showClusters && (
             <>
-              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {t.peoplePage.statsBar(stats.people, stats.photosAnalyzed, stats.facesFound)}
-                </p>
+              {/* Stats + controls header */}
+              <div className="mb-5 space-y-3 sm:space-y-0">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    {t.peoplePage.statsBar(stats.people, stats.photosAnalyzed, stats.facesFound)}
+                  </p>
+                  {/* Desktop rescan button */}
+                  <button
+                    onClick={handleRescan}
+                    disabled={rescanning}
+                    className="hidden items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 sm:inline-flex"
+                  >
+                    {rescanning && <SpinnerIcon />}
+                    {rescanning ? t.peoplePage.rescanning : t.peoplePage.rescanButton}
+                  </button>
+                </div>
+                {/* Mobile: full-width rescan button */}
                 <button
                   onClick={handleRescan}
                   disabled={rescanning}
-                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-zinc-300 bg-white py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 sm:hidden"
                 >
                   {rescanning && <SpinnerIcon />}
                   {rescanning ? t.peoplePage.rescanning : t.peoplePage.rescanButton}
@@ -540,7 +620,7 @@ export function PeopleTab({
               </div>
               {rescanError && <p className="mb-3 text-xs text-red-500">{rescanError}</p>}
 
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+              <div className="grid grid-cols-3 gap-3 sm:gap-4 md:grid-cols-4">
                 {clusters.map((cluster) => (
                   <ClusterCard
                     key={cluster.id}

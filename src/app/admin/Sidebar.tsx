@@ -106,7 +106,7 @@ function IconLogout() {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
-export function Sidebar({ name, email }: { name: string | null; email: string }) {
+export function Sidebar({ name, email, onClose }: { name: string | null; email: string; onClose?: () => void }) {
   const t = useT();
   const pathname = usePathname();
   const initials = getInitials(name, email);
@@ -135,12 +135,24 @@ export function Sidebar({ name, email }: { name: string | null; email: string })
             <path fillRule="evenodd" d="M1 8a2 2 0 0 1 2-2h.93a2 2 0 0 0 1.664-.89l.812-1.22A2 2 0 0 1 8.07 3h3.86a2 2 0 0 1 1.664.89l.812 1.22A2 2 0 0 0 16.07 6H17a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8Zm13.5 3a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM10 14a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
           </svg>
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-white">{t.app.name}</p>
           <p className="truncate text-[11px] font-medium uppercase tracking-widest text-slate-400">
             {t.admin.panelLabel}
           </p>
         </div>
+        {/* Close button — mobile drawer only */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            aria-label="Close navigation"
+            className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* ── Nav links ── */}

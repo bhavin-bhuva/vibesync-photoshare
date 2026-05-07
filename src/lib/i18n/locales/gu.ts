@@ -3,8 +3,8 @@ import type { Translations } from "./en";
 export const gu: Translations = {
   // ─── App-wide ──────────────────────────────────────────────────────────────
   app: {
-    name: "PhotoShare",
-    tagline: "PhotoShare દ્વારા શેર કર્યું",
+    name: "PhotoHouse",
+    tagline: "PhotoHouse દ્વારા શેર કર્યું",
     accessDenied: "પ્રવેશ નકારવામાં આવ્યો. આ પૃષ્ઠ જોવાની તમારી પાસે પરવાનગી નથી.",
   },
 
@@ -66,11 +66,13 @@ export const gu: Translations = {
   // ─── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
     welcome: (name: string) => `કેમ છો?, ${name}`,
+    welcomeShort: (name: string) => `સ્વાગત, ${name} 👋`,
     subtitle: "તમારા ગૅલેરીઓનો સારાંશ અહીં છે.",
     stats: {
       events: "ઇવેન્ટ્સ",
       photos: "ફોટો",
       storage: "સ્ટોરેજ",
+      links: "Links",
       storageDetail: (used: string, limit: string) => `${used} / ${limit}`,
       storagePercent: (pct: number) => `${pct}% ઉપયોગ`,
       atEventLimit: "ઇવેન્ટ મર્યાદા પૂર્ણ — વધુ ઉમેરવા અપગ્રેડ કરો.",
@@ -145,6 +147,9 @@ export const gu: Translations = {
     loadingPhotos: "ફોટો લોડ\u2026",
     backToPeople: "લોકો પર પાછા",
     unknownPerson: "અજ્ઞાત વ્યક્તિ",
+    viewPhotos: "ફોટો જુઓ",
+    renamePerson: "નામ બદલો",
+    hideFromGallery: "ગૅલેરીમાંથી છુપાવો",
     deleteFaceDataButton: "બધો ચહેરો ડેટા ડિલીટ કરો",
     deleteFaceDataTitle: "બધો ચહેરો ડેટા ડિલીટ કરો?",
     deleteFaceDataBody: "આ ઇવેન્ટ માટે બધા ચહેરા, ક્લસ્ટર અને એમ્બેડિંગ કાયમ માટે ડિલીટ થઈ જશે.",
@@ -160,6 +165,7 @@ export const gu: Translations = {
     dropzoneBrowse: "બ્રાઉઝ કરો",
     dropzoneHint: "JPG, PNG, WEBP · મહત્તમ 50 MB પ્રત્યેક",
     dropzoneDragActive: "ફોટો ઉમેરવા છોડો…",
+    dropzoneTap: "ફોટો પસંદ કરવા ટૅપ કરો",
     statusDone: "પૂર્ણ",
     statusFailed: "નિષ્ફળ",
     summaryNoFiles: "કોઈ ફાઇલ પસંદ નથી",
@@ -326,13 +332,18 @@ export const gu: Translations = {
     title: "ક્લાઇન્ટ સિલેક્શન્સ",
     backAriaLabel: "ઇવેન્ટ પર પાછા જાઓ",
     pendingBadge: (n: number) => `${n} બાકી`,
+    submissionsCount: (n: number) => `${n} સબમિશન${n !== 1 ? "્સ" : ""}`,
     emptyTitle: "હજુ સુધી કોઈ સિલેક્શન નથી",
     emptySubtitle: "ક્લાઇન્ટ્સ શેર ગૅલેરીમાંથી મનપસંદ ફોટો પસંદ કરી શકે છે.",
     statusPending: "બાકી",
     statusReviewed: "સમીક્ષા થઈ",
     statusDelivered: "ડિલિવર થયો",
     downloadZip: "ZIP ડાઉનલોડ",
+    downloadAll: "બધા સિલેક્શન ડાઉનલોડ",
     clientNoteLabel: "ક્લાઇન્ટ તરફથી નોંધ",
+    filterAll: "બધા",
+    viewDetails: "વિગત જુઓ",
+    hideDetails: "વિગત છુપાવો",
   },
 
   // ─── Find My Photos (face search on share page) ───────────────────────────
@@ -395,6 +406,9 @@ export const gu: Translations = {
     thankYouTitle: "તમારા સિલેક્શન્સ સબમિટ થઈ ગયા!",
     thankYouSubtitle: "ફોટોગ્રાફર ટૂંક સમયમાં સંપર્ક કરશે.",
     browseGallery: "ગૅલેરી જુઓ",
+    addPhotoNote: "આ ફોટો માટે નોંધ ઉમેરો (વૈકલ્પિક)",
+    saveNote: "નોંધ સાચવો",
+    removeSelection: "પસંદગી દૂર કરો",
   },
 
   // ─── Billing page ──────────────────────────────────────────────────────────

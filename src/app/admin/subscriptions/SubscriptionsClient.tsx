@@ -154,9 +154,9 @@ export function SubscriptionsClient({
         </select>
 
         <div className="flex items-center gap-1.5">
-          <input type="date" value={dateFrom} onChange={(e) => updateParams({ from: e.target.value || null, page: null })} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+          <input type="date" value={dateFrom} onChange={(e) => updateParams({ from: e.target.value || null, page: null })} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none sm:text-sm" />
           <span className="text-xs text-zinc-400">to</span>
-          <input type="date" value={dateTo} onChange={(e) => updateParams({ to: e.target.value || null, page: null })} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none" />
+          <input type="date" value={dateTo} onChange={(e) => updateParams({ to: e.target.value || null, page: null })} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none sm:text-sm" />
         </div>
 
         <span className="ml-auto text-xs text-zinc-400">{total.toLocaleString()} result{total !== 1 ? "s" : ""}</span>

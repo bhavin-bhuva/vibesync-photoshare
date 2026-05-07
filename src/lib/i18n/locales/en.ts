@@ -1,8 +1,8 @@
 export const en = {
   // ─── App-wide ──────────────────────────────────────────────────────────────
   app: {
-    name: "PhotoShare",
-    tagline: "Shared via PhotoShare",
+    name: "PhotoHouse",
+    tagline: "Shared via PhotoHouse",
     accessDenied: "Access denied. You don\u2019t have permission to view that page.",
   },
 
@@ -64,11 +64,13 @@ export const en = {
   // ─── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
     welcome: (name: string) => `Hello, ${name}`,
+    welcomeShort: (name: string) => `Welcome, ${name} \ud83d\udc4b`,
     subtitle: "Here\u2019s an overview of your galleries.",
     stats: {
       events: "Events",
       photos: "Photos",
       storage: "Storage",
+      links: "Links",
       storageDetail: (used: string, limit: string) => `${used} / ${limit}`,
       storagePercent: (pct: number) => `${pct}% used`,
       atEventLimit: "Event limit reached \u2014 upgrade to add more.",
@@ -147,6 +149,9 @@ export const en = {
     loadingPhotos: "Loading photos\u2026",
     backToPeople: "Back to People",
     unknownPerson: "Unknown Person",
+    viewPhotos: "View Photos",
+    renamePerson: "Rename Person",
+    hideFromGallery: "Hide from Gallery",
     deleteFaceDataButton: "Delete All Face Data",
     deleteFaceDataTitle: "Delete all face data?",
     deleteFaceDataBody:
@@ -163,6 +168,7 @@ export const en = {
     dropzoneBrowse: "browse",
     dropzoneHint: "JPG, PNG, WEBP \u00b7 max 50 MB each",
     dropzoneDragActive: "Drop to add photos\u2026",
+    dropzoneTap: "Tap to select photos",
     statusDone: "Done",
     statusFailed: "Failed",
     summaryNoFiles: "No files selected",
@@ -329,13 +335,18 @@ export const en = {
     title: "Client Selections",
     backAriaLabel: "Back to event",
     pendingBadge: (n: number) => `${n} pending`,
+    submissionsCount: (n: number) => `${n} submission${n !== 1 ? "s" : ""}`,
     emptyTitle: "No selections yet",
     emptySubtitle: "Clients can select their favourite photos from the shared gallery.",
     statusPending: "Pending",
     statusReviewed: "Reviewed",
     statusDelivered: "Delivered",
     downloadZip: "Download ZIP",
+    downloadAll: "Download All Selections",
     clientNoteLabel: "Note from client",
+    filterAll: "All",
+    viewDetails: "View Details",
+    hideDetails: "Hide Details",
   },
 
   // ─── Find My Photos (face search on share page) ───────────────────────────
@@ -395,6 +406,9 @@ export const en = {
     submitting: "Submitting\u2026",
     errorNoName: "Please enter your name.",
     errorNoPhotos: "Please select at least one photo.",
+    addPhotoNote: "Add note for this photo (optional)",
+    saveNote: "Save Note",
+    removeSelection: "Remove Selection",
     thankYouTitle: "Your selections have been submitted!",
     thankYouSubtitle: "The photographer will be in touch soon.",
     browseGallery: "Browse gallery",

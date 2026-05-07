@@ -54,27 +54,35 @@ export default async function SharePage({
   const { slug } = await params;
   const t = await getServerT();
 
-  const link = await db.sharedLink.findUnique({
-    where: { slug },
-    include: {
-      event: {
-        include: {
-          photos: { orderBy: { createdAt: "desc" } },
-          photoGroups: {
-            where: { photoCount: { gt: 0 } },
-            orderBy: { sortOrder: "asc" },
-            select: { id: true, name: true, color: true, photoCount: true, isVisible: true },
-          },
-          user: {
-            include: { subscription: true, studioProfile: true },
+  const [link, linkExtraRows] = await Promise.all([
+    db.sharedLink.findUnique({
+      where: { slug },
+      include: {
+        event: {
+          include: {
+            photos: { orderBy: { createdAt: "desc" } },
+            photoGroups: {
+              where: { photoCount: { gt: 0 } },
+              orderBy: { sortOrder: "asc" },
+              select: { id: true, name: true, color: true, photoCount: true, isVisible: true },
+            },
+            user: {
+              include: { subscription: true, studioProfile: true },
+            },
           },
         },
       },
-    },
-  });
+    }),
+    // Raw query for fields not yet in the generated Prisma model
+    db.$queryRaw<{ defaultGridDensity: string; faceSearchEnabled: boolean; groupVisibilityOverrides: unknown }[]>`
+      SELECT "defaultGridDensity", "faceSearchEnabled", "groupVisibilityOverrides"
+      FROM "SharedLink" WHERE slug = ${slug}
+    `,
+  ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const linkAny = link as any;
+  const linkExtra = linkExtraRows[0] ?? { defaultGridDensity: "default", faceSearchEnabled: false, groupVisibilityOverrides: null };
 
   if (!link) notFound();
 
@@ -142,7 +150,7 @@ export default async function SharePage({
   const { event } = link;
 
   // Resolve effective group visibility: per-link overrides take precedence over PhotoGroup.isVisible
-  const groupOverrides = (linkAny?.groupVisibilityOverrides ?? null) as Record<string, boolean> | null;
+  const groupOverrides = (linkExtra.groupVisibilityOverrides ?? null) as Record<string, boolean> | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const visibleGroups = ((event as any).photoGroups as Array<{ id: string; name: string; color: string | null; photoCount: number; isVisible: boolean }>)
     .filter((g) => {
@@ -158,7 +166,7 @@ export default async function SharePage({
   //   1. The shared link has faceSearchEnabled = true
   //   2. The event has faceIndexingEnabled = true
   //   3. At least one FaceCluster exists (i.e. indexing has completed)
-  const linkFaceSearchEnabled: boolean = linkAny?.faceSearchEnabled ?? false;
+  const linkFaceSearchEnabled: boolean = linkExtra.faceSearchEnabled ?? false;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const eventFaceIndexingEnabled: boolean = (event as any).faceIndexingEnabled ?? false;
   let faceSearchEnabled = false;
@@ -173,8 +181,25 @@ export default async function SharePage({
         id: photo.id,
         filename: photo.filename,
         size: photo.size,
+        createdAt: photo.createdAt,
+        width: photo.width ?? null,
+        height: photo.height ?? null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         groupId: (photo as any).groupId ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifCameraMake:   (photo as any).exifCameraMake   ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifCameraModel:  (photo as any).exifCameraModel  ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifFocalLength:  (photo as any).exifFocalLength  ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifAperture:     (photo as any).exifAperture     ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifShutterSpeed: (photo as any).exifShutterSpeed ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifIso:          (photo as any).exifIso          ?? null,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        exifShootDate:    (photo as any).exifShootDate    ?? null,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         thumbnailUrl: (photo as any).thumbS3Key
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -220,9 +245,9 @@ export default async function SharePage({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/10" />
 
         {/* ── Glassmorphism info card ── */}
-        <div className="relative z-10 w-full px-6 pb-7 pt-20">
+        <div className="relative z-10 w-full px-4 pb-7 pt-20 sm:px-6">
           <div className="mx-auto max-w-6xl">
-            <div className="inline-flex w-full flex-col gap-4 rounded-2xl border border-white/20 bg-white/10 px-6 py-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:flex-row sm:items-center sm:gap-5">
+            <div className="inline-flex w-full flex-col items-center gap-4 rounded-2xl border border-white/20 bg-white/10 px-4 py-5 shadow-2xl shadow-black/30 backdrop-blur-xl sm:flex-row sm:items-center sm:gap-5 sm:px-6">
 
               {/* Brand mark: logo > initials > generic camera */}
               {logoUrl ? (
@@ -230,14 +255,14 @@ export default async function SharePage({
                 <img
                   src={logoUrl}
                   alt={sp!.studioName}
-                  className="h-14 w-14 shrink-0 rounded-xl object-cover ring-2 ring-white/30 shadow-lg"
+                  className="h-14 w-14 shrink-0 rounded-xl object-cover ring-2 ring-white/30 shadow-lg sm:self-auto"
                 />
               ) : sp ? (
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20 text-lg font-bold text-white shadow-lg ring-2 ring-white/20">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20 text-lg font-bold text-white shadow-lg ring-2 ring-white/20 sm:self-auto">
                   {sp.studioName.slice(0, 2).toUpperCase()}
                 </div>
               ) : (
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20 shadow-lg ring-2 ring-white/20">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-white/20 shadow-lg ring-2 ring-white/20 sm:self-auto">
                   <svg className="h-7 w-7 text-white" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
                     <path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
@@ -246,7 +271,7 @@ export default async function SharePage({
               )}
 
               {/* Text info */}
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 text-center sm:text-left">
                 {sp && (
                   <p className="mb-0.5 text-xs font-semibold uppercase tracking-widest text-white/60">
                     {sp.studioName}
@@ -255,7 +280,7 @@ export default async function SharePage({
                 <h1 className="truncate text-xl font-bold text-white drop-shadow-sm">
                   {event.name}
                 </h1>
-                <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
+                <div className="mt-1 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 sm:justify-start">
                   <span className="text-sm text-white/70">{formatDate(event.date)}</span>
                   <span className="text-white/30">·</span>
                   <span className="text-sm text-white/70">{t.common.photoCount(event.photos.length)}</span>
@@ -277,7 +302,7 @@ export default async function SharePage({
       </header>
 
       {/* Gallery */}
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-3 py-6 sm:px-6 sm:py-8">
         <Gallery
           photos={photos}
           slug={slug}
@@ -286,6 +311,8 @@ export default async function SharePage({
           faceSearchEnabled={faceSearchEnabled}
           groups={visibleGroups}
           eventName={event.name}
+          brandColor={brandColor}
+          serverDefaultDensity={(linkExtra.defaultGridDensity ?? "default") as string}
         />
       </main>
 

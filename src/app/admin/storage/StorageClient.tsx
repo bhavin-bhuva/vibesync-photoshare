@@ -79,7 +79,7 @@ function IncreaseLimitModal({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
       <div
         className="w-full max-w-md rounded-2xl bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -127,7 +127,7 @@ function IncreaseLimitModal({
               step="0.1"
               value={gbInput}
               onChange={(e) => setGbInput(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-base text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
             />
             {gbInput && parseFloat(gbInput) > 0 && (
               <p className="mt-1 text-xs text-zinc-400">
@@ -147,7 +147,7 @@ function IncreaseLimitModal({
               onChange={(e) => setReason(e.target.value)}
               rows={2}
               placeholder="e.g. Special arrangement, partner account, etc."
-              className="block w-full resize-none rounded-lg border border-zinc-300 px-3 py-2 text-sm placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="block w-full resize-none rounded-lg border border-zinc-300 px-3 py-2 text-base placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
             />
           </div>
 
@@ -321,7 +321,7 @@ export function StorageTable({ initialRows }: { initialRows: StorageRow[] }) {
                   </td>
                   {/* Plan */}
                   <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${plan}`}>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${plan}`}>
                       {row.planTier}
                     </span>
                   </td>
@@ -383,7 +383,7 @@ export function StorageTable({ initialRows }: { initialRows: StorageRow[] }) {
                         Limit
                       </button>
                       {rowMsg[row.userId] && (
-                        <span className={`text-[11px] ${rowMsg[row.userId] === "Updated." ? "text-emerald-600" : "text-red-600"}`}>
+                        <span className={`text-xs ${rowMsg[row.userId] === "Updated." ? "text-emerald-600" : "text-red-600"}`}>
                           {rowMsg[row.userId]}
                         </span>
                       )}

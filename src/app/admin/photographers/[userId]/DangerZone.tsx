@@ -23,7 +23,7 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
   }, [onClose]);
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-60 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
@@ -115,7 +115,7 @@ function SuspendModal({ userId, userName, onClose, onDone }: {
       </p>
       <div className="mb-4">
         <label className="block text-sm font-medium text-zinc-700">Reason <span className="text-zinc-400">(optional)</span></label>
-        <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} placeholder="Policy violation, abuse, etc." className="mt-1.5 block w-full resize-none rounded-lg border border-zinc-300 px-3 py-2 text-sm placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500" />
+        <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} placeholder="Policy violation, abuse, etc." className="mt-1.5 block w-full resize-none rounded-lg border border-zinc-300 px-3 py-2 text-base placeholder-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 sm:text-sm" />
       </div>
       <BtnRow
         onCancel={onClose}
@@ -187,7 +187,7 @@ function ResetPasswordModal({ userId, onClose }: { userId: string; onClose: () =
         <>
           <p className="mb-3 text-sm text-zinc-500">Password reset successfully. Share this temporary password with the user — it will not be shown again.</p>
           <div className="mb-4 flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2">
-            <input ref={inputRef} readOnly value={tempPw} className="flex-1 bg-transparent font-mono text-sm text-zinc-900 focus:outline-none" />
+            <input ref={inputRef} readOnly value={tempPw} className="flex-1 bg-transparent font-mono text-base text-zinc-900 focus:outline-none sm:text-sm" />
             <button onClick={copy} className="shrink-0 rounded-md bg-zinc-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-zinc-700">
               {copied ? "Copied!" : "Copy"}
             </button>
