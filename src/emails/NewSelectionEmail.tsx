@@ -41,7 +41,7 @@ export function NewSelectionEmail({
           {/* Header */}
           <Section style={header}>
             <Text style={headerLabel}>
-              {studioName ?? "PhotoShare"}
+              {studioName ?? "PhotoHouse"}
             </Text>
           </Section>
 

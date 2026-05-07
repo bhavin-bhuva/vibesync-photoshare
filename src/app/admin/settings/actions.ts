@@ -42,7 +42,7 @@ export async function savePlatformSettingsAction(updates: {
   try {
     await requireSuperAdmin();
     await setSettings({
-      [SETTING_KEYS.APP_NAME]:         updates.appName.trim() || "PhotoShare",
+      [SETTING_KEYS.APP_NAME]:         updates.appName.trim() || "PhotoHouse",
       [SETTING_KEYS.SUPPORT_EMAIL]:    updates.supportEmail.trim(),
       [SETTING_KEYS.MAINTENANCE_MODE]: updates.maintenanceMode ? "true" : "false",
       [SETTING_KEYS.SIGNUPS_ENABLED]:  updates.signupsEnabled  ? "true" : "false",
@@ -129,17 +129,17 @@ export async function sendTestEmailAction(): Promise<{ error?: string }> {
         Source:      fromEmail,
         Destination: { ToAddresses: [toEmail] },
         Message: {
-          Subject: { Data: "PhotoShare — Test Email", Charset: "UTF-8" },
+          Subject: { Data: "PhotoHouse — Test Email", Charset: "UTF-8" },
           Body: {
             Text: {
-              Data: `This is a test email from PhotoShare admin panel.\n\nSent to: ${toEmail}\nSent from: ${fromEmail}\nTimestamp: ${new Date().toISOString()}`,
+              Data: `This is a test email from PhotoHouse admin panel.\n\nSent to: ${toEmail}\nSent from: ${fromEmail}\nTimestamp: ${new Date().toISOString()}`,
               Charset: "UTF-8",
             },
             Html: {
               Data: `
                 <div style="font-family:sans-serif;max-width:480px;margin:40px auto;padding:32px;border:1px solid #e4e4e7;border-radius:12px">
                   <h2 style="margin:0 0 8px;font-size:18px;color:#18181b">✓ Test Email</h2>
-                  <p style="margin:0 0 16px;color:#71717a;font-size:14px">This is a test email from the PhotoShare admin panel.</p>
+                  <p style="margin:0 0 16px;color:#71717a;font-size:14px">This is a test email from the PhotoHouse admin panel.</p>
                   <table style="width:100%;border-collapse:collapse;font-size:13px">
                     <tr><td style="padding:6px 0;color:#a1a1aa">To</td><td style="padding:6px 0;color:#18181b">${toEmail}</td></tr>
                     <tr><td style="padding:6px 0;color:#a1a1aa">From</td><td style="padding:6px 0;color:#18181b">${fromEmail}</td></tr>

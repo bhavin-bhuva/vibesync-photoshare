@@ -1,8 +1,8 @@
 export const en = {
   // ─── App-wide ──────────────────────────────────────────────────────────────
   app: {
-    name: "PhotoShare",
-    tagline: "Shared via PhotoShare",
+    name: "PhotoHouse",
+    tagline: "Shared via PhotoHouse",
     accessDenied: "Access denied. You don\u2019t have permission to view that page.",
   },
 

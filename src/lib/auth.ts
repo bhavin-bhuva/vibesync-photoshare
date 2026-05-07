@@ -38,7 +38,7 @@ export const authOptions: NextAuthOptions = {
 
         // ── Suspension check ────────────────────────────────────────────────
         if (user.isSuspended) {
-          const supportEmail = (await getSetting(SETTING_KEYS.SUPPORT_EMAIL)) || "support@photoshare.com";
+          const supportEmail = (await getSetting(SETTING_KEYS.SUPPORT_EMAIL)) || "support@photohouse.com";
           const reason       = user.suspendedReason?.trim() || "No reason provided";
           throw new Error(
             `Your account has been suspended. Reason: ${reason}. Contact support at ${supportEmail}`

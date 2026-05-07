@@ -88,7 +88,7 @@ export function MobileNav({ name, email }: { name: string | null; email: string 
           href="/dashboard"
           className="text-base font-semibold text-zinc-900 dark:text-zinc-50"
         >
-          PhotoShare
+          PhotoHouse
         </Link>
 
         <div className="flex items-center gap-1">
@@ -129,7 +129,7 @@ export function MobileNav({ name, email }: { name: string | null; email: string 
             {/* Drawer header */}
             <div className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-200 px-4 dark:border-zinc-700">
               <span className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-                PhotoShare
+                PhotoHouse
               </span>
               <button
                 onClick={() => setDrawerOpen(false)}

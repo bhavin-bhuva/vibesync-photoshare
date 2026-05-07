@@ -3,8 +3,8 @@ import type { Translations } from "./en";
 export const ja: Translations = {
   // ─── App-wide ──────────────────────────────────────────────────────────────
   app: {
-    name: "PhotoShare",
-    tagline: "PhotoShare 経由で共有",
+    name: "PhotoHouse",
+    tagline: "PhotoHouse 経由で共有",
     accessDenied: "アクセスが拒否されました。このページを表示する権限がありません。",
   },
 

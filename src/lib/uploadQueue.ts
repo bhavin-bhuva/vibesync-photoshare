@@ -31,7 +31,7 @@ export interface QueueItem {
 
 // ─── DB config ────────────────────────────────────────────────────────────────
 
-const DB_NAME = "photoshare-uploads";
+const DB_NAME = "photohouse-uploads";
 const DB_VERSION = 1;
 const STORE = "queue";
 

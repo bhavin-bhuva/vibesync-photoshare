@@ -52,7 +52,7 @@ function formatShortDate(date: Date | string): string {
 function showToast(message: string, ok = true) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(
-    new CustomEvent("photoshare:toast", {
+    new CustomEvent("photohouse:toast", {
       detail: { message, type: ok ? "success" : "error" },
     })
   );

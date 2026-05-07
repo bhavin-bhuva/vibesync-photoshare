@@ -39,7 +39,7 @@ export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
 
 // Defaults returned when no DB row exists yet
 export const SETTING_DEFAULTS: Record<SettingKey, string> = {
-  app_name:                   "PhotoShare",
+  app_name:                   "PhotoHouse",
   support_email:               "",
   maintenance_mode:            "false",
   signups_enabled:             "true",

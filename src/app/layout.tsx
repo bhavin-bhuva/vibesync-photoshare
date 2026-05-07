@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PhotoShare",
+  title: "PhotoHouse",
   description: "Photographer client gallery app",
 };
 

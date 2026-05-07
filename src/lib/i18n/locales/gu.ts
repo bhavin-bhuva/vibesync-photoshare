@@ -3,8 +3,8 @@ import type { Translations } from "./en";
 export const gu: Translations = {
   // ─── App-wide ──────────────────────────────────────────────────────────────
   app: {
-    name: "PhotoShare",
-    tagline: "PhotoShare દ્વારા શેર કર્યું",
+    name: "PhotoHouse",
+    tagline: "PhotoHouse દ્વારા શેર કર્યું",
     accessDenied: "પ્રવેશ નકારવામાં આવ્યો. આ પૃષ્ઠ જોવાની તમારી પાસે પરવાનગી નથી.",
   },
 
