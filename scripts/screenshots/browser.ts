@@ -3,13 +3,30 @@ import { SCREENSHOT_CONFIG } from "./config";
 import fs from "fs";
 import path from "path";
 
+// Alpine Linux ships Chromium via apk (musl-compatible).
+// Puppeteer's bundled Chrome is glibc-only and won't run on Alpine.
+const ALPINE_CHROMIUM =
+  process.env.PUPPETEER_EXECUTABLE_PATH ||
+  (() => {
+    const candidates = [
+      "/usr/bin/chromium-browser",
+      "/usr/bin/chromium",
+      "/usr/bin/google-chrome",
+    ];
+    const { existsSync } = require("fs");
+    return candidates.find((p) => existsSync(p)) || undefined;
+  })();
+
 export async function launchBrowser(): Promise<Browser> {
   return puppeteer.launch({
     headless: true,
+    executablePath: ALPINE_CHROMIUM,
     args: [
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--disable-dev-shm-usage",
+      "--disable-gpu",
+      "--single-process",
     ],
   });
 }
@@ -29,12 +46,19 @@ export async function loginAs(
   email    = SCREENSHOT_CONFIG.testEmail,
   password = SCREENSHOT_CONFIG.testPassword
 ): Promise<void> {
-  await page.goto(`${SCREENSHOT_CONFIG.baseUrl}/login`);
-  await page.waitForSelector('input[type="email"]');
+  await page.goto(`${SCREENSHOT_CONFIG.baseUrl}/login`, { waitUntil: "load" });
+
+  // Middleware redirects logged-in users away from /login → already authenticated
+  if (!page.url().includes("/login")) {
+    console.log("✅ Already logged in as", email);
+    return;
+  }
+
+  await page.waitForSelector('input[type="email"]', { timeout: 8_000 });
   await page.type('input[type="email"]', email);
   await page.type('input[type="password"]', password);
   await page.click('button[type="submit"]');
-  await page.waitForNavigation({ waitUntil: "networkidle0" });
+  await page.waitForNavigation({ waitUntil: "load", timeout: 15_000 });
   console.log("✅ Logged in as", email);
 }
 

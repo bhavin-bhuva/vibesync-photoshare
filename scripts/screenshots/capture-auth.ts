@@ -29,7 +29,7 @@ export async function captureAuth() {
     // ── PRICING PAGE ──
     const pricingPage = await newPage(browser, "desktop");
     await pricingPage.goto(`${SCREENSHOT_CONFIG.baseUrl}/pricing`);
-    await pricingPage.waitForSelector('.pricing-grid, [class*="pricing"]');
+    await pricingPage.waitForSelector('[class*="grid-cols"], h1, main', { timeout: 10_000 });
     await takeScreenshot(pricingPage, "pricing-plans-desktop", {
       fullPage: true,
     });

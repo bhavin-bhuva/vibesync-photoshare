@@ -115,11 +115,10 @@ export async function captureSettings() {
     // ── 7. Admin photographers list ───────────────────────────────────────────
     const photogsPage = await newPage(browser, "desktop");
     await loginAsAdmin(photogsPage);
-    await photogsPage.goto(`${BASE}/admin/photographers`);
-    // Wait for the photographers table (desktop) or card list (mobile)
-    await photogsPage.waitForSelector("table, [class*='divide-y']", {
-      timeout: 10_000,
-    });
+    await photogsPage.goto(`${BASE}/admin/photographers`, { waitUntil: "load" });
+    // Wait for main content — table may be hidden on mobile but visible at 1440px
+    await photogsPage.waitForSelector("main", { timeout: 10_000 });
+    await new Promise((r) => setTimeout(r, 800)); // allow React hydration
     await takeScreenshot(photogsPage, "admin-photographers-list", {
       fullPage:      true,
       waitFor:       400,
@@ -135,8 +134,8 @@ export async function captureSettings() {
     });
     if (clickedRow) {
       await photogsPage.waitForNavigation({
-        waitUntil: "networkidle0",
-        timeout:   10_000,
+        waitUntil: "load",
+        timeout:   15_000,
       });
       await takeScreenshot(photogsPage, "admin-photographer-detail", {
         fullPage:      true,

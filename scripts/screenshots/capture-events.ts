@@ -212,22 +212,34 @@ export async function captureEvents() {
     await lightboxPage.goto(eventUrl);
     await lightboxPage.waitForSelector(photoWait, { timeout: 10_000 });
 
-    // Click the first photo card to open lightbox
-    await lightboxPage.click(photoWait);
+    // Scroll to top so first photo is in viewport, then click it
+    await lightboxPage.evaluate(() => window.scrollTo(0, 0));
+    await new Promise((r) => setTimeout(r, 300));
+    // Use evaluate click to bypass Puppeteer's clickability check
+    await lightboxPage.evaluate((sel: string) => {
+      const el = document.querySelector(sel) as HTMLElement | null;
+      if (el) el.click();
+    }, photoWait);
     // Lightbox renders at z-70 (bg-black fixed overlay)
-    await lightboxPage.waitForSelector('div[class*="z-70"]', { timeout: 5_000 });
+    await lightboxPage.waitForFunction(
+      () => !!document.querySelector('[class*="z-70"]') ||
+            document.body.style.overflow === 'hidden',
+      { timeout: 5_000 }
+    );
     await takeScreenshot(lightboxPage, "event-lightbox-closed-info", {
       waitFor:       500,
       hideSelectors: HIDE,
     });
 
-    // Click the info toggle button to open info panel
-    const clickedInfo = await clickButtonByText(lightboxPage, "Show details");
-    if (!clickedInfo) {
-      // aria-label fallback
-      const infoBtn = await lightboxPage.$('button[aria-label="Show details"]');
-      if (infoBtn) await infoBtn.click();
-    }
+    // Click the info toggle button using evaluate to bypass clickability checks
+    await lightboxPage.evaluate(() => {
+      const btn =
+        document.querySelector<HTMLElement>('button[aria-label="Show details"]') ||
+        Array.from(document.querySelectorAll("button")).find(
+          (b) => b.textContent?.includes("Show details")
+        ) as HTMLElement | undefined;
+      if (btn) btn.click();
+    });
     await takeScreenshot(lightboxPage, "event-lightbox-open-info", {
       waitFor:       300,
       hideSelectors: HIDE,

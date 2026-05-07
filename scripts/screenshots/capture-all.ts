@@ -5,25 +5,35 @@ import { captureGallery }   from "./capture-gallery";
 import { captureSettings }  from "./capture-settings";
 import { fileURLToPath }    from "url";
 
+const SECTIONS: Array<{ label: string; fn: () => Promise<void> }> = [
+  { label: "Auth & pricing",   fn: captureAuth      },
+  { label: "Dashboard",        fn: captureDashboard  },
+  { label: "Event detail",     fn: captureEvents    },
+  { label: "Public gallery",   fn: captureGallery   },
+  { label: "Settings & admin", fn: captureSettings  },
+];
+
 async function captureAll() {
   console.log("🚀 Starting full screenshot capture...\n");
 
-  console.log("── Auth & pricing ──────────────────────────────");
-  await captureAuth();
+  const failed: string[] = [];
 
-  console.log("\n── Dashboard ───────────────────────────────────");
-  await captureDashboard();
+  for (const { label, fn } of SECTIONS) {
+    console.log(`── ${label} ${"─".repeat(Math.max(0, 46 - label.length))}`);
+    try {
+      await fn();
+    } catch (err) {
+      console.error(`❌ ${label} failed:`, (err as Error).message);
+      failed.push(label);
+    }
+    console.log();
+  }
 
-  console.log("\n── Event detail ────────────────────────────────");
-  await captureEvents();
-
-  console.log("\n── Public gallery ──────────────────────────────");
-  await captureGallery();
-
-  console.log("\n── Settings & admin ────────────────────────────");
-  await captureSettings();
-
-  console.log("\n✅ All screenshots captured!");
+  if (failed.length === 0) {
+    console.log("✅ All screenshots captured!");
+  } else {
+    console.log(`⚠️  Completed with ${failed.length} section failure(s): ${failed.join(", ")}`);
+  }
   console.log("📁 Saved to: ./docs/screenshots/");
 }
 

@@ -78,9 +78,20 @@ async function authenticateGallery(browser: Browser, slug: string): Promise<void
       await new Promise((r) => setTimeout(r, 120));
     }
 
-    // After the last digit, OtpInput calls onComplete → server action sets cookie
-    // Wait for gallery content (photo cards) to appear via router.refresh()
-    await page.waitForSelector('div[role="button"][tabindex="0"]', { timeout: 12_000 });
+    // After last digit, OtpInput fires onComplete → server action verifies PIN
+    // and sets cookie → router.refresh() re-renders RSC (no navigation event).
+    // Wait for gallery photo grid to appear (replaces PinForm after auth).
+    await new Promise((r) => setTimeout(r, 3_000));
+    await page.waitForFunction(
+      () =>
+        // Gallery content appears (photo cards or any non-pin element)
+        document.querySelector('[class*="columns"]') !== null ||
+        document.querySelector('img[src*="cloudfront"]') !== null ||
+        // Fallback: pin inputs gone and some grid/main content appeared
+        (document.querySelector('input[inputmode="numeric"]') === null &&
+         document.querySelector('main') !== null),
+      { timeout: 20_000 }
+    );
     console.log("🔓 Gallery authenticated via PIN");
   } finally {
     await page.close();
