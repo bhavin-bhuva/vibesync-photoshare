@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sharing Galleries — PhotoHouse Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark"><svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg></div>
+    <div><div class="sidebar-logo-name">PhotoHouse</div><div class="sidebar-logo-label">Documentation</div></div>
+  </div>
+  <nav class="sidebar-nav"><div class="nav-section"><div class="nav-section-title">📖 User Guide</div><ul>
+    <li><a href="getting-started.html"   class="nav-link">Getting Started</a></li>
+    <li><a href="events.html"            class="nav-link">Managing Events</a></li>
+    <li><a href="uploading-photos.html"  class="nav-link">Uploading Photos</a></li>
+    <li><a href="sharing-galleries.html" class="nav-link">Sharing Galleries</a></li>
+    <li><a href="photo-selection.html"   class="nav-link">Photo Selection</a></li>
+    <li><a href="face-recognition.html"  class="nav-link">AI Face Search</a></li>
+    <li><a href="watermarking.html"      class="nav-link">Watermarking</a></li>
+    <li><a href="billing.html"           class="nav-link">Billing &amp; Plans</a></li>
+  </ul></div></nav>
+</aside>
+<div class="sidebar-overlay"></div>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hamburger" aria-label="Open navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <nav class="breadcrumb"><span>PhotoHouse Docs</span><span class="breadcrumb-sep">›</span><span>User Guide</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">Sharing Galleries</span></nav>
+  </div>
+  <div class="topbar-right"><div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>
+    <input class="search-input" type="search" placeholder="Search docs…"><span class="search-kbd">⌘K</span>
+    <div class="search-results"></div>
+  </div></div>
+</div>
+<div class="main-wrapper"><div class="page-layout">
+  <main class="content-col">
+    <h1 class="page-title">Sharing Galleries</h1>
+    <p class="page-intro">PhotoHouse generates unique, hard-to-guess URLs for each gallery. You control whether clients need a PIN, a password, or can access the gallery freely. Each event can have multiple share links — useful when sharing different group subsets with different people.</p>
+    <div class="content-body">
+
+      <h2 id="creating-a-link">Creating a Share Link</h2>
+      <ol class="step-list">
+        <li><div><strong>Open your event and click "Share Event"</strong><p>The share modal opens, showing any existing links and a form to create a new one.</p></div></li>
+        <li><div><strong>Choose an access type</strong><p>Select <strong>PIN</strong>, <strong>Password</strong>, or <strong>No protection</strong>.</p></div></li>
+        <li><div><strong>Set an optional expiry date</strong><p>Leave blank for a permanent link, or pick a date after which the link stops working.</p></div></li>
+        <li><div><strong>Click Create</strong><p>Copy the URL and send it to your client.</p></div></li>
+      </ol>
+
+      <figure class="docs-screenshot">
+        <img src="./screenshots/event-share-link-panel.png" alt="Share link panel">
+        <figcaption>The Share modal showing existing links and the create-new-link form.</figcaption>
+      </figure>
+
+      <h2 id="access-types">Access Types</h2>
+
+      <h3>PIN <span class="badge badge--new">Recommended</span></h3>
+      <p>A 4-digit numeric PIN is the easiest option for clients. They see four input boxes and type the PIN on their phone without needing to remember a complex password. You can reveal the PIN later from the share modal if a client forgets it.</p>
+
+      <figure class="docs-screenshot">
+        <img src="./screenshots/event-share-pin-option.png" alt="PIN option selected">
+        <figcaption>Choosing the PIN access type. Use "Generate" to create a random PIN.</figcaption>
+      </figure>
+
+      <h3>Password</h3>
+      <p>A text password (minimum 4 characters). Good when you want a memorable phrase — e.g. <code>smithwedding2024</code> — that you can include in a welcome email.</p>
+
+      <h3>No protection</h3>
+      <p>Anyone with the link can view the gallery. The URL is still a random 16-character hex string, so it's not guessable, but there's no credential layer.</p>
+
+      <div class="callout callout--warning">
+        <span class="callout-icon">⚠️</span>
+        <div><strong>Use protection for private events</strong><p>Unprotected links can be forwarded. For weddings or private family sessions, always use a PIN or password.</p></div>
+      </div>
+
+      <h2 id="gallery-view">What Clients See</h2>
+      <p>After entering their PIN or password, clients land on a branded gallery page showing:</p>
+      <ul>
+        <li>Your studio logo, name, and brand colour in the hero header.</li>
+        <li>The event name and date.</li>
+        <li>Group filter pills (if you created groups).</li>
+        <li>A <strong>Select Photos</strong> button to enter selection mode.</li>
+        <li>A <strong>Download All (ZIP)</strong> button (Pro/Studio plans only).</li>
+      </ul>
+
+      <figure class="docs-screenshot">
+        <img src="./screenshots/gallery-photos-desktop.png" alt="Client gallery view">
+        <figcaption>The client gallery — your studio branding in the hero, photos in a responsive grid below.</figcaption>
+      </figure>
+
+      <h2 id="pin-entry">PIN Entry Screen</h2>
+      <p>Clients who navigate directly to a PIN-protected gallery see a clean entry screen with your studio branding before any photos are revealed.</p>
+
+      <figure class="docs-screenshot">
+        <img src="./screenshots/gallery-pin-entry-desktop.png" alt="PIN entry screen">
+        <figcaption>The PIN entry screen on desktop, showing the studio logo and four digit boxes.</figcaption>
+      </figure>
+
+      <h2 id="revoking-links">Revoking Links</h2>
+      <p>Open the Share modal and click <strong>Revoke</strong> next to a link. The URL immediately stops working. Existing browser sessions with a valid cookie will expire within 24 hours.</p>
+
+      <h2 id="multiple-links">Multiple Share Links</h2>
+      <p>You can create multiple links per event with different settings — for example, a PIN link for the wedding couple and a separate password link for the parents. Each link can show a different subset of groups using group visibility overrides.</p>
+
+    </div>
+    <nav class="page-nav">
+      <a href="uploading-photos.html" class="page-nav-btn prev"><span class="page-nav-label">← Previous</span><span class="page-nav-title">Uploading Photos</span></a>
+      <a href="photo-selection.html" class="page-nav-btn next"><span class="page-nav-label">Next →</span><span class="page-nav-title">Photo Selection</span></a>
+    </nav>
+  </main>
+  <aside class="toc-col"><div class="toc-inner"><div class="toc-title">On this page</div><ul class="toc-list"></ul></div></aside>
+</div></div>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Uploading Photos — PhotoHouse Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark"><svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg></div>
+    <div><div class="sidebar-logo-name">PhotoHouse</div><div class="sidebar-logo-label">Documentation</div></div>
+  </div>
+  <nav class="sidebar-nav"><div class="nav-section"><div class="nav-section-title">📖 User Guide</div><ul>
+    <li><a href="getting-started.html"   class="nav-link">Getting Started</a></li>
+    <li><a href="events.html"            class="nav-link">Managing Events</a></li>
+    <li><a href="uploading-photos.html"  class="nav-link">Uploading Photos</a></li>
+    <li><a href="sharing-galleries.html" class="nav-link">Sharing Galleries</a></li>
+    <li><a href="photo-selection.html"   class="nav-link">Photo Selection</a></li>
+    <li><a href="face-recognition.html"  class="nav-link">AI Face Search</a></li>
+    <li><a href="watermarking.html"      class="nav-link">Watermarking</a></li>
+    <li><a href="billing.html"           class="nav-link">Billing &amp; Plans</a></li>
+  </ul></div></nav>
+</aside>
+<div class="sidebar-overlay"></div>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hamburger" aria-label="Open navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <nav class="breadcrumb"><span>PhotoHouse Docs</span><span class="breadcrumb-sep">›</span><span>User Guide</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">Uploading Photos</span></nav>
+  </div>
+  <div class="topbar-right"><div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>
+    <input class="search-input" type="search" placeholder="Search docs…"><span class="search-kbd">⌘K</span>
+    <div class="search-results"></div>
+  </div></div>
+</div>
+<div class="main-wrapper"><div class="page-layout">
+  <main class="content-col">
+    <h1 class="page-title">Uploading Photos</h1>
+    <p class="page-intro">PhotoHouse uploads photos directly to Amazon S3 using multipart upload — meaning large files are sent in chunks and can resume after an interruption. The upload queue persists in your browser so you can close the tab and come back.</p>
+    <div class="content-body">
+
+      <h2 id="how-to-upload">How to Upload</h2>
+      <ol class="step-list">
+        <li><div><strong>Open an event and click "Upload Photos"</strong><p>The upload modal slides up from the bottom.</p></div></li>
+        <li><div><strong>Drag files or click to browse</strong><p>Select one or more JPEG, PNG, WebP, or TIFF files. You can select an entire folder.</p></div></li>
+        <li><div><strong>Optionally assign a group</strong><p>Pick a group from the dropdown before uploading to automatically file photos into that group.</p></div></li>
+        <li><div><strong>Click Upload</strong><p>Files are queued and uploaded in parallel. A progress bar shows bytes transferred per file.</p></div></li>
+      </ol>
+
+      <figure class="docs-screenshot">
+        <img src="./screenshots/event-upload-zone.png" alt="Upload modal">
+        <figcaption>The upload modal with the drag-and-drop zone. Drag files anywhere on the zone to begin.</figcaption>
+      </figure>
+
+      <h2 id="formats">Supported Formats</h2>
+      <p>PhotoHouse accepts the following image formats:</p>
+      <ul>
+        <li><strong>JPEG / JPG</strong> — recommended for delivery (smallest file size)</li>
+        <li><strong>PNG</strong> — for images with transparency</li>
+        <li><strong>WebP</strong> — modern format, excellent compression</li>
+        <li><strong>TIFF</strong> — archival quality; thumbnails are generated as JPEG</li>
+      </ul>
+      <div class="callout callout--warning">
+        <span class="callout-icon">⚠️</span>
+        <div><strong>RAW files not supported</strong><p>CR2, NEF, ARW and other RAW formats are not accepted. Export from Lightroom or Capture One to JPEG or TIFF before uploading.</p></div>
+      </div>
+
+      <h2 id="upload-queue">The Upload Queue</h2>
+      <p>Every file you add enters a persistent browser-side queue backed by IndexedDB. This means:</p>
+      <ul>
+        <li>You can close the upload modal and the queue keeps running in the background.</li>
+        <li>If you navigate away or the network drops, uploads resume automatically when you return to the page.</li>
+        <li>Each file shows its own progress bar and status: <strong>Pending → Uploading → Done</strong>.</li>
+      </ul>
+
+      <h3>Pausing and resuming</h3>
+      <p>Use the pause button in the upload modal to temporarily halt the queue. Click resume to continue. Individual failed files can be retried with the retry button.</p>
+
+      <h2 id="thumbnails">Thumbnails &amp; EXIF</h2>
+      <p>When a photo is saved, PhotoHouse automatically generates a compressed thumbnail (≈ 600 px wide) used for the photo grid. EXIF metadata — camera model, focal length, aperture, shutter speed, ISO, and capture date — is extracted and stored for display in the lightbox info panel.</p>
+
+      <h2 id="storage">Storage Limits</h2>
+      <p>Your storage bar on the dashboard tracks total photo size across all events. When you approach your limit a warning banner appears. To see a breakdown, visit <strong>Dashboard → Storage</strong> in the admin panel.</p>
+
+      <table class="plan-table">
+        <thead><tr><th>Plan</th><th>Storage</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge badge--free">Free</span></td><td>1 GB</td></tr>
+          <tr><td><span class="badge badge--pro">Pro</span></td><td>50 GB</td></tr>
+          <tr><td><span class="badge badge--studio">Studio</span></td><td>500 GB</td></tr>
+        </tbody>
+      </table>
+
+    </div>
+    <nav class="page-nav">
+      <a href="events.html" class="page-nav-btn prev"><span class="page-nav-label">← Previous</span><span class="page-nav-title">Managing Events</span></a>
+      <a href="sharing-galleries.html" class="page-nav-btn next"><span class="page-nav-label">Next →</span><span class="page-nav-title">Sharing Galleries</span></a>
+    </nav>
+  </main>
+  <aside class="toc-col"><div class="toc-inner"><div class="toc-title">On this page</div><ul class="toc-list"></ul></div></aside>
+</div></div>
+<script src="script.js"></script>
+</body>
+</html>

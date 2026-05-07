@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Managing Events — PhotoHouse Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark"><svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg></div>
+    <div><div class="sidebar-logo-name">PhotoHouse</div><div class="sidebar-logo-label">Documentation</div></div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">📖 User Guide</div>
+      <ul>
+        <li><a href="getting-started.html"   class="nav-link">Getting Started</a></li>
+        <li><a href="events.html"            class="nav-link">Managing Events</a></li>
+        <li><a href="uploading-photos.html"  class="nav-link">Uploading Photos</a></li>
+        <li><a href="sharing-galleries.html" class="nav-link">Sharing Galleries</a></li>
+        <li><a href="photo-selection.html"   class="nav-link">Photo Selection</a></li>
+        <li><a href="face-recognition.html"  class="nav-link">AI Face Search</a></li>
+        <li><a href="watermarking.html"      class="nav-link">Watermarking</a></li>
+        <li><a href="billing.html"           class="nav-link">Billing &amp; Plans</a></li>
+      </ul>
+    </div>
+  </nav>
+</aside>
+<div class="sidebar-overlay"></div>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hamburger" aria-label="Open navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <nav class="breadcrumb"><span>PhotoHouse Docs</span><span class="breadcrumb-sep">›</span><span>User Guide</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">Managing Events</span></nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>
+      <input class="search-input" type="search" placeholder="Search docs…">
+      <span class="search-kbd">⌘K</span>
+      <div class="search-results"></div>
+    </div>
+  </div>
+</div>
+<div class="main-wrapper">
+  <div class="page-layout">
+    <main class="content-col">
+      <h1 class="page-title">Managing Events</h1>
+      <p class="page-intro">Events are the core unit in PhotoHouse — each event maps to a single shoot and holds all photos, groups, and client share links. Learn how to create, organise, and manage your events.</p>
+      <div class="content-body">
+
+        <h2 id="creating-events">Creating an Event</h2>
+        <p>From the dashboard, click the <strong>+ New Event</strong> button. Give the event a descriptive name and set the shoot date — the date appears on your gallery header and helps you sort events.</p>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/dashboard-events-grid.png" alt="Events grid">
+          <figcaption>The dashboard events grid. Each card links to that event's photo management page.</figcaption>
+        </figure>
+
+        <div class="callout callout--info">
+          <span class="callout-icon">ℹ️</span>
+          <div><strong>Event limits</strong><p>Free accounts are limited to 3 events. Pro accounts get 25. Studio accounts have unlimited events. See <a href="billing.html">Billing &amp; Plans</a>.</p></div>
+        </div>
+
+        <h2 id="photo-groups">Organising with Photo Groups</h2>
+        <p>Groups let you divide an event's photos into named sections — <em>Ceremony</em>, <em>Reception</em>, <em>Portraits</em> — so clients can browse and filter by section in the gallery.</p>
+
+        <h3>Creating a group</h3>
+        <p>Open an event, then look for the group filter bar above the photo grid. Use the group manager to add a new group, assign it a colour, and drag photos into it.</p>
+
+        <h3>Group filter pills</h3>
+        <p>Once groups exist, filter pills appear above the photo grid. Clicking a pill shows only photos in that group. Clients see the same pills in their gallery.</p>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/event-photos-group-filter.png" alt="Group filter active">
+          <figcaption>Group filter pills in the event view. The active group is highlighted with its assigned colour.</figcaption>
+        </figure>
+
+        <h3>Hiding groups</h3>
+        <p>Toggle a group's visibility to hide it from clients without deleting it. The group still appears in your photographer view with a strikethrough label.</p>
+
+        <h2 id="cover-photo">Setting a Cover Photo</h2>
+        <p>The cover photo appears as the gallery hero and as the thumbnail on your dashboard event card. To set one, click the cover photo zone at the top of any event page and upload or select a photo.</p>
+
+        <div class="callout callout--tip">
+          <span class="callout-icon">💡</span>
+          <div><strong>Best dimensions</strong><p>Landscape photos at 1920×1080 px or wider look best. The hero crops to a 16:9 ratio.</p></div>
+        </div>
+
+        <h2 id="grid-density">Grid Density</h2>
+        <p>Use the density control (top-right of the photo grid) to switch between four layouts:</p>
+        <ul>
+          <li><strong>Comfortable</strong> — 2 columns, large previews. Great for reviewing detail.</li>
+          <li><strong>Default</strong> — 3 columns. Balanced view for most events.</li>
+          <li><strong>Compact</strong> — 4 columns. Good for large events.</li>
+          <li><strong>Dense</strong> — 6 columns. Maximum overview for culling hundreds of photos.</li>
+        </ul>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/event-photos-density-dense.png" alt="Dense grid density">
+          <figcaption>Dense grid layout showing 6 columns — ideal for quickly reviewing a large shoot.</figcaption>
+        </figure>
+
+        <h2 id="lightbox">Photo Lightbox</h2>
+        <p>Click any photo to open the lightbox. Navigate with <span class="kbd">←</span> <span class="kbd">→</span> arrow keys, or swipe on mobile. Press <span class="kbd">Esc</span> to close.</p>
+        <p>The info panel (<strong>ⓘ</strong> button) shows EXIF metadata — camera model, focal length, aperture, shutter speed, and ISO — when available.</p>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/event-lightbox-open-info.png" alt="Lightbox with info panel open">
+          <figcaption>The photo lightbox with the EXIF info panel expanded.</figcaption>
+        </figure>
+
+        <h2 id="deleting-events">Deleting an Event</h2>
+        <p>Open the event's <strong>⋯ More</strong> menu and choose <strong>Delete Event</strong>. Deletion is permanent — all photos are removed from S3 and all share links are revoked.</p>
+
+        <div class="callout callout--warning">
+          <span class="callout-icon">⚠️</span>
+          <div><strong>This cannot be undone</strong><p>Deleting an event removes all its photos, groups, share links, and client selections permanently. Download any photos you want to keep first.</p></div>
+        </div>
+
+      </div>
+      <nav class="page-nav">
+        <a href="getting-started.html" class="page-nav-btn prev"><span class="page-nav-label">← Previous</span><span class="page-nav-title">Getting Started</span></a>
+        <a href="uploading-photos.html" class="page-nav-btn next"><span class="page-nav-label">Next →</span><span class="page-nav-title">Uploading Photos</span></a>
+      </nav>
+    </main>
+    <aside class="toc-col"><div class="toc-inner"><div class="toc-title">On this page</div><ul class="toc-list"></ul></div></aside>
+  </div>
+</div>
+<script src="script.js"></script>
+</body>
+</html>

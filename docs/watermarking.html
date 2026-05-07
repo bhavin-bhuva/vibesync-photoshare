@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Watermarking — PhotoHouse Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark"><svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg></div>
+    <div><div class="sidebar-logo-name">PhotoHouse</div><div class="sidebar-logo-label">Documentation</div></div>
+  </div>
+  <nav class="sidebar-nav"><div class="nav-section"><div class="nav-section-title">📖 User Guide</div><ul>
+    <li><a href="getting-started.html"   class="nav-link">Getting Started</a></li>
+    <li><a href="events.html"            class="nav-link">Managing Events</a></li>
+    <li><a href="uploading-photos.html"  class="nav-link">Uploading Photos</a></li>
+    <li><a href="sharing-galleries.html" class="nav-link">Sharing Galleries</a></li>
+    <li><a href="photo-selection.html"   class="nav-link">Photo Selection</a></li>
+    <li><a href="face-recognition.html"  class="nav-link">AI Face Search</a></li>
+    <li><a href="watermarking.html"      class="nav-link">Watermarking</a></li>
+    <li><a href="billing.html"           class="nav-link">Billing &amp; Plans</a></li>
+  </ul></div></nav>
+</aside>
+<div class="sidebar-overlay"></div>
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hamburger" aria-label="Open navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <nav class="breadcrumb"><span>PhotoHouse Docs</span><span class="breadcrumb-sep">›</span><span>User Guide</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">Watermarking</span></nav>
+  </div>
+  <div class="topbar-right"><div class="search-wrap">
+    <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>
+    <input class="search-input" type="search" placeholder="Search docs…"><span class="search-kbd">⌘K</span>
+    <div class="search-results"></div>
+  </div></div>
+</div>
+<div class="main-wrapper"><div class="page-layout">
+  <main class="content-col">
+    <h1 class="page-title">Watermarking</h1>
+    <p class="page-intro">PhotoHouse applies your studio watermark to every photo a client downloads — protecting your work without affecting what they see in the gallery preview. Watermarking is available on Pro and Studio plans.</p>
+    <div class="content-body">
+
+      <h2 id="how-watermarking-works">How Watermarking Works</h2>
+      <p>Watermarks are applied <strong>at download time</strong> using the Sharp image processing library on the server. The original photo stored in S3 is never modified — only the file sent to the client's browser carries the watermark.</p>
+      <p>This means you can change your watermark settings at any time and every future download will use the new settings, including for existing events.</p>
+
+      <div class="callout callout--info">
+        <span class="callout-icon">ℹ️</span>
+        <div><strong>Pro &amp; Studio only</strong><p>Watermarking is disabled for Free accounts. Gallery photos for Free plan events are downloaded without a watermark.</p></div>
+      </div>
+
+      <h2 id="configuring-watermark">Configuring Your Watermark</h2>
+      <p>Go to <strong>Profile → Watermark Settings</strong> to configure:</p>
+
+      <h3>Logo watermark</h3>
+      <p>If you've uploaded a studio logo (in <strong>Studio Branding</strong>), it's automatically used as the watermark graphic. The logo is resized to 8% of the image width and composited at your chosen position.</p>
+
+      <h3>Text watermark fallback</h3>
+      <p>When no logo is set (or if the logo fails to load), PhotoHouse falls back to an SVG text watermark using your studio name with a subtle drop-shadow filter.</p>
+
+      <h3>Position</h3>
+      <p>Choose where the watermark appears:</p>
+      <ul>
+        <li><strong>Bottom right</strong> — default, least obtrusive for landscape shots</li>
+        <li><strong>Bottom left</strong></li>
+        <li><strong>Bottom center</strong></li>
+      </ul>
+
+      <h3>Opacity</h3>
+      <p>Set opacity between 10% and 80%. Lower values create a subtle translucent mark; higher values create a more obvious brand stamp. The live preview in the settings panel updates in real time as you drag the slider.</p>
+
+      <figure class="docs-screenshot">
+        <img src="./screenshots/settings-watermark.png" alt="Watermark settings">
+        <figcaption>Watermark Settings — position, opacity slider, and the live CSS preview.</figcaption>
+      </figure>
+
+      <h2 id="live-preview">Live Preview</h2>
+      <p>The preview panel in Watermark Settings shows a simulated photo with your logo or studio name at the selected position and opacity. This is a CSS approximation — the actual composited watermark is generated by Sharp on the server and may differ slightly depending on photo dimensions.</p>
+
+      <h2 id="enable-disable">Enabling and Disabling</h2>
+      <p>Toggle <strong>Add watermark to downloaded photos</strong> to enable or disable watermarking. When disabled, all downloads (individual photos and ZIPs) are served without modification.</p>
+
+      <div class="callout callout--tip">
+        <span class="callout-icon">💡</span>
+        <div><strong>Workflow tip</strong><p>Disable watermarking before downloading your final delivered files, then re-enable it for ongoing client gallery access.</p></div>
+      </div>
+
+    </div>
+    <nav class="page-nav">
+      <a href="face-recognition.html" class="page-nav-btn prev"><span class="page-nav-label">← Previous</span><span class="page-nav-title">AI Face Search</span></a>
+      <a href="billing.html" class="page-nav-btn next"><span class="page-nav-label">Next →</span><span class="page-nav-title">Billing &amp; Plans</span></a>
+    </nav>
+  </main>
+  <aside class="toc-col"><div class="toc-inner"><div class="toc-title">On this page</div><ul class="toc-list"></ul></div></aside>
+</div></div>
+<script src="script.js"></script>
+</body>
+</html>
