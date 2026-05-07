@@ -1,105 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Face Search — PhotoHouse Docs</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-  <link rel="stylesheet" href="style.css">
+  <style>@import url('style.css');</style>
 </head>
 <body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <div class="sidebar-logo-mark"><svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg></div>
-    <div><div class="sidebar-logo-name">PhotoHouse</div><div class="sidebar-logo-label">Documentation</div></div>
+    <div class="sidebar-logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-name">PhotoHouse</div>
+      <div class="sidebar-logo-label">Documentation</div>
+    </div>
   </div>
-  <nav class="sidebar-nav"><div class="nav-section"><div class="nav-section-title">📖 User Guide</div><ul>
-    <li><a href="getting-started.html"   class="nav-link">Getting Started</a></li>
-    <li><a href="events.html"            class="nav-link">Managing Events</a></li>
-    <li><a href="uploading-photos.html"  class="nav-link">Uploading Photos</a></li>
-    <li><a href="sharing-galleries.html" class="nav-link">Sharing Galleries</a></li>
-    <li><a href="photo-selection.html"   class="nav-link">Photo Selection</a></li>
-    <li><a href="face-recognition.html"  class="nav-link">AI Face Search</a></li>
-    <li><a href="watermarking.html"      class="nav-link">Watermarking</a></li>
-    <li><a href="billing.html"           class="nav-link">Billing &amp; Plans</a></li>
-  </ul></div></nav>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">📖 User Guide</div>
+      <ul>
+        <li><a href="getting-started.html"    class="nav-link">Getting Started</a></li>
+        <li><a href="events.html"             class="nav-link">Managing Events</a></li>
+        <li><a href="uploading-photos.html"   class="nav-link">Uploading Photos</a></li>
+        <li><a href="sharing-galleries.html"  class="nav-link">Sharing Galleries</a></li>
+        <li><a href="photo-selection.html"    class="nav-link">Photo Selection</a></li>
+        <li><a href="face-recognition.html"   class="nav-link">AI Face Search</a></li>
+        <li><a href="watermarking.html"       class="nav-link">Watermarking</a></li>
+        <li><a href="billing.html"            class="nav-link">Billing &amp; Plans</a></li>
+      </ul>
+    </div>
+  </nav>
 </aside>
 <div class="sidebar-overlay"></div>
+
+<!-- ── Top bar ────────────────────────────────────────────────────────────── -->
 <div class="topbar">
   <div style="display:flex;align-items:center;gap:12px">
-    <button class="hamburger" aria-label="Open navigation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
-    <nav class="breadcrumb"><span>PhotoHouse Docs</span><span class="breadcrumb-sep">›</span><span>User Guide</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-current">AI Face Search</span></nav>
-  </div>
-  <div class="topbar-right"><div class="search-wrap">
-    <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/></svg>
-    <input class="search-input" type="search" placeholder="Search docs…"><span class="search-kbd">⌘K</span>
-    <div class="search-results"></div>
-  </div></div>
-</div>
-<div class="main-wrapper"><div class="page-layout">
-  <main class="content-col">
-    <h1 class="page-title">AI Face Search</h1>
-    <p class="page-intro">Face Search lets clients upload a selfie and instantly see every photo in the gallery that contains their face — no scrolling through hundreds of images. For photographers, it reduces the time clients spend hunting for themselves in large wedding or event galleries.</p>
-    <div class="content-body">
-
-      <h2 id="enabling-face-detection">Enabling Face Detection</h2>
-      <p>Face detection must be enabled per event. Open an event, click the <strong>People</strong> tab, then click <strong>Enable Face Detection</strong>.</p>
-
-      <p>PhotoHouse will queue an indexing job that:</p>
-      <ol>
-        <li>Scans every photo in the event for faces</li>
-        <li>Extracts a 512-dimension face embedding for each detected face</li>
-        <li>Clusters similar faces into <em>people clusters</em></li>
-      </ol>
-
-      <p>Indexing time depends on event size. A 200-photo wedding typically completes in under 2 minutes. A progress bar shows the status.</p>
-
-      <figure class="docs-screenshot">
-        <img src="./screenshots/event-people-tab.png" alt="People tab">
-        <figcaption>The People tab showing face clusters after indexing completes. Each cluster represents one person.</figcaption>
-      </figure>
-
-      <h2 id="people-clusters">People Clusters</h2>
-      <p>After indexing, the People tab shows a grid of face clusters — one cluster per person detected in the event. Click a cluster to see all photos containing that person.</p>
-
-      <h3>Labelling people</h3>
-      <p>Click the pencil icon on a cluster to give it a name — e.g. "Bride", "Groom", "Uncle Raj". Labels are visible only to you (photographers), not to gallery clients.</p>
-
-      <h3>Hiding a cluster</h3>
-      <p>Toggle the visibility of a cluster to prevent its photos from appearing in client face search results while keeping them in the main gallery.</p>
-
-      <h2 id="find-my-photos">Find My Photos — Client Experience</h2>
-      <p>To enable Find My Photos on a gallery share link, open the Share modal, toggle <strong>Allow Face Search</strong>, and save. Face detection must be complete before you can enable this toggle.</p>
-
-      <p>Clients with a face-search-enabled link see a <strong>Find My Photos</strong> button in the gallery. Tapping it opens a modal where they upload a selfie. PhotoHouse compares the selfie embedding against indexed faces and returns matching photos within seconds.</p>
-
-      <div class="callout callout--tip">
-        <span class="callout-icon">💡</span>
-        <div><strong>Privacy note</strong><p>Face embeddings are numerical vectors stored in your database — no facial image is sent to a third-party service. All processing runs on your own infrastructure.</p></div>
-      </div>
-
-      <h2 id="plan-availability">Plan Availability</h2>
-      <p>Face indexing and Find My Photos availability is configured by the platform admin. By default:</p>
-      <table class="plan-table">
-        <thead><tr><th>Feature</th><th>Free</th><th>Pro</th><th>Studio</th></tr></thead>
-        <tbody>
-          <tr><td>Face indexing</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Find My Photos</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
-          <tr><td>Monthly searches</td><td>—</td><td>100</td><td>Unlimited</td></tr>
-        </tbody>
-      </table>
-
-      <h2 id="deleting-face-data">Deleting Face Data</h2>
-      <p>At the bottom of the People tab, click <strong>Delete All Face Data</strong>. This removes all embeddings, clusters, and face records for the event. The underlying photos are not affected. Face detection can be re-enabled afterwards.</p>
-
-    </div>
-    <nav class="page-nav">
-      <a href="photo-selection.html" class="page-nav-btn prev"><span class="page-nav-label">← Previous</span><span class="page-nav-title">Photo Selection</span></a>
-      <a href="watermarking.html" class="page-nav-btn next"><span class="page-nav-label">Next →</span><span class="page-nav-title">Watermarking</span></a>
+    <button class="hamburger" aria-label="Open navigation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <nav class="breadcrumb">
+      <span>PhotoHouse Docs</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>User Guide</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">AI Face Search</span>
     </nav>
-  </main>
-  <aside class="toc-col"><div class="toc-inner"><div class="toc-title">On this page</div><ul class="toc-list"></ul></div></aside>
-</div></div>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/>
+      </svg>
+      <input class="search-input" type="search" placeholder="Search docs…" aria-label="Search documentation">
+      <span class="search-kbd">⌘K</span>
+      <div class="search-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<div class="main-wrapper">
+  <div class="page-layout">
+    <main class="content-col">
+      <h1 class="page-title">AI Face Search</h1>
+      <p class="page-intro">AI Face Search removes the biggest frustration in large event galleries — clients hunting for photos of themselves through hundreds of images. With one selfie, PhotoHouse surfaces every photo containing that person in seconds.</p>
+
+      <div class="content-body">
+
+        <!-- ── 1. How AI Face Search Works ───────────────────────────── -->
+        <h2 id="how-it-works">How AI Face Search Works</h2>
+        <p>When you enable face detection on an event, PhotoHouse scans every photo and groups faces it finds. Clients can then upload a selfie to instantly find all their photos.</p>
+        <p>Under the hood, the process works like this:</p>
+
+        <ol class="step-list">
+          <li>
+            <div>
+              <strong>Face detection</strong>
+              <p>Each photo is analysed and every face in it is located using bounding box coordinates. A cropped thumbnail of each detected face is saved.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Embedding generation</strong>
+              <p>A 512-dimension numerical vector (an "embedding") is computed for each face. This vector encodes the unique geometry of that face — spacing of eyes, shape of jaw, and so on.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Clustering</strong>
+              <p>Embeddings that are mathematically similar are grouped into clusters. Each cluster represents one person. A 300-photo wedding might produce 15–40 clusters depending on how many unique faces appear.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Client search</strong>
+              <p>When a client uploads a selfie, the same embedding process runs on their face. PhotoHouse compares it against every stored embedding in the event and returns the photos where that person appears.</p>
+            </div>
+          </li>
+        </ol>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/event-people-tab.png"
+               alt="The People tab showing face cluster cards with photo counts"
+               loading="lazy">
+          <figcaption>The People tab after face detection — each card represents one person detected across the event's photos.</figcaption>
+        </figure>
+
+        <div class="callout callout--info">
+          <span class="callout-icon">ℹ️</span>
+          <div>
+            <strong>No third-party AI service</strong>
+            <p>All face detection and embedding runs on your own infrastructure. No photo or face data is sent to external AI providers like AWS Rekognition, Google Vision, or Azure Face.</p>
+          </div>
+        </div>
+
+        <!-- ── 2. Enabling Face Detection ────────────────────────────── -->
+        <h2 id="enabling-face-detection">Enabling Face Detection</h2>
+        <p>Face detection is disabled by default on every event. To enable it:</p>
+
+        <ol class="step-list">
+          <li>
+            <div>
+              <strong>Open the event and click the People tab</strong>
+              <p>You'll see the "Face detection is disabled" empty state.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Click "Enable Face Detection"</strong>
+              <p>PhotoHouse queues an indexing job and begins scanning photos immediately.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Wait for indexing to complete</strong>
+              <p>A progress bar tracks how many photos have been analysed. For a 300-photo event on typical hardware, expect 1–3 minutes. For 800+ photos, allow 5–10 minutes.</p>
+            </div>
+          </li>
+        </ol>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/event-people-empty-state.png"
+               alt="People tab showing the disabled state with Enable Face Detection button"
+               loading="lazy">
+          <figcaption>The People tab before enabling — click "Enable Face Detection" to start the indexing job.</figcaption>
+        </figure>
+
+        <div class="callout callout--tip">
+          <span class="callout-icon">💡</span>
+          <div>
+            <strong>Enable before sharing with clients</strong>
+            <p>Face indexing must be complete before you can turn on "Find My Photos" on a share link. Enable it as soon as you finish uploading, so it's ready when you create the client gallery link.</p>
+          </div>
+        </div>
+
+        <!-- ── 3. The People Tab ──────────────────────────────────────── -->
+        <h2 id="the-people-tab">The People Tab</h2>
+        <p>Once indexing completes, the People tab shows a grid of face cluster cards — one card per detected person. Each card shows the best face crop for that cluster and a count of how many photos they appear in.</p>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/event-people-tab.png"
+               alt="People tab cluster grid showing faces with photo counts"
+               loading="lazy">
+          <figcaption>Face cluster cards in the People tab. Click any card to see all photos containing that person.</figcaption>
+        </figure>
+
+        <h3>Naming clusters</h3>
+        <p>Click the pencil icon on any cluster card to assign a label — <em>Bride</em>, <em>Groom</em>, <em>Uncle Raj</em>, and so on. Labels are visible only to you in the People tab; clients never see cluster names.</p>
+        <p>Labelling isn't required for Find My Photos to work — it's purely an organisational aid for the photographer. Named clusters are useful when a client asks <em>"Can you send me all the photos of the flower girl?"</em> — you can click straight to that cluster.</p>
+
+        <h3>Clicking into a cluster</h3>
+        <p>Click any cluster card to open a full-screen view of all photos in which that person appears. From here you can open the photo lightbox, download individual shots, or navigate back to the cluster grid.</p>
+
+        <h3>Hiding clusters</h3>
+        <p>Toggle the visibility switch on a cluster to exclude it from client face search results. Hidden clusters remain visible to you in the People tab with a greyed-out appearance. Use this to exclude staff, vendors, or strangers who happened to walk into the frame — so clients don't accidentally find photos of people they don't know.</p>
+
+        <!-- ── 4. Customer Face Search ────────────────────────────────── -->
+        <h2 id="customer-face-search">Customer Face Search (Find My Photos)</h2>
+        <p>To enable Find My Photos on a gallery share link, open the Share modal for the event and toggle <strong>Allow Face Search</strong> before creating (or editing) the link. This toggle only appears if face detection is complete.</p>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/gallery-find-my-photos-button.png"
+               alt="The Find My Photos button visible in the gallery view"
+               loading="lazy">
+          <figcaption>The "Find My Photos" button appears in the gallery toolbar when face search is enabled on the share link.</figcaption>
+        </figure>
+
+        <h3>Client flow — step by step</h3>
+        <ol class="step-list">
+          <li>
+            <div>
+              <strong>Client opens the gallery</strong>
+              <p>They enter their PIN or password as usual. A <strong>Find My Photos</strong> button appears in the toolbar (desktop) or as a floating button (mobile).</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Client taps "Find My Photos"</strong>
+              <p>A modal opens with a camera icon and instructions to upload a selfie.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Client uploads a selfie</strong>
+              <p>They can take a new photo or choose one from their camera roll. The selfie doesn't need to be from the event — any clear photo of their face works.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>PhotoHouse finds their photos</strong>
+              <p>The gallery instantly filters to show only the photos in which that face appears. They can browse, select, and download these photos normally.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Clear the filter</strong>
+              <p>Tapping <strong>Clear</strong> or <strong>Show all photos</strong> returns to the full gallery.</p>
+            </div>
+          </li>
+        </ol>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/gallery-face-search-modal.png"
+               alt="Find My Photos modal with selfie upload area"
+               loading="lazy">
+          <figcaption>The Find My Photos modal — clients tap the upload area to take or choose a selfie.</figcaption>
+        </figure>
+
+        <!-- ── 5. Privacy & Data ───────────────────────────────────────── -->
+        <h2 id="privacy-and-data">Privacy &amp; Data</h2>
+
+        <div class="callout callout--info">
+          <span class="callout-icon">🔒</span>
+          <div>
+            <strong>Customer selfies are automatically deleted after 24 hours. Face data is never shared across events or with third parties.</strong>
+            <p>Each face search session has a 24-hour expiry. When the session expires, the uploaded selfie is removed from storage. The face embeddings computed from event photos are stored per-event and are never used to match faces across different events or photographers.</p>
+          </div>
+        </div>
+
+        <h3>What is stored and for how long</h3>
+        <ul>
+          <li><strong>Face embeddings from event photos</strong> — stored in the database as long as face detection is enabled for the event. Deleted immediately when you click "Delete All Face Data".</li>
+          <li><strong>Cropped face thumbnails</strong> — small crop images stored in S3, used to display cluster cards. Deleted with face data.</li>
+          <li><strong>Client selfies</strong> — stored in S3 only during the search session. Automatically deleted after 24 hours regardless of whether the session was completed.</li>
+          <li><strong>Search session records</strong> — the matched photo ID list stored temporarily. Expires after 24 hours.</li>
+        </ul>
+
+        <h3>Deleting all face data</h3>
+        <p>At the bottom of the People tab, click <strong>Delete All Face Data</strong> and confirm. This removes all embeddings, cluster records, face thumbnails, and any active search sessions for the event. The original photos in the gallery are unaffected. Face detection can be re-enabled afterwards.</p>
+
+        <!-- ── 6. Plan Requirements ───────────────────────────────────── -->
+        <h2 id="plan-requirements">Plan Requirements</h2>
+
+        <div class="callout callout--warning">
+          <span class="callout-icon">⚠️</span>
+          <div>
+            <strong>Face detection is available on Pro and Studio plans only. Upgrade to enable this feature.</strong>
+            <p>Free accounts can view the People tab, but the "Enable Face Detection" button is locked. Clicking it opens an upgrade prompt. Visit the <a href="billing.html">Billing &amp; Plans</a> page to compare plans and upgrade.</p>
+          </div>
+        </div>
+
+        <table class="plan-table">
+          <thead>
+            <tr><th>Feature</th><th>Free</th><th>Pro</th><th>Studio</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Face indexing (Enable Face Detection)</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>People tab &amp; cluster management</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Find My Photos on share links</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Monthly client searches</td><td>—</td><td>100</td><td>Unlimited</td></tr>
+          </tbody>
+        </table>
+
+      </div><!-- /.content-body -->
+
+      <nav class="page-nav">
+        <a href="photo-selection.html" class="page-nav-btn prev">
+          <span class="page-nav-label">← Previous</span>
+          <span class="page-nav-title">Photo Selection</span>
+        </a>
+        <a href="watermarking.html" class="page-nav-btn next">
+          <span class="page-nav-label">Next →</span>
+          <span class="page-nav-title">Watermarking</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="toc-col">
+      <div class="toc-inner">
+        <div class="toc-title">On this page</div>
+        <ul class="toc-list"></ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>
