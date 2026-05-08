@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Billing &amp; Plans — PhotoHouse Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>@import url('style.css');</style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-name">PhotoHouse</div>
+      <div class="sidebar-logo-label">Documentation</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">📖 User Guide</div>
+      <ul>
+        <li><a href="getting-started.html"    class="nav-link">Getting Started</a></li>
+        <li><a href="events.html"             class="nav-link">Managing Events</a></li>
+        <li><a href="uploading-photos.html"   class="nav-link">Uploading Photos</a></li>
+        <li><a href="sharing-galleries.html"  class="nav-link">Sharing Galleries</a></li>
+        <li><a href="photo-selection.html"    class="nav-link">Photo Selection</a></li>
+        <li><a href="face-recognition.html"   class="nav-link">AI Face Search</a></li>
+        <li><a href="watermarking.html"       class="nav-link">Watermarking</a></li>
+        <li><a href="billing.html"            class="nav-link">Billing &amp; Plans</a></li>
+      </ul>
+    </div>
+  </nav>
+</aside>
+<div class="sidebar-overlay"></div>
+
+<!-- ── Top bar ────────────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hamburger" aria-label="Open navigation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <nav class="breadcrumb">
+      <span>PhotoHouse Docs</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>User Guide</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">Billing &amp; Plans</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/>
+      </svg>
+      <input class="search-input" type="search" placeholder="Search docs…" aria-label="Search documentation">
+      <span class="search-kbd">⌘K</span>
+      <div class="search-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<div class="main-wrapper">
+  <div class="page-layout">
+    <main class="content-col">
+      <h1 class="page-title">Billing &amp; Plans</h1>
+      <p class="page-intro">PhotoHouse has three plans — Free, Pro, and Studio. All billing is handled by Stripe; your card details are never stored on the PhotoHouse server. You can upgrade, downgrade, or cancel at any time from the Billing page in your dashboard.</p>
+
+      <div class="content-body">
+
+        <!-- ── 1. Plan Overview ───────────────────────────────────────── -->
+        <h2 id="plan-overview">Plan Overview</h2>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/settings-billing-plan.png"
+               alt="Billing page showing current plan, storage usage and renewal date"
+               loading="lazy">
+          <figcaption>The Billing page — current plan details, storage usage bar, next renewal date, and Manage billing button.</figcaption>
+        </figure>
+
+        <table class="plan-table">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th><span class="badge badge--free">Free</span></th>
+              <th><span class="badge badge--pro">Pro</span></th>
+              <th><span class="badge badge--studio">Studio</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Events</td>
+              <td>3</td>
+              <td>Unlimited</td>
+              <td>Unlimited</td>
+            </tr>
+            <tr>
+              <td>Storage</td>
+              <td>5 GB</td>
+              <td>100 GB</td>
+              <td>500 GB</td>
+            </tr>
+            <tr>
+              <td>Shared gallery links</td>
+              <td><span class="check">✓</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>Photo groups</td>
+              <td><span class="check">✓</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>Client photo selection</td>
+              <td><span class="check">✓</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>AI Face Search</td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>Watermarking</td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>ZIP Downloads</td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+            <tr>
+              <td>White Label (no PhotoHouse branding)</td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="check">✓</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout--info">
+          <span class="callout-icon">ℹ️</span>
+          <div>
+            <strong>Limits are set by the platform administrator</strong>
+            <p>Exact storage sizes, event counts, and per-plan feature flags are configured in the admin panel. The table above shows the default values. Your platform instance may have different limits.</p>
+          </div>
+        </div>
+
+        <!-- ── 2. Upgrading Your Plan ─────────────────────────────────── -->
+        <h2 id="upgrading">Upgrading Your Plan</h2>
+        <p>You can upgrade at any time — there's no need to wait for a billing cycle to end. Stripe handles the proration automatically; you'll only be charged the difference for the remaining days in your current period.</p>
+
+        <ol class="step-list">
+          <li>
+            <div>
+              <strong>Navigate to the Pricing page</strong>
+              <p>Go to <code>/pricing</code> to see all available plans with current prices. Prices are managed by the platform admin and may vary from the default.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Click "Get started" on your chosen plan</strong>
+              <p>You'll be redirected to Stripe Checkout — a secure, PCI-compliant payment page hosted by Stripe.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Enter your payment details</strong>
+              <p>Stripe accepts all major credit and debit cards. Your card number is never sent to or stored by PhotoHouse.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Complete the payment</strong>
+              <p>Stripe sends a webhook to PhotoHouse confirming the subscription. Your account is upgraded within seconds — no manual approval required.</p>
+            </div>
+          </li>
+        </ol>
+
+        <div class="callout callout--tip">
+          <span class="callout-icon">💡</span>
+          <div>
+            <strong>Upgrade from the Billing page too</strong>
+            <p>If you're already logged in, go to <strong>Dashboard → Billing</strong> and click <strong>Upgrade plan</strong> to reach the same Stripe Checkout flow without navigating to the public Pricing page.</p>
+          </div>
+        </div>
+
+        <!-- ── 3. Managing Your Subscription ─────────────────────────── -->
+        <h2 id="managing-subscription">Managing Your Subscription</h2>
+        <p>Go to <strong>Dashboard → Billing</strong> and click <strong>Manage billing</strong>. This opens the Stripe Customer Portal — a secure, Stripe-hosted page where you can manage every aspect of your subscription without leaving your browser.</p>
+
+        <h3>Stripe Customer Portal lets you</h3>
+        <ul>
+          <li><strong>Update your payment method</strong> — add a new card, remove an old one, or set a different card as the default.</li>
+          <li><strong>Switch billing interval</strong> — move between monthly and annual billing. Annual billing typically includes a discount.</li>
+          <li><strong>Change or cancel your plan</strong> — downgrade to a lower tier or cancel entirely.</li>
+          <li><strong>Download invoices</strong> — every invoice is available as a PDF from the portal's invoice history.</li>
+        </ul>
+
+        <h3>Cancellation</h3>
+        <p>When you cancel, your subscription remains active until the end of the current billing period. After that, your account reverts to the Free plan automatically — no data is deleted.</p>
+
+        <div class="callout callout--warning">
+          <span class="callout-icon">⚠️</span>
+          <div>
+            <strong>Storage over the Free limit after downgrade</strong>
+            <p>If your stored photos exceed the Free plan's 5 GB limit, new uploads are blocked. Existing photos are not deleted — you'll need to either delete some events to bring storage under the limit, or re-upgrade to continue uploading.</p>
+          </div>
+        </div>
+
+        <!-- ── 4. Storage Usage ────────────────────────────────────────── -->
+        <h2 id="storage-usage">Storage Usage</h2>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/dashboard-storage-bar.png"
+               alt="Storage bar on the dashboard showing used vs available storage"
+               loading="lazy">
+          <figcaption>The storage indicator on the dashboard — shows bytes used, percentage, and your plan's total allowance.</figcaption>
+        </figure>
+
+        <h3>How storage is calculated</h3>
+        <p>Storage usage is the sum of the original file sizes of every photo across all your events. The calculation uses the size of the original uploaded file, not the thumbnail.</p>
+
+        <h3>What counts toward storage</h3>
+        <ul>
+          <li>Original photo files (JPEG, PNG, WebP, TIFF)</li>
+          <li>Cover photo files uploaded for each event</li>
+          <li>Studio logo file (minimal — typically a few KB)</li>
+        </ul>
+
+        <h3>What does not count toward storage</h3>
+        <ul>
+          <li>Generated thumbnails (stored in S3 but not counted in your quota)</li>
+          <li>Face embeddings and face crop thumbnails</li>
+          <li>Client selfies uploaded for face search (deleted after 24 hours)</li>
+        </ul>
+
+        <h3>When storage is full</h3>
+        <p>When you reach your plan's storage limit, the upload modal shows a <strong>Storage limit reached</strong> error and new uploads are blocked. Existing photos, events, and share links remain fully functional. To resume uploading, either:</p>
+        <ul>
+          <li>Delete events or photos to free up space, or</li>
+          <li>Upgrade to a plan with a higher storage limit.</li>
+        </ul>
+        <p>A warning banner appears on your dashboard when storage exceeds 90% of your limit, giving you time to act before uploads are blocked.</p>
+
+        <!-- ── 5. Invoices & Receipts ─────────────────────────────────── -->
+        <h2 id="invoices">Invoices &amp; Receipts</h2>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/settings-billing-invoices.png"
+               alt="Invoice history table on the Billing page showing paid invoices with PDF links"
+               loading="lazy">
+          <figcaption>Invoice history on the Billing page — date, amount, status, and a PDF download link for each invoice.</figcaption>
+        </figure>
+
+        <p>Past invoices are displayed directly on the <strong>Dashboard → Billing</strong> page, fetched in real time from Stripe. Each row in the invoice table shows:</p>
+        <ul>
+          <li><strong>Date</strong> — the invoice creation date.</li>
+          <li><strong>Description</strong> — the plan name and billing interval (e.g. <em>Pro Plan — Monthly</em>).</li>
+          <li><strong>Amount</strong> — total charged, including any applicable taxes.</li>
+          <li><strong>Status</strong> — <span class="badge" style="background:#DCFCE7;color:#14532D">paid</span>, <span class="badge" style="background:#FEF3C7;color:#92400E">open</span>, or <span class="badge badge--free">void</span>.</li>
+          <li><strong>PDF</strong> — a download link for the official Stripe invoice PDF, suitable for expense reports and VAT returns.</li>
+        </ul>
+
+        <div class="callout callout--info">
+          <span class="callout-icon">ℹ️</span>
+          <div>
+            <strong>Invoices are also available in the Stripe Customer Portal</strong>
+            <p>Click <strong>Manage billing</strong> on the Billing page to open the Stripe portal, where you can access the full invoice history including any invoices predating your PhotoHouse Billing page integration.</p>
+          </div>
+        </div>
+
+      </div><!-- /.content-body -->
+
+      <nav class="page-nav">
+        <a href="watermarking.html" class="page-nav-btn prev">
+          <span class="page-nav-label">← Previous</span>
+          <span class="page-nav-title">Watermarking</span>
+        </a>
+        <div></div>
+      </nav>
+    </main>
+
+    <aside class="toc-col">
+      <div class="toc-inner">
+        <div class="toc-title">On this page</div>
+        <ul class="toc-list"></ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

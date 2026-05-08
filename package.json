@@ -9,7 +9,15 @@
     "lint": "eslint",
     "storage:sync": "tsx scripts/sync-storage.ts",
     "links:migrate": "tsx scripts/migrate-shared-links.ts",
-    "exif:backfill": "tsx scripts/backfill-exif.ts"
+    "exif:backfill": "tsx scripts/backfill-exif.ts",
+    "seed:docs": "tsx scripts/seed-docs-data.ts",
+    "screenshots": "tsx scripts/screenshots/capture-all.ts",
+    "screenshots:auth": "tsx scripts/screenshots/capture-auth.ts",
+    "screenshots:dashboard": "tsx scripts/screenshots/capture-dashboard.ts",
+    "screenshots:events": "tsx scripts/screenshots/capture-events.ts",
+    "screenshots:gallery": "tsx scripts/screenshots/capture-gallery.ts",
+    "screenshots:settings": "tsx scripts/screenshots/capture-settings.ts",
+    "docs:serve": "npx serve docs -p 4000"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -47,6 +55,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "puppeteer": "^24.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

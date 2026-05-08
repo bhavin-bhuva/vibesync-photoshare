@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sharing Galleries — PhotoHouse Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>@import url('style.css');</style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-name">PhotoHouse</div>
+      <div class="sidebar-logo-label">Documentation</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">📖 User Guide</div>
+      <ul>
+        <li><a href="getting-started.html"    class="nav-link">Getting Started</a></li>
+        <li><a href="events.html"             class="nav-link">Managing Events</a></li>
+        <li><a href="uploading-photos.html"   class="nav-link">Uploading Photos</a></li>
+        <li><a href="sharing-galleries.html"  class="nav-link">Sharing Galleries</a></li>
+        <li><a href="photo-selection.html"    class="nav-link">Photo Selection</a></li>
+        <li><a href="face-recognition.html"   class="nav-link">AI Face Search</a></li>
+        <li><a href="watermarking.html"       class="nav-link">Watermarking</a></li>
+        <li><a href="billing.html"            class="nav-link">Billing &amp; Plans</a></li>
+      </ul>
+    </div>
+  </nav>
+</aside>
+<div class="sidebar-overlay"></div>
+
+<!-- ── Top bar ────────────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hamburger" aria-label="Open navigation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <nav class="breadcrumb">
+      <span>PhotoHouse Docs</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>User Guide</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">Sharing Galleries</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/>
+      </svg>
+      <input class="search-input" type="search" placeholder="Search docs…" aria-label="Search documentation">
+      <span class="search-kbd">⌘K</span>
+      <div class="search-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<div class="main-wrapper">
+  <div class="page-layout">
+    <main class="content-col">
+      <h1 class="page-title">Sharing Galleries</h1>
+      <p class="page-intro">A shared gallery link gives clients private, branded access to your event photos. Each link has its own protection method, optional expiry date, and group visibility settings — so you can share exactly the right photos with the right people.</p>
+
+      <div class="content-body">
+
+        <!-- ── 1. How Shared Links Work ────────────────────────────────── -->
+        <h2 id="how-shared-links-work">How Shared Links Work</h2>
+        <p>When you create a share link, PhotoHouse generates a unique 16-character random URL slug — for example, <code>/share/a3f8e2b91c047d6e</code>. The URL is cryptographically random and not guessable by brute force, giving you a baseline of privacy even without a PIN or password.</p>
+        <p>Clients who visit the URL are authenticated by a short-lived, server-signed cookie. The cookie is scoped to the share link's slug, so accessing one gallery never grants access to another.</p>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/event-share-link-panel.png"
+               alt="Share modal showing existing links and the create-new-link form"
+               loading="lazy">
+          <figcaption>The Share modal — existing links listed at the top, create-new-link form at the bottom.</figcaption>
+        </figure>
+
+        <h3>Creating a share link</h3>
+        <ol class="step-list">
+          <li><div><strong>Open an event and click "Share Event"</strong><p>The Share modal opens, showing all existing links for this event.</p></div></li>
+          <li><div><strong>Choose a protection method</strong><p>Select No Protection, PIN, or Password from the toggle strip.</p></div></li>
+          <li><div><strong>Optionally set an expiry date</strong><p>Leave blank for a permanent link, or pick a calendar date.</p></div></li>
+          <li><div><strong>Click Create Link</strong><p>The new link appears in the list above with a one-click copy button.</p></div></li>
+          <li><div><strong>Copy and share</strong><p>Paste the URL into an email, WhatsApp, or SMS message to send to your client.</p></div></li>
+        </ol>
+
+        <h3>Customer experience</h3>
+        <p>When a client opens your link they see a branded entry screen with your studio logo and name. After entering the PIN or password, they land on a gallery page styled with your brand colour and event cover photo in the hero header. All navigation (group filters, selection mode, download) is accessible from within the gallery — no login required.</p>
+
+        <!-- ── 2. Protection Options ────────────────────────────────────── -->
+        <h2 id="protection-options">Protection Options</h2>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/event-share-pin-option.png"
+               alt="PIN option selected in the share modal showing OTP input boxes"
+               loading="lazy">
+          <figcaption>Choosing PIN protection — four digit boxes for the client, with a "Generate" button for a random PIN.</figcaption>
+        </figure>
+
+        <h3>No Protection</h3>
+        <p>Anyone who has the URL can view the gallery immediately — no entry screen, no credential required. The URL itself is random and hard to guess, but there is no authentication layer.</p>
+        <p>Use this only for low-sensitivity content where you trust that the link won't be shared beyond the intended recipient.</p>
+
+        <h3>PIN Protection <span class="badge badge--new">Recommended</span></h3>
+        <p>A 4-digit numeric PIN is the most client-friendly option. The entry screen shows four large input boxes; entering the PIN automatically submits — no button to tap.</p>
+        <p>You can share the PIN verbally at the end of a shoot: <em>"Just tell your client: enter 4821."</em> On mobile, the browser automatically opens the numeric keyboard when the PIN boxes are focused — no keyboard switching needed.</p>
+        <p>The plain-text PIN is stored in the database (alongside a bcrypt hash) so you can reveal it from the Share modal at any time if a client loses it.</p>
+
+        <div class="callout callout--tip">
+          <span class="callout-icon">💡</span>
+          <div>
+            <strong>PIN protection is recommended for most clients</strong>
+            <p>It's easy to share verbally at weddings and events, opens the numeric keyboard automatically on mobile, and clients can enter it without any typing confusion. Use a password only when you need a longer, more memorable credential — e.g. <code>smithwedding2024</code> included in a welcome email.</p>
+          </div>
+        </div>
+
+        <h3>Password Protection</h3>
+        <p>A text password (minimum 4 characters, no maximum). Good when you want a meaningful phrase clients can remember without writing it down, or when you include the password directly in an email template.</p>
+        <p>Passwords are bcrypt-hashed before storage. The plain-text password is <strong>not</strong> stored, so if a client forgets it you'll need to revoke the link and create a new one.</p>
+
+        <!-- ── 3. Setting an Expiry Date ───────────────────────────────── -->
+        <h2 id="expiry-date">Setting an Expiry Date</h2>
+        <p>When creating a link, click the calendar icon next to <strong>Expires</strong> and pick a date. The link stops working at midnight on that date (UTC).</p>
+
+        <h3>What happens when a link expires</h3>
+        <p>Clients who visit an expired URL see a friendly <em>"This gallery link has expired"</em> screen with the event name. The entry screen does not show photos and cannot be accessed even with the correct PIN or password.</p>
+        <p>Expiry does not delete the event or its photos — only the share link becomes inactive. You can create a new link for the same event at any time.</p>
+
+        <div class="callout callout--info">
+          <span class="callout-icon">ℹ️</span>
+          <div>
+            <strong>No expiry by default</strong>
+            <p>Leave the expiry field blank and the link remains active permanently — or until you revoke it manually. Most photographers set an expiry of 30–90 days to encourage clients to download promptly.</p>
+          </div>
+        </div>
+
+        <!-- ── 4. Controlling Downloads ────────────────────────────────── -->
+        <h2 id="controlling-downloads">Controlling Downloads</h2>
+
+        <h3>Individual photo downloads</h3>
+        <p>Clients can download individual photos using the download button in the photo lightbox. Each download request goes through a server endpoint that verifies the share cookie before streaming the file — direct S3 URLs are never exposed.</p>
+
+        <h3>ZIP download</h3>
+        <p>The <strong>Download All (ZIP)</strong> button lets clients download every visible photo in one archive. This feature requires <span class="badge badge--pro">Pro</span> or <span class="badge badge--studio">Studio</span>. On Free accounts, the button is shown but opens an upgrade prompt.</p>
+        <p>If a group filter is active, only the photos in the filtered group are included in the ZIP.</p>
+
+        <h3>Watermarking on download</h3>
+        <p>When watermarking is enabled in your Studio Profile, every downloaded photo — individual or ZIP — has your logo (or studio name) composited at the position and opacity you configured. The original S3 file is never modified; the watermark is applied server-side at download time. See <a href="watermarking.html">Watermarking</a> for setup details.</p>
+        <p>Watermarking applies on <span class="badge badge--pro">Pro</span> and <span class="badge badge--studio">Studio</span> only.</p>
+
+        <!-- ── 5. Group Visibility ─────────────────────────────────────── -->
+        <h2 id="group-visibility">Group Visibility per Link</h2>
+        <p>When you have multiple groups in an event, you can control which groups are visible on a per-link basis. This is set in the Share modal under <strong>Group visibility</strong> before creating the link.</p>
+
+        <h3>Use case: staged gallery delivery</h3>
+        <p>A common workflow for weddings:</p>
+        <ol>
+          <li>Upload all photos and organise into Ceremony, Portraits, and Reception groups.</li>
+          <li>Create a first share link with only <strong>Ceremony</strong> and <strong>Portraits</strong> visible. Send this to the couple one week after the wedding for an early preview.</li>
+          <li>When reception editing is complete, create a second link (or update visibility on the first) to reveal the <strong>Reception</strong> group.</li>
+        </ol>
+        <p>This way you can release sections as they're ready without creating multiple events or waiting until everything is done.</p>
+
+        <!-- ── 6. Sharing with Your Client ────────────────────────────── -->
+        <h2 id="sharing-with-client">Sharing with Your Client</h2>
+
+        <h3>Copying the link</h3>
+        <p>After creating a link, click the <strong>Copy</strong> button next to the URL in the Share modal. The full URL is copied to your clipboard, ready to paste into any messaging app or email.</p>
+
+        <h3>Via WhatsApp or SMS</h3>
+        <p>Paste the URL directly into a WhatsApp message or SMS. Most smartphones render the URL as a tappable link. If you used PIN protection, include the PIN in the same message — for example:</p>
+        <blockquote style="border-left:3px solid var(--accent);padding:12px 16px;margin:16px 0;color:var(--muted);font-style:italic;background:var(--code-bg);border-radius:0 8px 8px 0">
+          Hi Sarah! Your wedding gallery is ready 🎉<br>
+          Link: https://yourapp.com/share/a3f8e2b91c047d6e<br>
+          PIN: 4821
+        </blockquote>
+
+        <h3>What the client sees</h3>
+        <p>Once through the PIN or password screen, clients see a full-screen gallery with:</p>
+        <ul>
+          <li>Your <strong>studio logo</strong> and <strong>studio name</strong> in the hero header</li>
+          <li>The <strong>event cover photo</strong> (or your brand colour if no cover is set) as the hero background</li>
+          <li>The <strong>event name and date</strong> below the hero</li>
+          <li><strong>Group filter pills</strong> if the event has multiple groups</li>
+          <li><strong>Select Photos</strong> mode toggle for submitting selections</li>
+          <li><strong>Download All</strong> button (Pro/Studio plans)</li>
+        </ul>
+
+      </div><!-- /.content-body -->
+
+      <nav class="page-nav">
+        <a href="uploading-photos.html" class="page-nav-btn prev">
+          <span class="page-nav-label">← Previous</span>
+          <span class="page-nav-title">Uploading Photos</span>
+        </a>
+        <a href="photo-selection.html" class="page-nav-btn next">
+          <span class="page-nav-label">Next →</span>
+          <span class="page-nav-title">Photo Selection</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="toc-col">
+      <div class="toc-inner">
+        <div class="toc-title">On this page</div>
+        <ul class="toc-list"></ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

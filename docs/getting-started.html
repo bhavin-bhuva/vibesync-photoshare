@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Getting Started — PhotoHouse Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>@import url('style.css');</style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-name">PhotoHouse</div>
+      <div class="sidebar-logo-label">Documentation</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">📖 User Guide</div>
+      <ul>
+        <li><a href="getting-started.html"    class="nav-link">Getting Started</a></li>
+        <li><a href="events.html"             class="nav-link">Managing Events</a></li>
+        <li><a href="uploading-photos.html"   class="nav-link">Uploading Photos</a></li>
+        <li><a href="sharing-galleries.html"  class="nav-link">Sharing Galleries</a></li>
+        <li><a href="photo-selection.html"    class="nav-link">Photo Selection</a></li>
+        <li><a href="face-recognition.html"   class="nav-link">AI Face Search</a></li>
+        <li><a href="watermarking.html"       class="nav-link">Watermarking</a></li>
+        <li><a href="billing.html"            class="nav-link">Billing &amp; Plans</a></li>
+      </ul>
+    </div>
+  </nav>
+</aside>
+<div class="sidebar-overlay"></div>
+
+<!-- ── Top bar ────────────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hamburger" aria-label="Open navigation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+    <nav class="breadcrumb">
+      <span>PhotoHouse Docs</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>User Guide</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">Getting Started</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/>
+      </svg>
+      <input class="search-input" type="search" placeholder="Search docs…" aria-label="Search documentation">
+      <span class="search-kbd">⌘K</span>
+      <div class="search-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<div class="main-wrapper">
+  <div class="page-layout">
+
+    <main class="content-col">
+      <h1 class="page-title">Getting Started</h1>
+      <p class="page-intro">PhotoHouse is a client gallery platform for professional photographers. Upload your photos, organise them into groups, and share a branded gallery link with your clients — all in a few clicks. This guide gets you from a fresh account to your first delivered gallery.</p>
+
+      <div class="content-body">
+
+        <!-- ── 1. Introduction ─────────────────────────────────────────────── -->
+        <h2 id="introduction">Introduction</h2>
+        <p>PhotoHouse is built around a simple idea: a photographer should be able to share a beautiful, private gallery with a client in under five minutes. Everything in the platform — upload queues, photo groups, PIN-protected share links, face search, watermarking — exists to support that core workflow.</p>
+        <p><strong>Who is it for?</strong> PhotoHouse suits any photographer who delivers digital images to clients: wedding photographers, portrait and headshot studios, corporate event photographers, and real-estate shooters.</p>
+        <ul>
+          <li><strong>Events</strong> map to individual shoots. One wedding = one event.</li>
+          <li><strong>Photo groups</strong> let you divide an event into sections (Ceremony, Reception) that clients can filter.</li>
+          <li><strong>Share links</strong> give each client a private, PIN- or password-protected URL.</li>
+          <li><strong>Photo selection</strong> lets clients pick their favourites and submit the list to you.</li>
+          <li><strong>Face Search</strong> (Pro/Studio) lets clients find every photo of themselves using a selfie.</li>
+        </ul>
+
+        <!-- ── 2. Creating Your Account ───────────────────────────────────── -->
+        <h2 id="create-account">Creating Your Account</h2>
+        <p>All new accounts start on the <span class="badge badge--free">Free</span> plan — no credit card required. You can upgrade to Pro or Studio at any time from the Billing page.</p>
+
+        <ol class="step-list">
+          <li>
+            <div>
+              <strong>Open the registration page</strong>
+              <p>Navigate to <code>/register</code> in your browser. You'll see the PhotoHouse sign-up form.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Fill in your details</strong>
+              <p>Enter your <strong>full name</strong>, <strong>email address</strong>, and a <strong>password</strong> (minimum 8 characters). Your name appears on your studio profile and in notification emails sent to clients.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Verify your email</strong>
+              <p>Check your inbox for a verification message and click the link inside. Unverified accounts cannot create share links.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Log in</strong>
+              <p>Return to <code>/login</code>, enter your credentials, and you'll land on the main dashboard.</p>
+            </div>
+          </li>
+        </ol>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/auth-register-desktop.png"
+               alt="The PhotoHouse registration form on desktop"
+               loading="lazy">
+          <figcaption>The registration page — enter your name, email, and password to create a free account.</figcaption>
+        </figure>
+
+        <div class="callout callout--tip">
+          <span class="callout-icon">💡</span>
+          <div>
+            <strong>Use a professional email</strong>
+            <p>Notification emails to your clients are sent from the address configured by the platform. Your account email is only used for login and system alerts.</p>
+          </div>
+        </div>
+
+        <!-- ── 3. Setting Up Your Studio Profile ──────────────────────────── -->
+        <h2 id="studio-profile">Setting Up Your Studio Profile</h2>
+        <p>Before sharing galleries, add your studio branding so every gallery your clients see reflects your identity — not a generic PhotoHouse default.</p>
+        <p>Go to <strong>Dashboard → Profile → Studio Branding</strong>.</p>
+
+        <h3>What to configure</h3>
+        <ul>
+          <li><strong>Studio name</strong> — shown in gallery hero headers and outgoing notification emails to clients.</li>
+          <li><strong>Logo</strong> — upload a square PNG or JPG (400×400 px recommended). Appears in gallery heroes, PIN/password entry screens, and — if watermarking is on — as the watermark graphic on downloaded photos.</li>
+          <li><strong>Tagline</strong> — a one-line description shown beneath your studio name on gallery pages (e.g. <em>"Capturing moments that last forever"</em>).</li>
+          <li><strong>Brand colour</strong> — used as the gallery hero background when no cover photo is set. Enter any hex value.</li>
+          <li><strong>Website, phone, address</strong> — optional contact details shown in gallery footers.</li>
+        </ul>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/settings-profile-studio.png"
+               alt="Studio Branding settings page"
+               loading="lazy">
+          <figcaption>Studio Branding settings — logo upload, name, tagline, brand colour, and contact details.</figcaption>
+        </figure>
+
+        <h3>Watermark settings</h3>
+        <p>On the same Profile page, scroll to <strong>Watermark Settings</strong>. You can enable the watermark toggle, set the position (bottom-right, bottom-left, or bottom-center), and adjust opacity from 10% to 80%. A live preview updates as you drag the slider. See <a href="watermarking.html">Watermarking</a> for full details.</p>
+
+        <div class="callout callout--info">
+          <span class="callout-icon">ℹ️</span>
+          <div>
+            <strong>Watermarking requires Pro or Studio</strong>
+            <p>The watermark toggle is available on Pro and Studio plans. Free accounts serve downloads without any watermark.</p>
+          </div>
+        </div>
+
+        <!-- ── 4. Understanding Your Dashboard ────────────────────────────── -->
+        <h2 id="dashboard">Understanding Your Dashboard</h2>
+        <p>The dashboard is your home screen. It shows a high-level summary of your studio and lets you navigate to any event.</p>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/dashboard-overview-desktop.png"
+               alt="PhotoHouse dashboard on desktop"
+               loading="lazy">
+          <figcaption>The photographer dashboard — stats bar at the top, event grid below.</figcaption>
+        </figure>
+
+        <h3>Stats bar</h3>
+        <p>Four cards at the top of the dashboard give you a quick overview:</p>
+        <ul>
+          <li><strong>Events</strong> — count of events created vs. your plan limit.</li>
+          <li><strong>Photos</strong> — total photos across all events.</li>
+          <li><strong>Shared links</strong> — number of active (non-revoked, non-expired) gallery links.</li>
+          <li><strong>Storage</strong> — a progress bar showing bytes used vs. your plan's limit.</li>
+        </ul>
+
+        <h3>New selections banner</h3>
+        <p>When a client submits a photo selection, a blue banner appears at the top of the dashboard with a direct link to review it. The banner disappears once you open the Selections page for that event.</p>
+
+        <h3>Event grid</h3>
+        <p>Each card in the grid represents an event. The card shows the cover photo (or a colour gradient placeholder), event name, date, group count, and how many active share links the event has. Click any card to open the event.</p>
+
+        <h3>Navigation</h3>
+        <p>The left sidebar (or mobile menu) gives you access to:</p>
+        <ul>
+          <li><strong>Dashboard</strong> — the home screen you're on now.</li>
+          <li><strong>Billing</strong> — your plan, storage, and invoice history.</li>
+          <li><strong>Profile</strong> — personal info, studio branding, watermark settings.</li>
+        </ul>
+
+        <!-- ── 5. Your First Event ─────────────────────────────────────────── -->
+        <h2 id="first-event">Your First Event</h2>
+        <p>An event groups all the photos from one shoot. Create one for every job you deliver.</p>
+
+        <ol class="step-list">
+          <li>
+            <div>
+              <strong>Click "+ New Event" on the dashboard</strong>
+              <p>The New Event modal slides in from the right.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Enter a title</strong>
+              <p>Use a name that identifies the shoot clearly — e.g. <em>"Smith Family Portrait — Dec 2024"</em>. Clients see this name in their gallery header.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Set the shoot date</strong>
+              <p>The date is shown in the gallery header and used to sort events on your dashboard.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Click Create</strong>
+              <p>You're taken directly to the new event page, ready to upload photos.</p>
+            </div>
+          </li>
+        </ol>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/dashboard-new-event-modal.png"
+               alt="New Event modal with title and date fields"
+               loading="lazy">
+          <figcaption>The New Event modal — enter a shoot title and date to create your first event.</figcaption>
+        </figure>
+
+        <div class="callout callout--tip">
+          <span class="callout-icon">💡</span>
+          <div>
+            <strong>Include the year in the name</strong>
+            <p>When you have hundreds of events over several years, titles like <em>"Johnson Wedding 2024"</em> are easier to search than <em>"Johnson Wedding"</em>.</p>
+          </div>
+        </div>
+
+        <!-- ── 6. Next Steps ──────────────────────────────────────────────── -->
+        <h2 id="next-steps">Next Steps</h2>
+        <p>Now that your account and studio are set up and you've created your first event, continue with:</p>
+        <ul>
+          <li><a href="uploading-photos.html"><strong>Uploading Photos</strong></a> — learn how to add photos to an event, use the batch upload queue, and manage storage.</li>
+          <li><a href="sharing-galleries.html"><strong>Sharing Galleries</strong></a> — create a PIN- or password-protected gallery link and send it to your client.</li>
+          <li><a href="events.html"><strong>Managing Events</strong></a> — organise photos into groups, set a cover photo, and manage the event lifecycle.</li>
+          <li><a href="billing.html"><strong>Billing &amp; Plans</strong></a> — compare Free, Pro, and Studio, and upgrade when you're ready.</li>
+        </ul>
+
+      </div><!-- /.content-body -->
+
+      <!-- ── Prev / Next ──────────────────────────────────────────────────── -->
+      <nav class="page-nav">
+        <div></div>
+        <a href="events.html" class="page-nav-btn next">
+          <span class="page-nav-label">Next →</span>
+          <span class="page-nav-title">Managing Events</span>
+        </a>
+      </nav>
+    </main>
+
+    <!-- ── TOC ───────────────────────────────────────────────────────────── -->
+    <aside class="toc-col">
+      <div class="toc-inner">
+        <div class="toc-title">On this page</div>
+        <ul class="toc-list"></ul>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

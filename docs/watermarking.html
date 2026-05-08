@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Watermarking — PhotoHouse Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>
+    @import url('style.css');
+
+    /* ── Watermark position diagram ─────────────────────────────────────── */
+    .watermark-diagram {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 20px 0 28px;
+    }
+    .wm-pos {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--code-bg);
+    }
+    .wm-pos-preview {
+      aspect-ratio: 4/3;
+      background: linear-gradient(135deg, #CBD5E1 0%, #94A3B8 100%);
+      position: relative;
+    }
+    .wm-pos-label-text {
+      position: absolute;
+      font-size: 10px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.85);
+      background: rgba(0,0,0,0.45);
+      border-radius: 4px;
+      padding: 3px 7px;
+      white-space: nowrap;
+      letter-spacing: 0.03em;
+    }
+    .wm-pos-label-text.bl { bottom: 8px; left: 8px; }
+    .wm-pos-label-text.bc { bottom: 8px; left: 50%; transform: translateX(-50%); }
+    .wm-pos-label-text.br { bottom: 8px; right: 8px; }
+    .wm-pos-caption {
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .wm-pos.active .wm-pos-caption { color: var(--accent); }
+    .wm-pos.active { border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-name">PhotoHouse</div>
+      <div class="sidebar-logo-label">Documentation</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">📖 User Guide</div>
+      <ul>
+        <li><a href="getting-started.html"    class="nav-link">Getting Started</a></li>
+        <li><a href="events.html"             class="nav-link">Managing Events</a></li>
+        <li><a href="uploading-photos.html"   class="nav-link">Uploading Photos</a></li>
+        <li><a href="sharing-galleries.html"  class="nav-link">Sharing Galleries</a></li>
+        <li><a href="photo-selection.html"    class="nav-link">Photo Selection</a></li>
+        <li><a href="face-recognition.html"   class="nav-link">AI Face Search</a></li>
+        <li><a href="watermarking.html"       class="nav-link">Watermarking</a></li>
+        <li><a href="billing.html"            class="nav-link">Billing &amp; Plans</a></li>
+      </ul>
+    </div>
+  </nav>
+</aside>
+<div class="sidebar-overlay"></div>
+
+<!-- ── Top bar ────────────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hamburger" aria-label="Open navigation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <nav class="breadcrumb">
+      <span>PhotoHouse Docs</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>User Guide</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">Watermarking</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/>
+      </svg>
+      <input class="search-input" type="search" placeholder="Search docs…" aria-label="Search documentation">
+      <span class="search-kbd">⌘K</span>
+      <div class="search-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<div class="main-wrapper">
+  <div class="page-layout">
+    <main class="content-col">
+      <h1 class="page-title">Watermarking</h1>
+      <p class="page-intro">PhotoHouse automatically applies your studio logo or name to every photo a client downloads — protecting your work and promoting your brand. The original files in S3 are never touched; the watermark is composited server-side at download time.</p>
+
+      <div class="content-body">
+
+        <!-- ── 1. How Watermarking Works ─────────────────────────────── -->
+        <h2 id="how-it-works">How Watermarking Works</h2>
+        <p>When a client downloads a photo — individually from the lightbox or as part of a ZIP — the request goes through a PhotoHouse server endpoint. Before streaming the file, the server:</p>
+
+        <ol class="step-list">
+          <li>
+            <div>
+              <strong>Fetches the original photo from S3</strong>
+              <p>The untouched, full-resolution image is retrieved from private S3 storage.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Fetches your studio logo (or generates SVG text)</strong>
+              <p>If you've uploaded a logo in Studio Branding, it's fetched from S3 and resized to 8% of the image width. If no logo is set, an SVG text watermark is generated using your studio name with a drop-shadow.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Composites the watermark using Sharp</strong>
+              <p>The Sharp image library blends the watermark onto the photo at your chosen position and opacity. This happens in memory — no temporary files are written to disk.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Streams the watermarked file to the client</strong>
+              <p>The client's browser receives the download. The original file in S3 is unchanged.</p>
+            </div>
+          </li>
+        </ol>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/settings-watermark.png"
+               alt="Watermark Settings page showing position, opacity, and live preview"
+               loading="lazy">
+          <figcaption>Watermark Settings — position selector, opacity slider, and live CSS preview showing your studio name at the chosen position.</figcaption>
+        </figure>
+
+        <!-- ── 2. Setting Up Your Watermark ──────────────────────────── -->
+        <h2 id="setting-up">Setting Up Your Watermark</h2>
+        <p>Go to <strong>Dashboard → Profile → Watermark Settings</strong> to configure your watermark.</p>
+
+        <h3>Enable / disable</h3>
+        <p>Toggle <strong>Add watermark to downloaded photos</strong> to turn watermarking on or off globally. When disabled, all downloads are served as-is — no watermark applied.</p>
+
+        <h3>Position</h3>
+        <p>Choose where the watermark appears on the image. The three options are demonstrated below:</p>
+
+        <div class="watermark-diagram">
+          <div class="wm-pos">
+            <div class="wm-pos-preview">
+              <span class="wm-pos-label-text bl">Studio Name</span>
+            </div>
+            <div class="wm-pos-caption">Bottom Left</div>
+          </div>
+          <div class="wm-pos">
+            <div class="wm-pos-preview">
+              <span class="wm-pos-label-text bc">Studio Name</span>
+            </div>
+            <div class="wm-pos-caption">Bottom Center</div>
+          </div>
+          <div class="wm-pos active">
+            <div class="wm-pos-preview">
+              <span class="wm-pos-label-text br">Studio Name</span>
+            </div>
+            <div class="wm-pos-caption">Bottom Right ★ Default</div>
+          </div>
+        </div>
+
+        <h3>Opacity</h3>
+        <p>Drag the opacity slider between 10% and 80%:</p>
+        <ul>
+          <li><strong>10–25%</strong> — very subtle, barely visible on busy backgrounds. Good when you want brand presence without obstructing the image.</li>
+          <li><strong>40–60%</strong> — the recommended range. Clearly visible but not distracting. The default is 55%.</li>
+          <li><strong>70–80%</strong> — strong brand stamp. Use when maximum visibility is more important than aesthetics — e.g. proofing galleries before final delivery.</li>
+        </ul>
+
+        <h3>Logo watermark vs. text watermark</h3>
+        <p><strong>Logo watermark</strong> — used automatically when a logo is uploaded in <a href="getting-started.html#studio-profile">Studio Branding</a>. The logo is resized proportionally to 8% of the photo's width and composited at the chosen position. A transparent-background PNG produces the cleanest result.</p>
+        <p><strong>Text watermark</strong> — the fallback when no logo is uploaded, or if the logo fetch fails. An SVG is generated containing your studio name in a readable font with a subtle drop-shadow that keeps the text legible on both light and dark photo backgrounds.</p>
+
+        <div class="callout callout--tip">
+          <span class="callout-icon">💡</span>
+          <div>
+            <strong>Upload a white transparent-background PNG logo</strong>
+            <p>A white logo on a transparent background works on both light and dark photos. Avoid logos with coloured backgrounds — they produce a rectangle over the image rather than a clean mark.</p>
+          </div>
+        </div>
+
+        <h3>Live preview</h3>
+        <p>The preview panel in Watermark Settings updates in real time as you adjust position and opacity. It's a CSS simulation — your studio name or logo appears at the chosen position over a gradient placeholder. The actual Sharp-composited result on real photos will be slightly different depending on image dimensions and background colour, but the preview gives you a close approximation.</p>
+
+        <!-- ── 3. When Watermarks Are Applied ─────────────────────────── -->
+        <h2 id="when-applied">When Watermarks Are Applied</h2>
+        <p>The watermark is applied whenever a photo leaves the PhotoHouse server heading to a client. Specifically:</p>
+
+        <ul>
+          <li>
+            <strong>Individual photo downloads</strong> — when a client clicks the download button in the photo lightbox of a shared gallery.
+          </li>
+          <li>
+            <strong>ZIP downloads</strong> — when a client clicks <strong>Download All</strong> in the gallery. Every photo in the ZIP is watermarked before the archive is assembled.
+          </li>
+          <li>
+            <strong>Client selection ZIPs</strong> — when you click <strong>Download All Selections</strong> on the Selections page, the downloaded ZIP contains watermarked copies of the selected photos.
+          </li>
+        </ul>
+
+        <h3>When watermarks are NOT applied</h3>
+        <ul>
+          <li><strong>Your photographer view</strong> — photos viewed in the dashboard event page and lightbox are served via CloudFront signed URLs directly. No watermark is applied when you browse your own event.</li>
+          <li><strong>Thumbnail grid images</strong> — the photo grid in both the dashboard and client gallery uses thumbnails, not full-resolution downloads. Thumbnails are never watermarked.</li>
+          <li><strong>Free plan accounts</strong> — watermarking is a Pro/Studio feature. Free accounts serve all downloads without any watermark regardless of the toggle setting.</li>
+        </ul>
+
+        <!-- ── 4. Plan Requirements ───────────────────────────────────── -->
+        <h2 id="plan-requirements">Plan Requirements</h2>
+        <p>Watermarking is available on <span class="badge badge--pro">Pro</span> and <span class="badge badge--studio">Studio</span> plans only.</p>
+
+        <table class="plan-table">
+          <thead>
+            <tr><th>Feature</th><th>Free</th><th>Pro</th><th>Studio</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Logo watermark</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Text watermark (fallback)</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Custom position</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+            <tr><td>Custom opacity</td><td><span class="cross">✗</span></td><td><span class="check">✓</span></td><td><span class="check">✓</span></td></tr>
+          </tbody>
+        </table>
+
+        <p>On Free accounts, the watermark toggle in Profile is visible but cannot be saved. Clicking it shows an upgrade prompt. See <a href="billing.html">Billing &amp; Plans</a> to compare plans.</p>
+
+      </div><!-- /.content-body -->
+
+      <nav class="page-nav">
+        <a href="face-recognition.html" class="page-nav-btn prev">
+          <span class="page-nav-label">← Previous</span>
+          <span class="page-nav-title">AI Face Search</span>
+        </a>
+        <a href="billing.html" class="page-nav-btn next">
+          <span class="page-nav-label">Next →</span>
+          <span class="page-nav-title">Billing &amp; Plans</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="toc-col">
+      <div class="toc-inner">
+        <div class="toc-title">On this page</div>
+        <ul class="toc-list"></ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

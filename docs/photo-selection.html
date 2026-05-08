@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Photo Selection — PhotoHouse Docs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <style>@import url('style.css');</style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-mark">
+      <svg viewBox="0 0 24 24"><path d="M9 3 7.17 5H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.17L15 3H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z"/></svg>
+    </div>
+    <div>
+      <div class="sidebar-logo-name">PhotoHouse</div>
+      <div class="sidebar-logo-label">Documentation</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title">📖 User Guide</div>
+      <ul>
+        <li><a href="getting-started.html"    class="nav-link">Getting Started</a></li>
+        <li><a href="events.html"             class="nav-link">Managing Events</a></li>
+        <li><a href="uploading-photos.html"   class="nav-link">Uploading Photos</a></li>
+        <li><a href="sharing-galleries.html"  class="nav-link">Sharing Galleries</a></li>
+        <li><a href="photo-selection.html"    class="nav-link">Photo Selection</a></li>
+        <li><a href="face-recognition.html"   class="nav-link">AI Face Search</a></li>
+        <li><a href="watermarking.html"       class="nav-link">Watermarking</a></li>
+        <li><a href="billing.html"            class="nav-link">Billing &amp; Plans</a></li>
+      </ul>
+    </div>
+  </nav>
+</aside>
+<div class="sidebar-overlay"></div>
+
+<!-- ── Top bar ────────────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="hamburger" aria-label="Open navigation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+    <nav class="breadcrumb">
+      <span>PhotoHouse Docs</span>
+      <span class="breadcrumb-sep">›</span>
+      <span>User Guide</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">Photo Selection</span>
+    </nav>
+  </div>
+  <div class="topbar-right">
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clip-rule="evenodd"/>
+      </svg>
+      <input class="search-input" type="search" placeholder="Search docs…" aria-label="Search documentation">
+      <span class="search-kbd">⌘K</span>
+      <div class="search-results"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<div class="main-wrapper">
+  <div class="page-layout">
+    <main class="content-col">
+      <h1 class="page-title">Photo Selection</h1>
+      <p class="page-intro">Photo selection replaces the old email-and-spreadsheet workflow. Clients browse your gallery, tap the photos they love, add optional notes, and submit the list. You receive a notification, review the picks, download the chosen files, and deliver. No filenames, no confusion.</p>
+
+      <div class="content-body">
+
+        <!-- ── 1. What is Photo Selection? ───────────────────────────── -->
+        <h2 id="what-is-photo-selection">What is Photo Selection?</h2>
+        <p>Photo selection is a feature of the public gallery that lets clients identify which photos they want you to deliver. Rather than scrolling through a gallery and trying to remember filenames or screenshot thumbnails, clients tap directly on the photos they want — the gallery marks them with a checkmark. When done, they submit the list with their name and any notes.</p>
+        <p>As the photographer, you receive a notification and can see exactly which photos each client chose, review them in context, download the selected files as a ZIP, and track the delivery status from your dashboard.</p>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/gallery-selection-mode.png"
+               alt="Gallery in selection mode showing photos with blue checkmark overlays"
+               loading="lazy">
+          <figcaption>Gallery in selection mode — blue checkmarks show which photos have been tapped. The count updates live in the sticky bottom bar.</figcaption>
+        </figure>
+
+        <!-- ── 2. Enabling Selection Mode ─────────────────────────────── -->
+        <h2 id="enabling-selection">Enabling Selection Mode</h2>
+        <p>Selection mode is available on all share links by default — clients can always enter it by clicking <strong>Select Photos</strong> in the gallery. There is no per-link toggle to disable it.</p>
+
+        <div class="callout callout--info">
+          <span class="callout-icon">ℹ️</span>
+          <div>
+            <strong>Selection persists across sessions</strong>
+            <p>A client's in-progress selections are saved to their browser's <code>localStorage</code> against the gallery slug. If they close the tab and return later, their previously tapped photos are still marked. The selection is only cleared after they submit.</p>
+          </div>
+        </div>
+
+        <!-- ── 3. How Clients Select Photos ───────────────────────────── -->
+        <h2 id="how-clients-select">How Clients Select Photos</h2>
+
+        <ol class="step-list">
+          <li>
+            <div>
+              <strong>Enter the gallery</strong>
+              <p>Client opens the share link and enters the PIN or password. They land on the gallery view showing all photos.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Click "Select Photos"</strong>
+              <p>On desktop, this toggle is in the mode bar at the top of the gallery. On mobile, a floating button appears in the bottom-left corner. Tapping either switches the gallery into selection mode.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Tap photos to select them</strong>
+              <p>Each tap toggles the photo's selection state. A filled blue checkmark appears on selected photos; tapping again removes it. The count in the sticky bottom bar updates with every tap.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Add a note per photo (optional)</strong>
+              <p>On a selected photo, clients can long-press (mobile) or right-click (desktop) to open a note sheet. They can leave a short message — e.g. <em>"Love this one but prefer without the background person"</em> — that you'll see alongside the photo in your selection review.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Click "Add details" in the bottom bar</strong>
+              <p>Expand the submit bar to reveal the name, email, and overall note fields.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Enter name and submit</strong>
+              <p>Name is required; email and note are optional. Clicking <strong>Submit Selection</strong> sends the list and shows a confirmation screen. The gallery then shows the submitted selection in read-only mode.</p>
+            </div>
+          </li>
+        </ol>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/gallery-selection-submit-bar.png"
+               alt="Expanded selection submit bar showing name, email, and note fields"
+               loading="lazy">
+          <figcaption>The submit bar expanded — name (required), email, and note fields. The selected photo count is shown at the top.</figcaption>
+        </figure>
+
+        <!-- ── 4. Viewing Client Selections ───────────────────────────── -->
+        <h2 id="viewing-selections">Viewing Client Selections</h2>
+        <p>When a client submits a selection, PhotoHouse sends an email notification to you (if email is configured) and places a red badge on the <strong>Selections</strong> button in your event header. Click the button to open the Selections page.</p>
+
+        <figure class="docs-screenshot">
+          <img src="./screenshots/event-selections-tab.png"
+               alt="Selections page showing submission cards with photo thumbnails and client details"
+               loading="lazy">
+          <figcaption>The Selections page — each submission card shows the client's name, submission date, note, and selected photo thumbnails.</figcaption>
+        </figure>
+
+        <h3>Submission cards</h3>
+        <p>Each card on the Selections page represents one submission and shows:</p>
+        <ul>
+          <li><strong>Client name and email</strong> — as they entered in the submit form.</li>
+          <li><strong>Submission timestamp</strong> — date and time the form was submitted.</li>
+          <li><strong>Overall note</strong> — the client's free-text message, if any.</li>
+          <li><strong>Per-photo notes</strong> — individual notes attached to specific photos, shown as a tooltip on each thumbnail.</li>
+          <li><strong>Selected photo thumbnails</strong> — a grid of the photos the client picked.</li>
+          <li><strong>Status badge</strong> — see below.</li>
+        </ul>
+
+        <h3>Status workflow</h3>
+        <p>Each submission moves through three statuses:</p>
+        <ul>
+          <li><span class="badge" style="background:#FEF3C7;color:#92400E">PENDING</span> — new submission, not yet reviewed.</li>
+          <li><span class="badge" style="background:#EDE9FE;color:#5B21B6">REVIEWED</span> — you've opened and acknowledged the submission.</li>
+          <li><span class="badge" style="background:#DCFCE7;color:#14532D">DELIVERED</span> — selected photos have been sent to the client.</li>
+        </ul>
+        <p>Click the status badge on a submission card to cycle it to the next state.</p>
+
+        <!-- ── 5. Downloading Selected Photos ────────────────────────── -->
+        <h2 id="downloading-selections">Downloading Selected Photos</h2>
+        <p>From the Selections page, click <strong>Download All Selections</strong> to generate a ZIP containing every photo chosen across all submissions for that event. <span class="badge badge--pro">Pro</span> <span class="badge badge--studio">Studio</span></p>
+
+        <h3>ZIP organisation by group</h3>
+        <p>If the event has photo groups, the ZIP is organised into sub-folders matching the group names. Photos not assigned to any group are placed in an <em>Ungrouped</em> folder. This means you can open the ZIP and immediately navigate to the section you need to retouch and deliver.</p>
+
+        <div class="callout callout--info">
+          <span class="callout-icon">ℹ️</span>
+          <div>
+            <strong>ZIP download requires Pro or Studio</strong>
+            <p>Free accounts can view and review selections but cannot download the ZIP. Individual selected photos can be downloaded one at a time from the photo lightbox on any plan.</p>
+          </div>
+        </div>
+
+        <h3>Watermark on download</h3>
+        <p>If watermarking is enabled in your Studio Profile, selected photos downloaded via the ZIP are watermarked — identical behaviour to individual photo downloads from the gallery. See <a href="watermarking.html">Watermarking</a> for configuration details.</p>
+
+        <!-- ── 6. Marking as Delivered ────────────────────────────────── -->
+        <h2 id="marking-delivered">Marking as Delivered</h2>
+        <p>Once you've edited and sent the final files to the client, update the submission status to <strong>DELIVERED</strong>. This helps you keep track of which jobs are complete across multiple events.</p>
+
+        <ol class="step-list">
+          <li>
+            <div>
+              <strong>Open the Selections page for the event</strong>
+              <p>Click the Selections button in the event header.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Find the submission card</strong>
+              <p>Locate the client's submission by name or date.</p>
+            </div>
+          </li>
+          <li>
+            <div>
+              <strong>Click the status badge and set to Delivered</strong>
+              <p>The badge updates immediately. The change is saved to the database — refreshing the page retains the status.</p>
+            </div>
+          </li>
+        </ol>
+
+        <h3>Client notification</h3>
+        <p>PhotoHouse does not currently send an automatic email to clients when you mark a selection as Delivered. To let the client know their photos are ready, send a separate message with your delivery link — whether that's a download link, WeTransfer, Google Drive, or another delivery method you prefer.</p>
+        <p>If your platform has email configured via Amazon SES, the <em>new selection submitted</em> notification email is sent automatically to you when a client submits. Outbound client notifications are on the product roadmap.</p>
+
+      </div><!-- /.content-body -->
+
+      <nav class="page-nav">
+        <a href="sharing-galleries.html" class="page-nav-btn prev">
+          <span class="page-nav-label">← Previous</span>
+          <span class="page-nav-title">Sharing Galleries</span>
+        </a>
+        <a href="face-recognition.html" class="page-nav-btn next">
+          <span class="page-nav-label">Next →</span>
+          <span class="page-nav-title">AI Face Search</span>
+        </a>
+      </nav>
+    </main>
+
+    <aside class="toc-col">
+      <div class="toc-inner">
+        <div class="toc-title">On this page</div>
+        <ul class="toc-list"></ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
