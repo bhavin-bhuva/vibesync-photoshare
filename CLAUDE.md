@@ -148,3 +148,24 @@ SHARE_TOKEN_SECRET
 ### Tailwind v4 note
 
 Uses `@tailwindcss/postcss`. Configuration is CSS-first (no `tailwind.config.js`); theme customization goes in `src/app/globals.css` under `@theme`.
+
+### Photo culling pipeline
+
+Culling uses the same Python face service as face indexing. All culling endpoints are prefixed `/cull/`.
+
+**Flow (per photo after upload):**
+1. `savePhotoRecord` fires `analyzePhotoForCulling` (fire-and-forget) if `event.cullingEnabled = true`
+2. `analyzePhotoForCulling` in `src/lib/cullingService.ts` calls `POST /cull/analyze` + `POST /cull/embed` in parallel, computes `autoSuggestion`, upserts `PhotoCullScore`
+3. CLIP embedding stored as `Bytes` in `PhotoCullScore.clipEmbedding` via `embeddingToBuffer()`
+
+**Manual trigger:**
+- `triggerManualCulling(eventId)` in `dashboard/events/[id]/actions.ts` — batches 20 photos concurrently, then runs burst clustering
+- Burst clustering calls `POST /cull/cluster-bursts`, upserts `BurstCluster` rows, marks `isBestInBurst` on winners
+- `getCullingProgress(eventId)` returns the latest `CullingJob` for polling
+
+**Key invariants:**
+- `PhotoCullScore` is unique per photo (`@@unique([photoId])`)
+- `autoSuggestion` is never written when `photographerOverride = true`
+- Burst duplicate auto-suggestion (`"Burst duplicate"`) only applied to non-best photos with `photographerOverride = false`
+- `analyzePhotoForCulling` does not own job DONE/FAILED lifecycle — callers manage it
+- HTTP client lives in `src/lib/cullClient.ts`; orchestration in `src/lib/cullingService.ts`

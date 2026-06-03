@@ -9,6 +9,7 @@ import { UploadModal, type GroupOption } from "./UploadModal";
 import { ShareModal, type SharedLinkRow } from "./ShareModal";
 import { CoverPhotoUpload } from "./CoverPhotoUpload";
 import { PeopleTab, type ClusterCardData, type ActiveJobData } from "./PeopleTab";
+import { CullingTab, type CullPhotoData, type BurstClusterData, type CullingJobData } from "./CullingTab";
 import { EventMoreMenu } from "./EventMoreMenu";
 import { getCloudfrontSignedUrl, getCloudfrontPreviewUrl } from "@/lib/cloudfront";
 
@@ -36,11 +37,11 @@ export default async function EventPage({
   searchParams: Promise<{ cursor?: string; tab?: string; group?: string }>;
 }) {
   const [{ id }, { cursor, tab, group }] = await Promise.all([params, searchParams]);
-  const activeTab = tab === "people" ? "people" : "photos";
+  const activeTab = tab === "people" ? "people" : tab === "culling" ? "culling" : "photos";
   const [t, session] = await Promise.all([getServerT(), getServerSession(authOptions)]);
   if (!session) redirect("/login");
 
-  const [event, pendingSelectionsCount, photos, totalSizeAgg, groups, ungroupedCount, clusters, activeJob, photosAnalyzed] =
+  const [event, pendingSelectionsCount, photos, totalSizeAgg, groups, ungroupedCount, clusters, activeJob, photosAnalyzed, subscription] =
     await Promise.all([
       db.event.findUnique({
         where: { id },
@@ -94,9 +95,15 @@ export default async function EventPage({
         by: ["photoId"],
         where: { eventId: id },
       }).then((rows) => rows.length),
+      db.subscription.findFirst({
+        where: { userId: session.user.id },
+        select: { planTier: true },
+      }),
     ]);
 
   if (!event || event.userId !== session.user.id) notFound();
+
+  const plan = (subscription?.planTier ?? "FREE") as "FREE" | "PRO" | "STUDIO";
 
   const nextCursor = photos.length === PAGE_SIZE ? photos[photos.length - 1].id : null;
   const totalSizeBytes = totalSizeAgg._sum.size ?? 0;
@@ -124,6 +131,117 @@ export default async function EventPage({
       }))
     ),
   ]);
+
+  // Culling tab badge — cheap count regardless of active tab
+  const cullReviewCount = await db.photoCullScore.count({
+    where: { eventId: id, autoSuggestion: "REVIEW", photographerOverride: false },
+  });
+
+  // Culling tab data — only fetched when the tab is active
+  let cullingTabData: { photos: CullPhotoData[]; burstClusters: BurstClusterData[]; job: CullingJobData } | null = null;
+  if (activeTab === "culling") {
+    const [rawPhotos, cullingJob, rawBursts] = await Promise.all([
+      db.photo.findMany({
+        where: { eventId: id },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          s3Key: true,
+          thumbS3Key: true,
+          cullScore: {
+            select: {
+              cullStatus: true,
+              autoSuggestion: true,
+              autoSuggestionReason: true,
+              sharpnessScore: true,
+              blinkProbability: true,
+              aestheticScore: true,
+              facesDetected: true,
+              burstClusterId: true,
+              isBestInBurst: true,
+              photographerOverride: true,
+            },
+          },
+        },
+      }),
+      db.cullingJob.findFirst({
+        where: { eventId: id },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, status: true, totalPhotos: true, processedPhotos: true, createdAt: true, completedAt: true },
+      }),
+      db.burstCluster.findMany({
+        where: { eventId: id },
+        orderBy: { photoCount: "desc" },
+        take: 50,
+        select: {
+          id: true,
+          photoCount: true,
+          bestPhotoId: true,
+          photos: {
+            select: {
+              photoId: true,
+              isBestInBurst: true,
+              photo: { select: { thumbS3Key: true, s3Key: true } },
+            },
+            take: 8,
+          },
+        },
+      }),
+    ]);
+
+    const cullingPhotos: CullPhotoData[] = await Promise.all(
+      rawPhotos.map(async (p) => ({
+        id: p.id,
+        thumbnailUrl:
+          (p.thumbS3Key
+            ? await getCloudfrontSignedUrl(p.thumbS3Key)
+            : await getCloudfrontPreviewUrl(p.s3Key, 800)) ?? "",
+        cullStatus: (p.cullScore?.cullStatus ?? "PENDING") as CullPhotoData["cullStatus"],
+        autoSuggestion: (p.cullScore?.autoSuggestion ?? null) as CullPhotoData["autoSuggestion"],
+        autoSuggestionReason: p.cullScore?.autoSuggestionReason ?? null,
+        sharpnessScore: p.cullScore?.sharpnessScore ?? null,
+        blinkProbability: p.cullScore?.blinkProbability ?? null,
+        aestheticScore: p.cullScore?.aestheticScore ?? null,
+        facesDetected: p.cullScore?.facesDetected ?? 0,
+        burstClusterId: p.cullScore?.burstClusterId ?? null,
+        isBestInBurst: p.cullScore?.isBestInBurst ?? false,
+        photographerOverride: p.cullScore?.photographerOverride ?? false,
+      }))
+    );
+
+    const cullingBursts: BurstClusterData[] = await Promise.all(
+      rawBursts.map(async (c) => ({
+        id: c.id,
+        photoCount: c.photoCount,
+        bestPhotoId: c.bestPhotoId,
+        photos: await Promise.all(
+          c.photos.map(async (cp) => ({
+            id: cp.photoId,
+            thumbnailUrl:
+              (cp.photo.thumbS3Key
+                ? await getCloudfrontSignedUrl(cp.photo.thumbS3Key)
+                : await getCloudfrontPreviewUrl(cp.photo.s3Key, 800)) ?? "",
+            isBestInBurst: cp.isBestInBurst,
+          }))
+        ),
+      }))
+    );
+
+    cullingTabData = {
+      photos: cullingPhotos,
+      burstClusters: cullingBursts,
+      job: cullingJob
+        ? {
+            id: cullingJob.id,
+            status: cullingJob.status,
+            totalPhotos: cullingJob.totalPhotos,
+            processedPhotos: cullingJob.processedPhotos,
+            createdAt: cullingJob.createdAt.toISOString(),
+            completedAt: cullingJob.completedAt?.toISOString() ?? null,
+          }
+        : null,
+    };
+  }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const faceIndexingEnabled = !!((event as any).faceIndexingEnabled as boolean | undefined);
@@ -308,12 +426,62 @@ export default async function EventPage({
               </span>
             )}
           </Link>
+          <Link
+            href={`/dashboard/events/${id}?tab=culling`}
+            className={`-mb-px flex min-h-[44px] items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors sm:px-4 sm:py-3 ${
+              activeTab === "culling"
+                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+            }`}
+          >
+            {/* Scissors icon — mobile only */}
+            <svg className="h-4 w-4 shrink-0 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="6" cy="6" r="3" /><circle cx="6" cy="18" r="3" />
+              <line x1="20" y1="4" x2="8.12" y2="15.88" /><line x1="14.47" y1="14.48" x2="20" y2="20" /><line x1="8.12" y1="8.12" x2="12" y2="12" />
+            </svg>
+            <span className="hidden sm:inline">Culling</span>
+            <span className="sr-only sm:hidden">Culling</span>
+            {cullReviewCount > 0 && (
+              <span className="hidden rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-600 dark:bg-orange-950 dark:text-orange-400 sm:inline">
+                {cullReviewCount}
+              </span>
+            )}
+          </Link>
         </div>
       </div>
 
       {/* ── Main content ── */}
       <main className="mx-auto max-w-6xl px-3 py-4 sm:px-6 sm:py-8">
-        {activeTab === "photos" ? (
+        {activeTab === "culling" ? (
+          cullingTabData && (
+            <CullingTab
+              eventId={id}
+              photos={cullingTabData.photos}
+              burstClusters={cullingTabData.burstClusters}
+              initialJob={cullingTabData.job}
+              plan={plan}
+              cullingSettings={{
+                cullingEnabled: event.cullingEnabled,
+                autoCullOnUpload: event.autoCullOnUpload,
+                cullingSensitivity: event.cullingSensitivity,
+                rejectBurstDups: event.rejectBurstDups,
+              }}
+            />
+          )
+        ) : activeTab === "people" ? (
+          <PeopleTab
+            eventId={id}
+            faceIndexingEnabled={faceIndexingEnabled}
+            clusters={clustersWithUrls}
+            activeJob={activeJobData}
+            totalPhotoCount={event._count.photos}
+            stats={{
+              people: clusters.length,
+              photosAnalyzed: photosAnalyzed,
+              facesFound: totalFacesFound,
+            }}
+          />
+        ) : (
           <>
             <PhotoGrid
               photos={photosWithUrls}
@@ -334,19 +502,6 @@ export default async function EventPage({
               </div>
             )}
           </>
-        ) : (
-          <PeopleTab
-            eventId={id}
-            faceIndexingEnabled={faceIndexingEnabled}
-            clusters={clustersWithUrls}
-            activeJob={activeJobData}
-            totalPhotoCount={event._count.photos}
-            stats={{
-              people: clusters.length,
-              photosAnalyzed: photosAnalyzed,
-              facesFound: totalFacesFound,
-            }}
-          />
         )}
       </main>
     </div>

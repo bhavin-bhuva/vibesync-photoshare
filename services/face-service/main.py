@@ -5,12 +5,17 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 
+import cv2
 import numpy as np
+import open_clip
+import torch
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from insightface.app import FaceAnalysis
+from PIL import Image
 from pydantic import BaseModel
 from scipy.spatial.distance import cdist
+from sklearn.cluster import DBSCAN
 
 from utils.image import bytes_to_rgb_array, crop_and_encode_face, resize_for_detection, rgb_to_bgr
 from utils.s3 import download_image_bytes, upload_image_bytes
@@ -29,6 +34,14 @@ async def lifespan(app: FastAPI):
     # ctx_id=0 uses GPU if available; InsightFace falls back to CPU automatically
     face_app.prepare(ctx_id=0, det_size=(640, 640))
     app.state.face_app = face_app
+
+    clip_model, _, clip_preprocess = open_clip.create_model_and_transforms(
+        "ViT-B-32", pretrained="openai"
+    )
+    clip_model.eval()
+    app.state.clip_model = clip_model
+    app.state.clip_preprocess = clip_preprocess
+
     yield
     # nothing to clean up
 
@@ -434,5 +447,293 @@ async def cluster_faces(body: ClusterRequest):
         clusters=clusters,
         total_faces=n,
         total_clusters=len(clusters),
+        processing_ms=elapsed_ms,
+    )
+
+
+# ---------------------------------------------------------------------------
+# /cull/analyze — sharpness scoring + blink detection for photo culling
+# ---------------------------------------------------------------------------
+
+def _compute_sharpness(img_bgr: np.ndarray) -> float:
+    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+    variance = cv2.Laplacian(gray, cv2.CV_64F).var()
+    # < 20 = very blurry, > 500 = very sharp
+    return round(min(float(variance) / 500.0, 1.0), 4)
+
+
+def _compute_ear(eye_kp: np.ndarray, img_bgr: np.ndarray) -> float:
+    """
+    Estimate eye openness via Variance of Laplacian on a 40×20 eye crop.
+    Open eyes have higher texture variance (iris, lashes); closed eyes are smoother.
+    Returns 0.0 (closed) – 1.0 (open).
+    """
+    h, w = img_bgr.shape[:2]
+    x, y = int(eye_kp[0]), int(eye_kp[1])
+    x1, x2 = max(0, x - 20), min(w, x + 20)
+    y1, y2 = max(0, y - 10), min(h, y + 10)
+    crop = img_bgr[y1:y2, x1:x2]
+    if crop.size == 0:
+        return 0.5
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    variance = cv2.Laplacian(gray, cv2.CV_64F).var()
+    # Empirically: open eye variance ~50–300, closed ~0–20
+    return round(min(float(variance) / 150.0, 1.0), 4)
+
+
+def _classify_eye(openness: float) -> str:
+    if openness < 0.2:
+        return "closed"
+    if openness < 0.35:
+        return "mid"
+    return "open"
+
+
+def _estimate_blink(face, img_bgr: np.ndarray) -> dict:
+    """
+    kps layout (InsightFace buffalo_l 5-point):
+      0 = right eye, 1 = left eye, 2 = nose, 3 = right mouth, 4 = left mouth
+    Spec treats kps[0] as left_eye output label, kps[1] as right_eye label —
+    the min() for blink_prob makes the labelling inconsequential for culling.
+    """
+    landmarks = face.kps  # (5, 2) float32
+    left_openness = _compute_ear(landmarks[0], img_bgr)
+    right_openness = _compute_ear(landmarks[1], img_bgr)
+    blink_prob = round(1.0 - min(left_openness, right_openness), 4)
+    return {
+        "left_eye": _classify_eye(left_openness),
+        "right_eye": _classify_eye(right_openness),
+        "blink_probability": blink_prob,
+    }
+
+
+class CullAnalyzeRequest(BaseModel):
+    photo_id: str
+    event_id: str
+    thumbnail_s3_key: str
+    s3_bucket: str
+
+
+def _compute_aesthetic_score(img_bgr: np.ndarray) -> float:
+    # TODO: replace with full NIMA MobileNet model once nima_mobilenet.pth is integrated
+    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+    brightness = np.mean(gray) / 255.0
+    contrast = np.std(gray) / 128.0
+    hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    saturation = np.mean(hsv[:, :, 1]) / 255.0
+    raw = brightness * 0.2 + min(float(contrast), 1.0) * 0.4 + saturation * 0.4
+    return round(1.0 + raw * 9.0, 2)
+
+
+class CullAnalyzeResponse(BaseModel):
+    photo_id: str
+    sharpness_score: float
+    face_sharpness_score: float
+    blink_probability: float
+    left_eye_status: str
+    right_eye_status: str
+    faces_detected: int
+    aesthetic_score: float
+    processing_ms: int
+
+
+@app.post("/cull/analyze", response_model=CullAnalyzeResponse)
+async def cull_analyze(body: CullAnalyzeRequest, request: Request):
+    face_app: FaceAnalysis = request.app.state.face_app
+    started = time.monotonic()
+
+    try:
+        raw = download_image_bytes(body.thumbnail_s3_key, bucket=body.s3_bucket)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"S3 key not found: {body.thumbnail_s3_key}")
+
+    img_rgb = bytes_to_rgb_array(raw)
+    img_rgb = resize_for_detection(img_rgb)
+    img_bgr = rgb_to_bgr(img_rgb)
+
+    # Whole-frame sharpness
+    sharpness = _compute_sharpness(img_bgr)
+
+    # Face detection
+    faces = face_app.get(img_bgr)
+    valid_faces = [f for f in faces if float(f.det_score) >= DET_SCORE_THRESHOLD]
+
+    # Face-region sharpness: use the highest-confidence face
+    face_sharpness = sharpness  # fallback when no face detected
+    if valid_faces:
+        best = max(valid_faces, key=lambda f: float(f.det_score))
+        h, w = img_bgr.shape[:2]
+        bx1, by1, bx2, by2 = best.bbox
+        pad = 10
+        fx1 = max(0, int(bx1) - pad)
+        fy1 = max(0, int(by1) - pad)
+        fx2 = min(w, int(bx2) + pad)
+        fy2 = min(h, int(by2) + pad)
+        face_crop = img_bgr[fy1:fy2, fx1:fx2]
+        if face_crop.size > 0:
+            face_sharpness = _compute_sharpness(face_crop)
+
+    # Blink detection: use the best face if available
+    if valid_faces:
+        best = max(valid_faces, key=lambda f: float(f.det_score))
+        blink = _estimate_blink(best, img_bgr)
+    else:
+        blink = {
+            "blink_probability": 0.0,
+            "left_eye": "no_face",
+            "right_eye": "no_face",
+        }
+
+    aesthetic = _compute_aesthetic_score(img_bgr)
+
+    elapsed_ms = int((time.monotonic() - started) * 1000)
+
+    return CullAnalyzeResponse(
+        photo_id=body.photo_id,
+        sharpness_score=sharpness,
+        face_sharpness_score=face_sharpness,
+        blink_probability=blink["blink_probability"],
+        left_eye_status=blink["left_eye"],
+        right_eye_status=blink["right_eye"],
+        faces_detected=len(valid_faces),
+        aesthetic_score=aesthetic,
+        processing_ms=elapsed_ms,
+    )
+
+
+# ---------------------------------------------------------------------------
+# /cull/embed — CLIP embedding for burst deduplication
+# ---------------------------------------------------------------------------
+
+class CullEmbedRequest(BaseModel):
+    photo_id: str
+    thumbnail_s3_key: str
+    s3_bucket: str
+
+
+class CullEmbedResponse(BaseModel):
+    photo_id: str
+    clip_embedding: list[float]   # 512 L2-normalised floats
+    processing_ms: int
+
+
+@app.post("/cull/embed", response_model=CullEmbedResponse)
+async def cull_embed(body: CullEmbedRequest, request: Request):
+    clip_model = request.app.state.clip_model
+    clip_preprocess = request.app.state.clip_preprocess
+    started = time.monotonic()
+
+    try:
+        raw = download_image_bytes(body.thumbnail_s3_key, bucket=body.s3_bucket)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"S3 key not found: {body.thumbnail_s3_key}")
+
+    img_rgb = bytes_to_rgb_array(raw)
+    pil_image = Image.fromarray(img_rgb)
+
+    image_tensor = clip_preprocess(pil_image).unsqueeze(0)
+    with torch.no_grad():
+        features = clip_model.encode_image(image_tensor)
+        features = features / features.norm(dim=-1, keepdim=True)
+
+    embedding: list[float] = features[0].tolist()
+    elapsed_ms = int((time.monotonic() - started) * 1000)
+
+    return CullEmbedResponse(
+        photo_id=body.photo_id,
+        clip_embedding=embedding,
+        processing_ms=elapsed_ms,
+    )
+
+
+# ---------------------------------------------------------------------------
+# /cull/cluster-bursts — group similar photos into burst clusters via DBSCAN
+# ---------------------------------------------------------------------------
+
+class BurstPhotoInput(BaseModel):
+    photo_id: str
+    embedding: list[float]
+
+
+class ClusterBurstsRequest(BaseModel):
+    event_id: str
+    photos: list[BurstPhotoInput]
+    similarity_threshold: float = 0.85
+
+
+class BurstCluster(BaseModel):
+    cluster_id: str
+    photo_ids: list[str]
+    best_photo_id: str
+    size: int
+
+
+class ClusterBurstsResponse(BaseModel):
+    event_id: str
+    burst_clusters: list[BurstCluster]
+    total_clustered: int
+    total_unique: int
+    processing_ms: int
+
+
+@app.post("/cull/cluster-bursts", response_model=ClusterBurstsResponse)
+async def cluster_bursts(body: ClusterBurstsRequest):
+    started = time.monotonic()
+
+    photos = body.photos
+
+    if len(photos) < 2:
+        elapsed_ms = int((time.monotonic() - started) * 1000)
+        return ClusterBurstsResponse(
+            event_id=body.event_id,
+            burst_clusters=[],
+            total_clustered=0,
+            total_unique=len(photos),
+            processing_ms=elapsed_ms,
+        )
+
+    embeddings = np.array([p.embedding for p in photos], dtype=np.float32)
+
+    # eps = cosine distance threshold; 0.85 similarity → 0.15 distance
+    eps = 1.0 - body.similarity_threshold
+    labels = DBSCAN(eps=eps, min_samples=2, metric="cosine").fit(embeddings).labels_
+
+    # Group photos by cluster label; label -1 = noise (unique photos)
+    label_to_indices: dict[int, list[int]] = {}
+    for i, label in enumerate(labels):
+        if label == -1:
+            continue
+        label_to_indices.setdefault(int(label), []).append(i)
+
+    burst_clusters: list[BurstCluster] = []
+    for label, indices in label_to_indices.items():
+        cluster_embeddings = embeddings[indices]
+        # Best photo = highest average cosine similarity to all others in cluster
+        # Embeddings are L2-normalised → dot product = cosine similarity
+        avg_sims = [
+            float(np.mean([np.dot(cluster_embeddings[j], cluster_embeddings[k])
+                           for k in range(len(indices)) if k != j]))
+            if len(indices) > 1 else 1.0
+            for j in range(len(indices))
+        ]
+        best_local_idx = int(np.argmax(avg_sims))
+        photo_ids = [photos[i].photo_id for i in indices]
+
+        burst_clusters.append(BurstCluster(
+            cluster_id=str(label),
+            photo_ids=photo_ids,
+            best_photo_id=photo_ids[best_local_idx],
+            size=len(photo_ids),
+        ))
+
+    total_clustered = sum(c.size for c in burst_clusters)
+    total_unique = len(photos) - total_clustered
+    elapsed_ms = int((time.monotonic() - started) * 1000)
+
+    return ClusterBurstsResponse(
+        event_id=body.event_id,
+        burst_clusters=burst_clusters,
+        total_clustered=total_clustered,
+        total_unique=total_unique,
         processing_ms=elapsed_ms,
     )

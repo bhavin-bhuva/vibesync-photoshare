@@ -1,6 +1,26 @@
 import { db } from "@/lib/db";
 import type { PlanTier } from "@/generated/prisma/client";
 
+// ─── Culling plan limits ───────────────────────────────────────────────────────
+
+export type CullingFeature = "sharpness" | "blink" | "aesthetic" | "burst";
+
+export interface CullingLimits {
+  enabled: boolean;
+  maxPhotos: number; // Infinity = unlimited
+  features: CullingFeature[];
+}
+
+export const PLAN_CULLING_LIMITS: Record<PlanTier, CullingLimits> = {
+  FREE:   { enabled: false, maxPhotos: 0,        features: [] },
+  PRO:    { enabled: true,  maxPhotos: 500,       features: ["sharpness", "blink"] },
+  STUDIO: { enabled: true,  maxPhotos: Infinity,  features: ["sharpness", "blink", "aesthetic", "burst"] },
+};
+
+export function getCullingLimits(tier: PlanTier): CullingLimits {
+  return PLAN_CULLING_LIMITS[tier];
+}
+
 // Fallback constants used when no matching StripePlan row exists
 const STORAGE_FALLBACK: Record<PlanTier, bigint> = {
   FREE:   BigInt(1073741824),     // 1 GB
