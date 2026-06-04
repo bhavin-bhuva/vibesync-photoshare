@@ -112,6 +112,21 @@ export default async function DashboardPage({
 
   const firstName = (user.name ?? "").split(" ")[0] || user.email?.split("@")[0] || "";
 
+  const cullReviewCounts = plan !== "FREE" && events.length > 0
+    ? await db.photoCullScore.groupBy({
+        by: ["eventId"],
+        where: {
+          eventId: { in: events.map((e) => e.id) },
+          autoSuggestion: "REVIEW",
+          photographerOverride: false,
+        },
+        _count: { _all: true },
+      })
+    : [];
+  const cullReviewMap = new Map(cullReviewCounts.map((r) => [r.eventId, r._count._all]));
+  const totalCullReview = cullReviewCounts.reduce((s, r) => s + r._count._all, 0);
+  const eventsWithReview = cullReviewCounts.filter((r) => r._count._all > 0).length;
+
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
       {error === "access_denied" && <AccessDeniedToast />}
@@ -153,6 +168,30 @@ export default async function DashboardPage({
                 className="shrink-0 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
               >
                 {t.dashboard.newSelectionsButton}
+              </Link>
+            </div>
+          );
+        })()}
+
+        {/* ── Culling review banner ── */}
+        {totalCullReview > 0 && (() => {
+          const firstReviewEvent = events.find((e) => (cullReviewMap.get(e.id) ?? 0) > 0)!;
+          return (
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 dark:border-orange-800 dark:bg-orange-950/40">
+              <div className="flex items-center gap-3">
+                <svg className="h-5 w-5 shrink-0 text-orange-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
+                </svg>
+                <p className="text-sm text-orange-800 dark:text-orange-300">
+                  {totalCullReview} {totalCullReview === 1 ? "photo needs" : "photos need"} review
+                  {eventsWithReview > 1 && ` across ${eventsWithReview} events`}
+                </p>
+              </div>
+              <Link
+                href={`/dashboard/events/${firstReviewEvent.id}?tab=culling`}
+                className="shrink-0 rounded-lg bg-orange-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-700"
+              >
+                Review →
               </Link>
             </div>
           );
@@ -405,6 +444,14 @@ export default async function DashboardPage({
                                 : t.shareModal.accessBadgePassword}
                             </span>
                           ))}
+                        </div>
+                      )}
+                      {/* Culling review badge */}
+                      {(cullReviewMap.get(event.id) ?? 0) > 0 && (
+                        <div className="mt-2">
+                          <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-600 dark:bg-orange-950 dark:text-orange-400">
+                            {cullReviewMap.get(event.id)} need review
+                          </span>
                         </div>
                       )}
                     </div>

@@ -1,6 +1,51 @@
+import gc
 import io
+import cv2
 import numpy as np
 from PIL import Image, ImageOps
+
+
+MAX_INFERENCE_SIZE = 640
+
+
+def load_image_for_inference(image_bytes: bytes) -> np.ndarray:
+    """
+    Decode image bytes to a BGR uint8 numpy array, resized immediately to
+    MAX_INFERENCE_SIZE on the longest side. Keeps EXIF rotation via Pillow
+    (required for phone photos), then hands off to cv2.resize (faster than
+    PIL LANCZOS and avoids a second full-res array).
+
+    Returns BGR — matches cv2/InsightFace native format. Callers using
+    PIL.Image.fromarray (e.g. CLIP preprocessing) must flip channels first.
+    """
+    pil = Image.open(io.BytesIO(image_bytes))
+    pil = ImageOps.exif_transpose(pil)
+    if pil.mode != "RGB":
+        pil = pil.convert("RGB")
+
+    img_rgb = np.asarray(pil)
+    pil.close()
+
+    h, w = img_rgb.shape[:2]
+    if max(h, w) > MAX_INFERENCE_SIZE:
+        scale = MAX_INFERENCE_SIZE / max(h, w)
+        img_rgb = cv2.resize(
+            img_rgb,
+            (int(w * scale), int(h * scale)),
+            interpolation=cv2.INTER_AREA,
+        )
+
+    return cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
+
+
+def release_image(img_array: np.ndarray) -> None:
+    """
+    Explicitly delete an image array and trigger GC.
+    Only frees memory when the caller holds the sole reference — call this
+    after the last use of the array and before moving to the next image.
+    """
+    del img_array
+    gc.collect()
 
 
 def bytes_to_rgb_array(data: bytes) -> np.ndarray:

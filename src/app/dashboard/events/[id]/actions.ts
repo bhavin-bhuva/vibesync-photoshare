@@ -15,6 +15,10 @@ import {
   processEventPhotosFaces,
   processSinglePhotoFaces,
 } from "@/lib/faceIndexing";
+import { analyzePhotoForCulling, type CullingOptions } from "@/lib/cullingService";
+import { clusterBursts } from "@/lib/cullClient";
+import { bufferToEmbedding } from "@/lib/embedding";
+import { getCullingLimits } from "@/lib/storage";
 import type { Photo } from "@/generated/prisma/client";
 
 export async function getPhotoLightboxUrl(
@@ -54,7 +58,7 @@ export async function savePhotoRecord(
   // Verify event belongs to this user before writing
   const event = await db.event.findFirst({
     where: { id: eventId, userId: session.user.id },
-    select: { id: true },
+    select: { id: true, cullingEnabled: true, autoCullOnUpload: true, cullingSensitivity: true },
   });
   if (!event) return { error: "Event not found." };
 
@@ -99,6 +103,37 @@ export async function savePhotoRecord(
 
   revalidatePath(`/dashboard/events/${eventId}`);
   revalidatePath("/dashboard");
+
+  // Fire culling pipeline — best-effort, never blocks upload response
+  if (event.cullingEnabled && event.autoCullOnUpload) {
+    const created = await db.photo.findFirst({
+      where: { s3Key, eventId },
+      select: { id: true, s3Key: true, thumbS3Key: true, eventId: true },
+      orderBy: { createdAt: "desc" },
+    });
+    if (created) {
+      const job = await getOrCreateCullingJob(eventId);
+      analyzePhotoForCulling(created, job.id, { sensitivity: event.cullingSensitivity as CullingOptions["sensitivity"] })
+        .then(() =>
+          db.cullingJob.update({
+            where: { id: job.id },
+            data: { status: "DONE", completedAt: new Date() },
+          }).catch(() => {})
+        )
+        .catch((err) => {
+          console.error("[savePhotoRecord] Culling failed for photo:", created.id, err);
+          db.cullingJob.update({
+            where: { id: job.id },
+            data: {
+              status: "FAILED",
+              errorMessage: err instanceof Error ? err.message : String(err),
+              completedAt: new Date(),
+            },
+          }).catch(() => {});
+        });
+    }
+  }
+
   return {};
 }
 
@@ -577,4 +612,340 @@ export async function deleteEventFaceDataAction(
 
   revalidatePath(`/dashboard/events/${eventId}`);
   return {};
+}
+
+// ─── Culling helpers (private) ────────────────────────────────────────────────
+
+function chunk<T>(arr: T[], size: number): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size));
+  return result;
+}
+
+/**
+ * Return an active (PENDING or RUNNING) AUTO culling job for the event,
+ * creating one if none exists. Used by the per-photo upload trigger so that
+ * photos uploaded in a burst share one job visible in the progress UI.
+ */
+async function getOrCreateCullingJob(eventId: string): Promise<{ id: string }> {
+  const existing = await db.cullingJob.findFirst({
+    where: { eventId, status: { in: ["PENDING", "RUNNING"] } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (existing) return existing;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (db.cullingJob.create as any)({
+    data: { eventId, status: "PENDING", triggeredBy: "AUTO", totalPhotos: 1 },
+    select: { id: true },
+  }) as Promise<{ id: string }>;
+}
+
+/**
+ * Cluster CLIP embeddings for an event, persist BurstCluster rows, link
+ * PhotoCullScore rows, and mark burst duplicates as REVIEW.
+ * Auto-suggestion is never overridden when photographerOverride = true.
+ */
+async function runBurstClustering(eventId: string, rejectDups = false): Promise<void> {
+  const scores = await db.photoCullScore.findMany({
+    where: { eventId, clipEmbedding: { not: null } },
+    select: { photoId: true, clipEmbedding: true },
+  });
+
+  if (scores.length < 2) return;
+
+  const photos = scores.map((s) => ({
+    photo_id: s.photoId,
+    embedding: bufferToEmbedding(Buffer.from(s.clipEmbedding!)),
+  }));
+
+  const result = await clusterBursts({ eventId, photos });
+  if (result.burst_clusters.length === 0) return;
+
+  // Clear stale burst data before writing fresh clusters
+  await db.burstCluster.deleteMany({ where: { eventId } });
+  await db.photoCullScore.updateMany({
+    where: { eventId },
+    data: { burstClusterId: null, isBestInBurst: false },
+  });
+
+  for (const cluster of result.burst_clusters) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newCluster = await (db.burstCluster.create as any)({
+      data: { eventId, photoCount: cluster.size, bestPhotoId: cluster.best_photo_id },
+      select: { id: true },
+    }) as { id: string };
+
+    await db.photoCullScore.updateMany({
+      where: { photoId: { in: cluster.photo_ids } },
+      data: { burstClusterId: newCluster.id },
+    });
+
+    await db.photoCullScore.update({
+      where: { photoId: cluster.best_photo_id },
+      data: { isBestInBurst: true },
+    });
+
+    // Burst duplicates — tag as REVIEW (default) or hard-reject when rejectDups is on
+    const duplicateIds = cluster.photo_ids.filter((id) => id !== cluster.best_photo_id);
+    if (duplicateIds.length > 0) {
+      if (rejectDups) {
+        await db.photoCullScore.updateMany({
+          where: { photoId: { in: duplicateIds }, photographerOverride: false },
+          data: { cullStatus: "REJECT", photographerOverride: true, autoSuggestionReason: "Burst duplicate" },
+        });
+      } else {
+        await db.photoCullScore.updateMany({
+          where: { photoId: { in: duplicateIds }, photographerOverride: false },
+          data: { autoSuggestion: "REVIEW", autoSuggestionReason: "Burst duplicate" },
+        });
+      }
+    }
+  }
+}
+
+async function runManualCullingJob(
+  eventId: string,
+  jobId: string,
+  photos: { id: string; s3Key: string; thumbS3Key: string | null; eventId: string }[],
+  options: CullingOptions & { rejectBurstDups?: boolean } = {}
+): Promise<void> {
+  const { rejectBurstDups = false, ...cullOpts } = options;
+  try {
+    await db.cullingJob.update({
+      where: { id: jobId },
+      data: { status: "RUNNING", startedAt: new Date() },
+    });
+
+    const batches = chunk(photos, 20);
+    for (const batch of batches) {
+      await Promise.all(
+        batch.map((p) =>
+          analyzePhotoForCulling(p, jobId, cullOpts).catch((err) =>
+            console.error(`[culling] Photo ${p.id} failed:`, err)
+          )
+        )
+      );
+    }
+
+    await runBurstClustering(eventId, rejectBurstDups);
+
+    await db.$transaction([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (db.cullingJob.update as any)({
+        where: { id: jobId },
+        data: { status: "DONE", completedAt: new Date() },
+      }),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (db.event.update as any)({
+        where: { id: eventId },
+        data: { lastCulledAt: new Date() },
+      }),
+    ]);
+  } catch (err) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (db.cullingJob.update as any)({
+      where: { id: jobId },
+      data: {
+        status: "FAILED",
+        errorMessage: err instanceof Error ? err.message : String(err),
+        completedAt: new Date(),
+      },
+    });
+  }
+}
+
+// ─── Culling server actions ───────────────────────────────────────────────────
+
+/**
+ * Kick off a full culling pass for an event.
+ * Re-analyzes all photos that don't have a photographer-locked score.
+ * Returns immediately with the jobId; the heavy work runs in the background.
+ */
+export async function triggerManualCulling(
+  eventId: string
+): Promise<{ jobId?: string; error?: string; limit?: number }> {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Unauthorized." };
+
+  const [event, subscription] = await Promise.all([
+    db.event.findFirst({
+      where: { id: eventId, userId: session.user.id },
+      select: { id: true, cullingSensitivity: true, rejectBurstDups: true },
+    }),
+    db.subscription.findFirst({
+      where: { userId: session.user.id },
+      select: { planTier: true },
+    }),
+  ]);
+  if (!event) return { error: "Event not found." };
+
+  const tier = subscription?.planTier ?? "FREE";
+  const limits = getCullingLimits(tier);
+  if (!limits.enabled) {
+    return { error: "PLAN_LIMIT", limit: 0 };
+  }
+
+  const running = await db.cullingJob.findFirst({
+    where: { eventId, status: { in: ["PENDING", "RUNNING"] } },
+    select: { id: true },
+  });
+  if (running) return { error: "A culling job is already in progress." };
+
+  const photos = await db.photo.findMany({
+    where: {
+      eventId,
+      status: "READY",
+      OR: [
+        { cullScore: null },
+        { cullScore: { photographerOverride: false } },
+      ],
+    },
+    select: { id: true, s3Key: true, thumbS3Key: true, eventId: true },
+  });
+
+  if (limits.maxPhotos !== Infinity && photos.length > limits.maxPhotos) {
+    return { error: "PLAN_LIMIT", limit: limits.maxPhotos };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const job = await (db.cullingJob.create as any)({
+    data: {
+      eventId,
+      status: "PENDING",
+      totalPhotos: photos.length,
+      triggeredBy: "MANUAL",
+    },
+    select: { id: true },
+  }) as { id: string };
+
+  const cullingOptions: CullingOptions & { rejectBurstDups?: boolean } = {
+    sensitivity: event.cullingSensitivity as CullingOptions["sensitivity"],
+    features: limits.features,
+    rejectBurstDups: event.rejectBurstDups,
+  };
+
+  runManualCullingJob(eventId, job.id, photos, cullingOptions).catch((err: Error) =>
+    console.error("[triggerManualCulling] Background job failed:", err.message)
+  );
+
+  return { jobId: job.id };
+}
+
+/** Update culling configuration for an event. */
+export async function updateCullingSettings(
+  eventId: string,
+  settings: Partial<{
+    cullingEnabled: boolean;
+    autoCullOnUpload: boolean;
+    cullingSensitivity: string;
+    rejectBurstDups: boolean;
+  }>
+): Promise<{ error?: string }> {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Unauthorized." };
+
+  const event = await db.event.findFirst({
+    where: { id: eventId, userId: session.user.id },
+    select: { id: true },
+  });
+  if (!event) return { error: "Event not found." };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (db.event.update as any)({
+    where: { id: eventId },
+    data: settings,
+  });
+
+  revalidatePath(`/dashboard/events/${eventId}`);
+  return {};
+}
+
+/** Set photographer's explicit cull decision for a single photo. */
+export async function setCullDecision(
+  photoId: string,
+  cullStatus: "KEEP" | "REJECT" | "UNSURE"
+): Promise<{ error?: string }> {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Unauthorized." };
+
+  const photo = await db.photo.findFirst({
+    where: { id: photoId, event: { userId: session.user.id } },
+    select: { id: true, eventId: true },
+  });
+  if (!photo) return { error: "Photo not found." };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (db.photoCullScore.upsert as any)({
+    where: { photoId },
+    create: { photoId, eventId: photo.eventId, cullStatus, photographerOverride: true },
+    update: { cullStatus, photographerOverride: true },
+  });
+
+  return {};
+}
+
+/**
+ * Bulk-lock all AI-suggested photos for one suggestion type.
+ * Only touches photos where photographerOverride is still false.
+ */
+export async function bulkApplyAutoSuggestions(
+  eventId: string,
+  autoSuggestion: "KEEP" | "REJECT"
+): Promise<{ error?: string; updated?: number }> {
+  const session = await getServerSession(authOptions);
+  if (!session) return { error: "Unauthorized." };
+
+  const event = await db.event.findFirst({
+    where: { id: eventId, userId: session.user.id },
+    select: { id: true },
+  });
+  if (!event) return { error: "Event not found." };
+
+  const result = await db.photoCullScore.updateMany({
+    where: { eventId, autoSuggestion, photographerOverride: false },
+    data: { cullStatus: autoSuggestion, photographerOverride: true },
+  });
+
+  return { updated: result.count };
+}
+
+/** Poll the latest culling job for an event — lightweight, used by frontend. */
+export async function getCullingProgress(eventId: string): Promise<{
+  job: {
+    id: string;
+    status: string;
+    processedPhotos: number;
+    totalPhotos: number;
+    triggeredBy: string;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    errorMessage: string | null;
+  } | null;
+}> {
+  const session = await getServerSession(authOptions);
+  if (!session) return { job: null };
+
+  const event = await db.event.findFirst({
+    where: { id: eventId, userId: session.user.id },
+    select: { id: true },
+  });
+  if (!event) return { job: null };
+
+  const job = await db.cullingJob.findFirst({
+    where: { eventId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      status: true,
+      processedPhotos: true,
+      totalPhotos: true,
+      triggeredBy: true,
+      startedAt: true,
+      completedAt: true,
+      errorMessage: true,
+    },
+  });
+
+  return { job: job ?? null };
 }

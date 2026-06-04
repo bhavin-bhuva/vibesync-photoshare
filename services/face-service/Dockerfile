@@ -23,7 +23,21 @@ RUN pip install --no-cache-dir -r requirements.txt
 # startup is fast.  ctx_id=-1 forces CPU — no GPU available during build.
 RUN python -c "from insightface.app import FaceAnalysis; app = FaceAnalysis(name='buffalo_l', root='/app/models'); app.prepare(ctx_id=-1, det_size=(640, 640)); print('Model downloaded successfully')"
 
+# CLIP model for burst deduplication (~350 MB, cached in HuggingFace hub dir)
+RUN python -c "import open_clip; model, _, preprocess = open_clip.create_model_and_transforms('ViT-B-32', pretrained='openai'); print('CLIP model ready')"
+
+# NIMA aesthetic model — place pretrained MobileNet weights at build time.
+# Download nima_mobilenet.pth from the neural-image-assessment releases and
+# ADD it to the build context before running docker-compose build:
+#   ADD models/nima_mobilenet.pth /app/models/nima_mobilenet.pth
+# Placeholder COPY is intentionally omitted until weights are available locally.
+
 COPY . .
+
+# Export CLIP (and NIMA if weights are present) to INT8-quantized ONNX.
+# CLIP: ~350MB → ~90MB, ~3x faster CPU inference.
+# NIMA: ~17MB → ~5MB, ~2x faster CPU inference (skipped if weights absent).
+RUN python utils/model_optimizer.py
 
 EXPOSE 8000
 

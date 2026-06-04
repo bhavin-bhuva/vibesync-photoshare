@@ -63,6 +63,31 @@ enum FaceSearchStatus {
   FAILED
 }
 
+enum CullStatus {
+  PENDING
+  KEEP
+  REJECT
+  UNSURE
+}
+
+enum AutoSuggestion {
+  KEEP
+  REJECT
+  REVIEW
+}
+
+enum CullingJobStatus {
+  PENDING
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum CullingTrigger {
+  AUTO
+  MANUAL
+}
+
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
@@ -125,6 +150,14 @@ model Event {
   faceRecords          FaceRecord[]
   faceClusters         FaceCluster[]
   faceIndexingJobs     FaceIndexingJob[]
+  cullingEnabled       Boolean           @default(true)
+  autoCullOnUpload     Boolean           @default(true)
+  cullingSensitivity   String            @default("medium")
+  rejectBurstDups      Boolean           @default(false)
+  lastCulledAt         DateTime?
+  photoCullScores      PhotoCullScore[]
+  burstClusters        BurstCluster[]
+  cullingJobs          CullingJob[]
 }
 
 model Photo {
@@ -150,6 +183,7 @@ model Photo {
   group           PhotoGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
   selectedPhotos  SelectedPhoto[]
   faceRecords     FaceRecord[]
+  cullScore       PhotoCullScore?
 
   @@index([groupId])
   @@index([eventId, groupId])
@@ -367,4 +401,72 @@ model FaceSearchSession {
   expiresAt         DateTime         // 24 hours from creation
 
   @@index([slug])
+}
+
+// ─── Photo Culling AI ─────────────────────────────────────────────────────────
+
+model PhotoCullScore {
+  id                   String          @id @default(cuid())
+  photoId              String          @unique
+  photo                Photo           @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  eventId              String
+  event                Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  sharpnessScore       Float?
+  faceSharpnessScore   Float?
+  blinkProbability     Float?
+  leftEyeStatus        String?
+  rightEyeStatus       String?
+  aestheticScore       Float?
+  facesDetected        Int             @default(0)
+
+  clipEmbedding        Bytes?
+  burstClusterId       String?
+  burstCluster         BurstCluster?   @relation(fields: [burstClusterId], references: [id])
+  isBestInBurst        Boolean         @default(false)
+
+  cullStatus           CullStatus      @default(PENDING)
+  autoSuggestion       AutoSuggestion?
+  autoSuggestionReason String?
+
+  photographerOverride Boolean         @default(false)
+
+  processedAt          DateTime?
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+
+  @@index([eventId])
+  @@index([eventId, cullStatus])
+  @@index([eventId, autoSuggestion])
+  @@index([burstClusterId])
+}
+
+model BurstCluster {
+  id                String           @id @default(cuid())
+  eventId           String
+  event             Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  photoCount        Int              @default(0)
+  bestPhotoId       String?
+  averageSimilarity Float?
+  photos            PhotoCullScore[]
+  createdAt         DateTime         @default(now())
+
+  @@index([eventId])
+}
+
+model CullingJob {
+  id              String           @id @default(cuid())
+  eventId         String
+  event           Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  status          CullingJobStatus @default(PENDING)
+  totalPhotos     Int              @default(0)
+  processedPhotos Int              @default(0)
+  triggeredBy     CullingTrigger   @default(AUTO)
+  startedAt       DateTime?
+  completedAt     DateTime?
+  errorMessage    String?
+  createdAt       DateTime         @default(now())
+
+  @@index([eventId])
+  @@index([status])
 }
