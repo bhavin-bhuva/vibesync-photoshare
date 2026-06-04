@@ -26,6 +26,32 @@ export interface CullEmbedding {
   processing_ms: number;
 }
 
+export interface BatchPhotoInput {
+  photoId: string;
+  thumbnailS3Key: string;
+}
+
+export interface BatchPhotoResult {
+  photo_id: string;
+  sharpness_score: number;
+  face_sharpness_score: number;
+  blink_probability: number;
+  left_eye_status: string;
+  right_eye_status: string;
+  faces_detected: number;
+  aesthetic_score: number;
+  clip_embedding: number[]; // 512 L2-normalised floats; empty on error
+  processing_ms: number;
+  error: string | null;
+}
+
+export interface BatchAnalysisResult {
+  results: BatchPhotoResult[];
+  total_photos: number;
+  failed_photos: number;
+  processing_ms: number;
+}
+
 export interface BurstPhotoInput {
   photo_id: string;
   embedding: number[];
@@ -98,6 +124,27 @@ export async function embedPhoto(params: {
   });
   await assertOk(res, "POST /cull/embed");
   return res.json() as Promise<CullEmbedding>;
+}
+
+export async function analyzeBatch(params: {
+  photos: BatchPhotoInput[];
+  s3Bucket: string;
+  batchSize?: number;
+}): Promise<BatchAnalysisResult> {
+  const res = await fetch(`${FACE_SERVICE_URL}/cull/analyze-batch`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      photos: params.photos.map((p) => ({
+        photo_id: p.photoId,
+        thumbnail_s3_key: p.thumbnailS3Key,
+      })),
+      s3_bucket: params.s3Bucket,
+      batch_size: params.batchSize ?? 16,
+    }),
+  });
+  await assertOk(res, "POST /cull/analyze-batch");
+  return res.json() as Promise<BatchAnalysisResult>;
 }
 
 export async function clusterBursts(params: {

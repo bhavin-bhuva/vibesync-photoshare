@@ -34,6 +34,11 @@ RUN python -c "import open_clip; model, _, preprocess = open_clip.create_model_a
 
 COPY . .
 
+# Export CLIP (and NIMA if weights are present) to INT8-quantized ONNX.
+# CLIP: ~350MB → ~90MB, ~3x faster CPU inference.
+# NIMA: ~17MB → ~5MB, ~2x faster CPU inference (skipped if weights absent).
+RUN python utils/model_optimizer.py
+
 EXPOSE 8000
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

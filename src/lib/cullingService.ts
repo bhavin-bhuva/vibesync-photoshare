@@ -1,7 +1,7 @@
 import { AutoSuggestion } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { embeddingToBuffer } from "@/lib/embedding";
-import { analyzeCull, embedPhoto } from "@/lib/cullClient";
+import { analyzeBatch, type BatchAnalysisResult } from "@/lib/cullClient";
 import type { CullingFeature } from "@/lib/storage";
 
 const BUCKET = process.env.AWS_S3_BUCKET_NAME!;
@@ -72,80 +72,152 @@ function computeAutoSuggestion(
   return { suggestion: "KEEP", reason: null };
 }
 
+// ─── Batch queue ─────────────────────────────────────────────────────────────
+
+interface QueueEntry {
+  photo: PhotoRef;
+  jobId: string;
+  options: CullingOptions | undefined;
+  resolve: () => void;
+  reject: (err: unknown) => void;
+}
+
+const BATCH_MAX = 20;
+const FLUSH_WINDOW_MS = 30_000;
+
+const _queue: QueueEntry[] = [];
+let _flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+function _scheduleFlush(): void {
+  if (_flushTimer !== null) return;
+  _flushTimer = setTimeout(() => { void _flushQueue(); }, FLUSH_WINDOW_MS);
+}
+
+async function _flushQueue(): Promise<void> {
+  if (_flushTimer !== null) { clearTimeout(_flushTimer); _flushTimer = null; }
+  if (_queue.length === 0) return;
+
+  const batch = _queue.splice(0, BATCH_MAX);
+
+  // Transition all affected jobs PENDING → RUNNING
+  const uniqueJobIds = [...new Set(batch.map((e) => e.jobId))];
+  await Promise.all(
+    uniqueJobIds.map((jobId) =>
+      db.cullingJob.updateMany({
+        where: { id: jobId, status: "PENDING" },
+        data: { status: "RUNNING", startedAt: new Date() },
+      })
+    )
+  ).catch(() => {
+    // Non-fatal — job stays PENDING but analysis continues
+  });
+
+  let batchResponse: BatchAnalysisResult;
+  try {
+    batchResponse = await analyzeBatch({
+      photos: batch.map((e) => ({
+        photoId: e.photo.id,
+        thumbnailS3Key: e.photo.thumbS3Key ?? e.photo.s3Key,
+      })),
+      s3Bucket: BUCKET,
+    });
+  } catch (err) {
+    batch.forEach((e) => e.reject(err));
+    return;
+  }
+
+  const resultMap = new Map(batchResponse.results.map((r) => [r.photo_id, r]));
+
+  await Promise.all(
+    batch.map(async (entry) => {
+      const result = resultMap.get(entry.photo.id);
+      if (!result || result.error !== null) {
+        entry.reject(
+          new Error(result?.error ?? `No result returned for photo ${entry.photo.id}`)
+        );
+        return;
+      }
+
+      const { suggestion, reason } = computeAutoSuggestion(
+        {
+          blinkProbability: result.blink_probability,
+          sharpnessScore: result.sharpness_score,
+          aestheticScore: result.aesthetic_score,
+        },
+        entry.options
+      );
+
+      const clipBuffer = embeddingToBuffer(result.clip_embedding);
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (db.photoCullScore.upsert as any)({
+          where: { photoId: entry.photo.id },
+          create: {
+            photoId: entry.photo.id,
+            eventId: entry.photo.eventId,
+            sharpnessScore: result.sharpness_score,
+            faceSharpnessScore: result.face_sharpness_score,
+            blinkProbability: result.blink_probability,
+            leftEyeStatus: result.left_eye_status,
+            rightEyeStatus: result.right_eye_status,
+            aestheticScore: result.aesthetic_score,
+            facesDetected: result.faces_detected,
+            clipEmbedding: clipBuffer,
+            autoSuggestion: suggestion,
+            autoSuggestionReason: reason,
+            processedAt: new Date(),
+          },
+          update: {
+            sharpnessScore: result.sharpness_score,
+            faceSharpnessScore: result.face_sharpness_score,
+            blinkProbability: result.blink_probability,
+            leftEyeStatus: result.left_eye_status,
+            rightEyeStatus: result.right_eye_status,
+            aestheticScore: result.aesthetic_score,
+            facesDetected: result.faces_detected,
+            clipEmbedding: clipBuffer,
+            autoSuggestion: suggestion,
+            autoSuggestionReason: reason,
+            photographerOverride: false,
+            processedAt: new Date(),
+          },
+        });
+
+        await db.cullingJob.update({
+          where: { id: entry.jobId },
+          data: { processedPhotos: { increment: 1 } },
+        });
+
+        entry.resolve();
+      } catch (err) {
+        entry.reject(err);
+      }
+    })
+  );
+}
+
 // ─── analyzePhotoForCulling ───────────────────────────────────────────────────
 
 /**
- * Run the full culling pipeline for a single photo:
- * sharpness + blink analysis, CLIP embedding, auto-suggestion, DB upsert.
+ * Enqueue a photo for culling analysis.
+ * Batches flush when the queue reaches 20 photos or after a 30-second window,
+ * replacing 2N individual HTTP calls with N/20 batched calls.
  *
  * Always called fire-and-forget after upload.
  * Errors here must NOT surface to the upload response.
  */
-export async function analyzePhotoForCulling(
+export function analyzePhotoForCulling(
   photo: PhotoRef,
   jobId: string,
   options?: CullingOptions
 ): Promise<void> {
-  const thumbnailS3Key = photo.thumbS3Key ?? photo.s3Key;
-
-  // Idempotent: only transitions PENDING → RUNNING; noop when job is already RUNNING
-  await db.cullingJob.updateMany({
-    where: { id: jobId, status: "PENDING" },
-    data: { status: "RUNNING", startedAt: new Date() },
-  });
-
-  const [analysis, embedding] = await Promise.all([
-    analyzeCull({ photoId: photo.id, eventId: photo.eventId, thumbnailS3Key, s3Bucket: BUCKET }),
-    embedPhoto({ photoId: photo.id, thumbnailS3Key, s3Bucket: BUCKET }),
-  ]);
-
-  const { suggestion, reason } = computeAutoSuggestion(
-    {
-      blinkProbability: analysis.blink_probability,
-      sharpnessScore: analysis.sharpness_score,
-      aestheticScore: analysis.aesthetic_score,
-    },
-    options
-  );
-
-  const clipBuffer = embeddingToBuffer(embedding.clip_embedding);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (db.photoCullScore.upsert as any)({
-    where: { photoId: photo.id },
-    create: {
-      photoId: photo.id,
-      eventId: photo.eventId,
-      sharpnessScore: analysis.sharpness_score,
-      faceSharpnessScore: analysis.face_sharpness_score,
-      blinkProbability: analysis.blink_probability,
-      leftEyeStatus: analysis.left_eye_status,
-      rightEyeStatus: analysis.right_eye_status,
-      aestheticScore: analysis.aesthetic_score,
-      facesDetected: analysis.faces_detected,
-      clipEmbedding: clipBuffer,
-      autoSuggestion: suggestion,
-      autoSuggestionReason: reason,
-      processedAt: new Date(),
-    },
-    update: {
-      sharpnessScore: analysis.sharpness_score,
-      faceSharpnessScore: analysis.face_sharpness_score,
-      blinkProbability: analysis.blink_probability,
-      leftEyeStatus: analysis.left_eye_status,
-      rightEyeStatus: analysis.right_eye_status,
-      aestheticScore: analysis.aesthetic_score,
-      facesDetected: analysis.faces_detected,
-      clipEmbedding: clipBuffer,
-      autoSuggestion: suggestion,
-      autoSuggestionReason: reason,
-      photographerOverride: false,
-      processedAt: new Date(),
-    },
-  });
-
-  await db.cullingJob.update({
-    where: { id: jobId },
-    data: { processedPhotos: { increment: 1 } },
+  return new Promise<void>((resolve, reject) => {
+    _queue.push({ photo, jobId, options, resolve, reject });
+    if (_queue.length >= BATCH_MAX) {
+      void _flushQueue();
+    } else {
+      _scheduleFlush();
+    }
   });
 }
