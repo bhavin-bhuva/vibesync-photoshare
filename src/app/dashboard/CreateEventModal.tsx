@@ -180,8 +180,7 @@ function UpgradePrompt({ t, onClose }: { t: ReturnType<typeof useT>; onClose: ()
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative z-50 w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl dark:bg-zinc-800">
-          <p className="text-2xl">🚀</p>
-          <h2 className="mt-3 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
             {t.dashboard.upgrade.eventLimitTitle}
           </h2>
           <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">

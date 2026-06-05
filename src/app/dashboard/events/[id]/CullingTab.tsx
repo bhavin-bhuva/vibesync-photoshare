@@ -10,6 +10,7 @@ import {
   bulkApplyAutoSuggestions,
 } from "./actions";
 import { CullingSettingsModal, type CullingSettings } from "./CullingSettingsModal";
+import { IconCheck, IconX, IconAI, IconSearch, IconTarget, IconEye, IconStar, ICON_SM, ICON_MD, ICON_COLOR } from "@/components/ui/icons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -163,10 +164,10 @@ function CullLightbox({
     photo.blinkProbability == null
       ? null
       : photo.blinkProbability < 0.15
-      ? "Eyes Open ✓"
+      ? "Eyes Open"
       : photo.blinkProbability < 0.45
       ? "Possibly Blinking"
-      : "Eyes Closed ✗";
+      : "Eyes Closed";
 
   return (
     <div
@@ -219,8 +220,8 @@ function CullLightbox({
         {/* Current status */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-zinc-400">Status:</span>
-          {status === "KEEP" && <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-bold text-white">✓ Keep</span>}
-          {status === "REJECT" && <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">✗ Reject</span>}
+          {status === "KEEP" && <span className="flex items-center gap-1 rounded-full bg-emerald-500 px-2 py-0.5 text-xs font-bold text-white"><IconCheck size={ICON_SM} aria-hidden="true" />Keep</span>}
+          {status === "REJECT" && <span className="flex items-center gap-1 rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white"><IconX size={ICON_SM} aria-hidden="true" />Reject</span>}
           {status === "REVIEW" && <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs font-bold text-white">? Review</span>}
           {status === "PENDING" && <span className="rounded-full bg-zinc-600 px-2 py-0.5 text-xs font-bold text-white">Pending</span>}
           {photo.photographerOverride && (
@@ -267,7 +268,7 @@ function CullLightbox({
             </div>
           )}
           {photo.isBestInBurst && (
-            <p className="text-xs text-amber-400">⭐ Best in burst</p>
+            <p className="flex items-center gap-1 text-xs text-amber-400"><IconStar size={ICON_SM} aria-hidden="true" />Best in burst</p>
           )}
         </div>
 
@@ -276,8 +277,8 @@ function CullLightbox({
           <div className="rounded-lg bg-zinc-800 p-3">
             <p className="mb-1.5 text-xs font-medium text-zinc-300">AI Suggests</p>
             <div className="flex items-center gap-2">
-              {photo.autoSuggestion === "KEEP" && <span className="text-xs font-semibold text-emerald-400">✓ Keep</span>}
-              {photo.autoSuggestion === "REJECT" && <span className="text-xs font-semibold text-red-400">✗ Reject</span>}
+              {photo.autoSuggestion === "KEEP" && <span className="flex items-center gap-1 text-xs font-semibold text-emerald-400"><IconCheck size={ICON_SM} aria-hidden="true" />Keep</span>}
+              {photo.autoSuggestion === "REJECT" && <span className="flex items-center gap-1 text-xs font-semibold text-red-400"><IconX size={ICON_SM} aria-hidden="true" />Reject</span>}
               {photo.autoSuggestion === "REVIEW" && <span className="text-xs font-semibold text-orange-400">? Review</span>}
               {photo.autoSuggestionReason && (
                 <span className="text-xs text-zinc-400">"{photo.autoSuggestionReason}"</span>
@@ -292,10 +293,10 @@ function CullLightbox({
           <div className="flex flex-col gap-2">
             {(
               [
-                { s: "KEEP" as const, label: "✓ Keep", active: "bg-emerald-600 text-white", idle: "hover:bg-emerald-900 hover:text-emerald-300" },
+                { s: "KEEP" as const, label: <span className="flex items-center justify-center gap-1.5"><IconCheck size={ICON_SM} aria-hidden="true" />Keep</span>, active: "bg-emerald-600 text-white", idle: "hover:bg-emerald-900 hover:text-emerald-300" },
                 { s: "UNSURE" as const, label: "? Unsure", active: "bg-amber-600 text-white", idle: "hover:bg-amber-900 hover:text-amber-300" },
-                { s: "REJECT" as const, label: "✗ Reject", active: "bg-red-600 text-white", idle: "hover:bg-red-900 hover:text-red-300" },
-              ] as const
+                { s: "REJECT" as const, label: <span className="flex items-center justify-center gap-1.5"><IconX size={ICON_SM} aria-hidden="true" />Reject</span>, active: "bg-red-600 text-white", idle: "hover:bg-red-900 hover:text-red-300" },
+              ]
             ).map(({ s, label, active, idle }) => (
               <button
                 key={s}
@@ -519,11 +520,11 @@ export function CullingTab({
       <div className="flex flex-wrap gap-2">
         {(
           [
-            { label: "✓ Keep",    f: "keep" as FilterType,    count: stats.keep,    color: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800" },
+            { label: <span className="flex items-center gap-1"><IconCheck size={ICON_SM} className={ICON_COLOR.success} aria-hidden="true" />Keep</span>,    f: "keep" as FilterType,    count: stats.keep,    color: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:ring-emerald-800" },
             { label: "? Review",  f: "review" as FilterType,  count: stats.review,  color: "bg-orange-100 text-orange-800 ring-1 ring-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:ring-orange-800" },
-            { label: "✗ Reject",  f: "reject" as FilterType,  count: stats.reject,  color: "bg-red-100 text-red-800 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800" },
-            { label: "⏳ Pending", f: "pending" as FilterType, count: stats.pending, color: "bg-zinc-100 text-zinc-600 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:ring-zinc-700" },
-          ] as const
+            { label: <span className="flex items-center gap-1"><IconX size={ICON_SM} className={ICON_COLOR.destructive} aria-hidden="true" />Reject</span>,  f: "reject" as FilterType,  count: stats.reject,  color: "bg-red-100 text-red-800 ring-1 ring-red-200 dark:bg-red-950 dark:text-red-300 dark:ring-red-800" },
+            { label: "Pending",   f: "pending" as FilterType, count: stats.pending, color: "bg-zinc-100 text-zinc-600 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:ring-zinc-700" },
+          ]
         ).map(({ label, f, count, color }) => (
           <button
             key={f}
@@ -538,7 +539,7 @@ export function CullingTab({
       {/* ── FREE upgrade prompt ── */}
       {plan === "FREE" && (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50/50 py-16 text-center dark:border-amber-800 dark:bg-amber-950/20">
-          <div className="mb-3 text-4xl">✨</div>
+          <div className="mb-3 text-zinc-400 dark:text-zinc-500"><IconAI size={ICON_MD} aria-hidden="true" /></div>
           <h3 className="mb-1 text-base font-semibold text-zinc-900 dark:text-zinc-100">
             AI Culling requires PRO or STUDIO
           </h3>
@@ -564,14 +565,14 @@ export function CullingTab({
           disabled={bulkLoading !== null || stats.keep === 0}
           className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-40 focus:outline-none"
         >
-          {bulkLoading === "KEEP" ? <Spinner /> : "✓"} Accept all KEEPs
+          {bulkLoading === "KEEP" ? <Spinner /> : <IconCheck size={ICON_SM} aria-hidden="true" />} Accept all KEEPs
         </button>
         <button
           onClick={() => handleBulkApply("REJECT")}
           disabled={bulkLoading !== null || stats.reject === 0}
           className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-40 focus:outline-none"
         >
-          {bulkLoading === "REJECT" ? <Spinner /> : "✗"} Reject all REJECTs
+          {bulkLoading === "REJECT" ? <Spinner /> : <IconX size={ICON_SM} aria-hidden="true" />} Reject all REJECTs
         </button>
         <div className="flex-1" />
         <button
@@ -606,7 +607,7 @@ export function CullingTab({
       {/* ── Empty state ── */}
       {noScores && !isJobActive && (
         <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-200 py-20 text-center dark:border-zinc-700">
-          <div className="mb-4 text-5xl">🔍</div>
+          <div className="mb-4 text-zinc-400 dark:text-zinc-500"><IconSearch size={ICON_MD} aria-hidden="true" /></div>
           <h3 className="mb-1 text-base font-semibold text-zinc-900 dark:text-zinc-100">
             No culling analysis yet
           </h3>
@@ -687,15 +688,15 @@ export function CullingTab({
                     </div>
                     {/* Score row — top, visible on hover */}
                     <div className="absolute inset-x-0 top-0 flex justify-center gap-2 bg-black/50 px-2 py-1 text-[9px] text-white opacity-0 transition-opacity group-hover:opacity-100">
-                      {photo.sharpnessScore != null && <span>🎯 {photo.sharpnessScore.toFixed(2)}</span>}
-                      {photo.blinkProbability != null && <span>👁 {photo.blinkProbability.toFixed(2)}</span>}
-                      {photo.aestheticScore != null && <span>★ {photo.aestheticScore.toFixed(1)}</span>}
+                      {photo.sharpnessScore != null && <span className="flex items-center gap-0.5"><IconTarget size={ICON_MD} aria-hidden="true" />{photo.sharpnessScore.toFixed(2)}</span>}
+                      {photo.blinkProbability != null && <span className="flex items-center gap-0.5"><IconEye size={ICON_MD} aria-hidden="true" />{photo.blinkProbability.toFixed(2)}</span>}
+                      {photo.aestheticScore != null && <span className="flex items-center gap-0.5"><IconStar size={ICON_MD} aria-hidden="true" />{photo.aestheticScore.toFixed(1)}</span>}
                     </div>
                     {/* Status badge — bottom overlay */}
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-2 pb-2 pt-4">
                       <div className="flex flex-col items-center gap-0.5">
-                        {s === "KEEP"    && <span className="rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white">✓ Keep</span>}
-                        {s === "REJECT"  && <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">✗ Reject</span>}
+                        {s === "KEEP"    && <span className="flex items-center gap-0.5 rounded-full bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white"><IconCheck size={ICON_SM} aria-hidden="true" />Keep</span>}
+                        {s === "REJECT"  && <span className="flex items-center gap-0.5 rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white"><IconX size={ICON_SM} aria-hidden="true" />Reject</span>}
                         {s === "REVIEW"  && <span className="rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold text-white">? Review</span>}
                         {s === "PENDING" && <span className="rounded-full bg-zinc-500/80 px-2 py-0.5 text-[10px] font-bold text-white">Analyzing…</span>}
                         {reason && <span className="text-[9px] text-zinc-300">{reason}</span>}
@@ -703,7 +704,7 @@ export function CullingTab({
                     </div>
                     {/* Best-in-burst star */}
                     {photo.isBestInBurst && (
-                      <div className="absolute right-1.5 top-1.5 text-sm leading-none">⭐</div>
+                      <div className="absolute right-1.5 top-1.5 text-amber-400"><IconStar size={ICON_SM} aria-hidden="true" /></div>
                     )}
                   </div>
                 );
@@ -764,7 +765,7 @@ export function CullingTab({
                               className="h-20 w-20 rounded-lg object-cover"
                             />
                             {cp.isBestInBurst && (
-                              <div className="absolute right-0.5 top-0.5 text-xs leading-none">⭐</div>
+                              <div className="absolute right-0.5 top-0.5 text-amber-400"><IconStar size={ICON_SM} aria-hidden="true" /></div>
                             )}
                           </div>
                         ))}

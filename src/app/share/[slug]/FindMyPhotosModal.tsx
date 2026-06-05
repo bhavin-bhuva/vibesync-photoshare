@@ -161,16 +161,17 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
       />
 
       {/* Panel — bottom sheet on mobile (90vh), centered modal on sm+ */}
-      <div className="relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl dark:bg-zinc-900 sm:max-w-sm sm:rounded-2xl">
+      <div className="relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-2xl shadow-2xl sm:max-w-sm sm:rounded-2xl" style={{ background: 'var(--theme-surface)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4 dark:border-zinc-800">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+        <div className="flex items-center justify-between border-b px-5 py-4" style={{ borderColor: 'var(--theme-border)' }}>
+          <h2 className="text-base font-semibold" style={{ color: 'var(--theme-text)' }}>
             {fs.modalTitle}
           </h2>
           <button
             onClick={onClose}
             aria-label={t.common.close_aria}
-            className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            className="rounded-lg p-1.5 transition-colors hover:bg-[var(--g-surface-2)]"
+            style={{ color: 'var(--theme-text-muted)' }}
           >
             <XIcon />
           </button>
@@ -184,7 +185,7 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
             <div className="space-y-5">
               {/* Selfie preview (if already picked a file) */}
               {previewUrl && (
-                <div className="overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-800">
+                <div className="overflow-hidden rounded-xl" style={{ background: 'var(--g-surface-2)' }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={previewUrl}
@@ -199,14 +200,14 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     onClick={() => cameraInputRef.current?.click()}
-                    className="flex min-h-[64px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 px-3 py-4 text-sm font-medium text-zinc-700 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
+                    className="flex min-h-[64px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--theme-border)] px-3 py-4 text-sm font-medium text-[var(--theme-text-muted)] transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600"
                   >
                     <CameraIcon />
                     {fs.cameraButton}
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex min-h-[64px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-200 px-3 py-4 text-sm font-medium text-zinc-700 transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:border-blue-500 dark:hover:bg-blue-950/30 dark:hover:text-blue-400"
+                    className="flex min-h-[64px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--theme-border)] px-3 py-4 text-sm font-medium text-[var(--theme-text-muted)] transition-colors hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600"
                   >
                     <UploadIcon />
                     {fs.uploadButton}
@@ -232,7 +233,8 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
               {previewUrl && (
                 <button
                   onClick={handleTryAgain}
-                  className="w-full text-center text-xs text-zinc-400 underline-offset-2 hover:text-zinc-600 hover:underline dark:text-zinc-500 dark:hover:text-zinc-300"
+                  className="w-full text-center text-xs underline-offset-2 hover:underline"
+                  style={{ color: 'var(--theme-text-muted)' }}
                 >
                   {fs.changePhoto}
                 </button>
@@ -243,10 +245,10 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
           {/* ── Step 2: Preview / Confirm ── */}
           {step === "preview" && previewUrl && (
             <div className="space-y-4">
-              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <p className="text-sm font-medium" style={{ color: 'var(--theme-text-muted)' }}>
                 {fs.previewTitle}
               </p>
-              <div className="overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-800">
+              <div className="overflow-hidden rounded-xl" style={{ background: 'var(--g-surface-2)' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
@@ -254,9 +256,9 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
                   className="mx-auto max-h-[280px] w-full object-contain"
                 />
               </div>
-              <p className="text-xs text-zinc-400 dark:text-zinc-500">{fs.previewHint}</p>
+              <p className="text-xs" style={{ color: 'var(--theme-text-muted)' }}>{fs.previewHint}</p>
               {error && (
-                <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/40 dark:text-red-400">
+                <p className="rounded-lg px-3 py-2 text-xs" style={{ background: 'rgba(239, 68, 68, 0.08)', color: '#ef4444' }}>
                   {error}
                 </p>
               )}
@@ -268,7 +270,8 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
               </button>
               <button
                 onClick={handleTryAgain}
-                className="w-full text-center text-xs text-zinc-400 underline-offset-2 hover:text-zinc-600 hover:underline dark:text-zinc-500 dark:hover:text-zinc-300"
+                className="w-full text-center text-xs underline-offset-2 hover:underline"
+                style={{ color: 'var(--theme-text-muted)' }}
               >
                 {fs.changePhoto}
               </button>
@@ -280,10 +283,10 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
             <div className="flex flex-col items-center gap-4 py-6">
               <SpinnerIcon />
               <div className="text-center">
-                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                <p className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
                   {fs.searching}
                 </p>
-                <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                <p className="mt-1 text-xs" style={{ color: 'var(--theme-text-muted)' }}>
                   {fs.searchingMessage(totalPhotos)}
                 </p>
               </div>
@@ -297,10 +300,10 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
                 <p className="text-4xl">
                   {matchCount > 0 ? "\uD83C\uDF89" : "\uD83D\uDD0D"}
                 </p>
-                <p className="mt-3 text-xl font-bold text-zinc-900 dark:text-zinc-50">
+                <p className="mt-3 text-xl font-bold" style={{ color: 'var(--theme-text)' }}>
                   {fs.resultsTitle(matchCount)}
                 </p>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-sm" style={{ color: 'var(--theme-text-muted)' }}>
                   {fs.resultsSubtitle(matchCount)}
                 </p>
               </div>
@@ -314,7 +317,8 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
                   </button>
                   <button
                     onClick={handleViewAll}
-                    className="w-full rounded-xl border border-zinc-200 px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                    className="w-full rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--g-surface-2)]"
+                    style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text)' }}
                   >
                     {fs.viewAll}
                   </button>
@@ -335,10 +339,10 @@ export function FindMyPhotosModal({ slug, totalPhotos, onFilter, onClose }: Prop
             <div className="space-y-5">
               <div className="py-2 text-center">
                 <p className="text-4xl">\u274C</p>
-                <p className="mt-3 text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                <p className="mt-3 text-lg font-bold" style={{ color: 'var(--theme-text)' }}>
                   {fs.noFaceTitle}
                 </p>
-                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-sm" style={{ color: 'var(--theme-text-muted)' }}>
                   {fs.noFaceBody}
                 </p>
               </div>

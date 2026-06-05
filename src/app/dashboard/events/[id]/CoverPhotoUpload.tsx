@@ -114,7 +114,8 @@ export function CoverPhotoUpload({
       {/* Uploading progress overlay */}
       {uploading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="flex items-center gap-2 rounded-xl bg-white/90 px-4 py-2.5 text-sm font-medium text-zinc-900">
+          {/* Intentional light button over photo */}
+          <div className="flex items-center gap-2 rounded-xl bg-white/90 px-4 py-2.5 text-sm font-medium text-zinc-900 dark:bg-white/90 dark:text-zinc-900">
             <SpinnerIcon />
             {t.coverPhoto.uploading}
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useT } from "@/lib/i18n";
+import { IconShield, ICON_SM, ICON_COLOR } from "@/components/ui/icons";
 
 interface Props {
   checked: boolean;
@@ -20,7 +21,7 @@ export function FacePrivacyNotice({ checked, onChange }: Props) {
       {/* ── Disclosure box ── */}
       <div className="rounded-xl bg-zinc-50 p-4 dark:bg-zinc-800/60">
         <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-          <span aria-hidden="true">🔒</span>
+          <IconShield size={ICON_SM} className={`${ICON_COLOR.primary} shrink-0`} aria-hidden="true" />
           {fs.privacyTitle}
         </p>
         <ul className="space-y-1.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">

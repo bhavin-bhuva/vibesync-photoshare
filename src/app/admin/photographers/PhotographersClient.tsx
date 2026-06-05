@@ -98,7 +98,7 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
   return createPortal(
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border bg-surface-elevated shadow-2xl shadow-black/10">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
           <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
           <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600">
@@ -374,7 +374,7 @@ function ActionsDropdown({ row, onAction }: {
 
   const displayName = row.name ?? row.email;
 
-  function item(label: string, onClick: () => void, cls = "text-zinc-700 hover:bg-zinc-50") {
+  function item(label: string, onClick: () => void, cls = "text-content-primary hover:bg-surface-subtle") {
     return (
       <button
         key={label}
@@ -401,7 +401,7 @@ function ActionsDropdown({ row, onAction }: {
         <div
           ref={menuRef}
           style={{ position: "fixed", width: 192, zIndex: 50, ...style }}
-          className="overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-xl"
+          className="overflow-hidden rounded-xl border border-border bg-surface-elevated py-1 shadow-xl shadow-black/10"
         >
           {item("View Details", () => window.open(`/admin/photographers/${row.id}`, "_self"))}
           <div className="my-1 border-t border-zinc-100" />
@@ -418,7 +418,7 @@ function ActionsDropdown({ row, onAction }: {
             impersonating ? "text-zinc-400 cursor-wait" : "text-amber-700 hover:bg-amber-50"
           )}
           <div className="my-1 border-t border-zinc-100" />
-          {item("Delete Account",  () => onAction({ type: "delete", userId: row.id, userName: displayName }), "text-red-600 hover:bg-red-50")}
+          {item("Delete Account",  () => onAction({ type: "delete", userId: row.id, userName: displayName }), "text-status-error hover:bg-status-error-bg")}
         </div>,
         document.body
       )}
@@ -535,7 +535,7 @@ export function PhotographersClient({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Search by name or email…"
-            className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-base focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
+            className="w-full rounded-lg border border-border bg-surface-input py-2 pl-9 pr-3 text-base focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand sm:text-sm"
           />
         </div>
 
@@ -543,7 +543,7 @@ export function PhotographersClient({
         <select
           value={planFilter}
           onChange={(e) => updateParams({ plan: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
+          className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base text-content-primary focus:border-brand focus:outline-none sm:text-sm"
         >
           <option value="">All plans</option>
           <option value="FREE">Free</option>
@@ -555,7 +555,7 @@ export function PhotographersClient({
         <select
           value={statusFilter}
           onChange={(e) => updateParams({ status: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
+          className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base text-content-primary focus:border-brand focus:outline-none sm:text-sm"
         >
           <option value="">All statuses</option>
           <option value="active">Active</option>
@@ -568,14 +568,14 @@ export function PhotographersClient({
             type="date"
             value={dateFrom}
             onChange={(e) => updateParams({ from: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
+            className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base text-content-primary focus:border-brand focus:outline-none sm:text-sm"
           />
           <span className="text-xs text-zinc-400">to</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => updateParams({ to: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
+            className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base text-content-primary focus:border-brand focus:outline-none sm:text-sm"
           />
         </div>
 
@@ -588,7 +588,7 @@ export function PhotographersClient({
       {/* ── Mobile card list — shows on small screens ── */}
       <div className="space-y-2 sm:hidden">
         {rows.length === 0 ? (
-          <p className="rounded-xl border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-400">
+          <p className="rounded-xl border border-border bg-surface-card px-4 py-10 text-center text-sm text-zinc-400">
             No photographers match your filters.
           </p>
         ) : rows.map((row) => {
@@ -597,7 +597,7 @@ export function PhotographersClient({
             <div
               key={row.id}
               onClick={() => router.push(`/admin/photographers/${row.id}`)}
-              className={`flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-3.5 transition-colors active:bg-zinc-50 ${row.isSuspended ? "border-red-200 bg-red-50/30" : ""}`}
+              className={`flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-surface-card px-4 py-3.5 transition-colors active:bg-surface-subtle ${row.isSuspended ? "border-red-200 bg-red-50/30" : ""}`}
             >
               {/* Avatar */}
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-sm font-semibold text-zinc-600">
@@ -626,7 +626,7 @@ export function PhotographersClient({
       </div>
 
       {/* ── Desktop table — hidden on mobile ── */}
-      <div className="hidden overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm sm:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface-card shadow-sm sm:block">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50">

@@ -16,7 +16,7 @@ export function AdminShell({
   const [navOpen, setNavOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-100">
+    <div className="flex h-screen overflow-hidden bg-surface-page" data-theme="light">
 
       {/* Desktop sidebar — hidden on mobile */}
       <div className="hidden sm:flex">

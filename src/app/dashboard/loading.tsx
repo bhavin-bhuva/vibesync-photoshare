@@ -1,7 +1,7 @@
 // Skeleton for the photographer dashboard
 
 function Bone({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-700 ${className}`} />;
+  return <div className={`animate-pulse rounded-lg bg-surface-overlay ${className}`} />;
 }
 
 export default function DashboardLoading() {

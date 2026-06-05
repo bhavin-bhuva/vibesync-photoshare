@@ -66,7 +66,7 @@ export const gu: Translations = {
   // ─── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
     welcome: (name: string) => `કેમ છો?, ${name}`,
-    welcomeShort: (name: string) => `સ્વાગત, ${name} 👋`,
+    welcomeShort: (name: string) => `સ્વાગત, ${name}`,
     subtitle: "તમારા ગૅલેરીઓનો સારાંશ અહીં છે.",
     stats: {
       events: "ઇવેન્ટ્સ",
@@ -217,7 +217,7 @@ export const gu: Translations = {
     pinHideAriaLabel: "PIN છુપાવો",
     faceSearchToggleLabel: "ગ્રાહકોને સેલ્ફી દ્વારા તેમના ફોટો શોધવા દો",
     faceSearchProcessingWarning: "ચહેરા શોધ હજી પ્રક્રિયામાં છે. વિશ્લેષણ પૂર્ણ થાય ત્યારે આ સક્ષમ કરી શકશો.",
-    faceSearchBadge: "🤳 ચહેરા શોધ ચાલુ",
+    faceSearchBadge: "ચહેરા શોધ ચાલુ",
     faceSearchStats: (n: number): string => `${n} ${n === 1 ? "વ્યક્તિ" : "લોકો"} ઇન્ડેક્સ`,
   },
 

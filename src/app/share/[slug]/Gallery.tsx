@@ -8,6 +8,8 @@ import { submitPhotoSelectionAction } from "./actions";
 import { FindMyPhotosModal } from "./FindMyPhotosModal";
 import { useInfoPanelState } from "@/hooks/useInfoPanelState";
 import { LightboxInfoPanel } from "@/components/LightboxInfoPanel";
+import { IconCamera, IconLock, IconSearch, IconGroups, ICON_MD, ICON_LG, ICON_COLOR } from "@/components/ui/icons";
+import { MasonryGrid } from "@/components/gallery/MasonryGrid";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -178,86 +180,30 @@ async function triggerDownload(slug: string, photoId: string, filename: string) 
   URL.revokeObjectURL(url);
 }
 
-// ─── Group filter bar ─────────────────────────────────────────────────────────
+// ─── Masonry config ───────────────────────────────────────────────────────────
 
-function GroupFilterBar({
-  groups,
-  activeGroupId,
-  totalCount,
-  onSelect,
-  density,
-  onDensityChange,
-}: {
-  groups: GalleryGroup[];
-  activeGroupId: string | null;
-  totalCount: number;
-  onSelect: (groupId: string | null) => void;
-  density: GridDensity;
-  onDensityChange: (d: GridDensity) => void;
-}) {
-  const displayCount = activeGroupId
-    ? (groups.find((g) => g.id === activeGroupId)?.photoCount ?? 0)
-    : totalCount;
+const MASONRY_CONFIG: Record<GridDensity, { desktop: number; tablet: number; mobile: number; gap: number }> = {
+  comfortable: { desktop: 2, tablet: 2, mobile: 1, gap: 16 },
+  default:     { desktop: 3, tablet: 2, mobile: 2, gap: 12 },
+  compact:     { desktop: 4, tablet: 3, mobile: 2, gap: 8  },
+  dense:       { desktop: 5, tablet: 4, mobile: 3, gap: 4  },
+};
 
-  return (
-    <div className="mb-6">
-      {/* Pills + density control row */}
-      <div className="flex items-center gap-2">
-      {/* Scrollable pill row — hide scrollbar on all browsers */}
-      <div
-        className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
-      >
-        {/* All Photos */}
-        <button
-          onClick={() => onSelect(null)}
-          className={`inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border-2 px-4 py-1.5 text-sm font-medium transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 ${
-            activeGroupId === null
-              ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-              : "border-zinc-300 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 dark:border-zinc-600 dark:bg-transparent dark:text-zinc-400 dark:hover:border-zinc-400 dark:hover:text-zinc-200"
-          }`}
-        >
-          <span aria-hidden="true" className="text-[10px] leading-none">✦</span>
-          All Photos
-        </button>
-
-        {/* Group pills */}
-        {groups.map((group) => {
-          const isActive = activeGroupId === group.id;
-          const color = group.color ?? "#6366f1";
-          return (
-            <button
-              key={group.id}
-              onClick={() => onSelect(group.id)}
-              style={
-                isActive
-                  ? { borderColor: color, backgroundColor: color, color: "#fff" }
-                  : { borderColor: color, color }
-              }
-              className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-2 bg-white px-4 py-1.5 text-sm font-medium transition-all duration-200 whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:bg-transparent"
-            >
-              {group.name}
-            </button>
-          );
-        })}
-      </div>{/* end scrollable pills */}
-
-        {/* Density control — fixed right */}
-        <div className="shrink-0 pb-1">
-          <GridDensityControl
-            value={density}
-            onChange={onDensityChange}
-            hideMobile={["comfortable"]}
-          />
-        </div>
-      </div>{/* end pills + density row */}
-
-      {/* Photo count */}
-      <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-        {displayCount.toLocaleString()} {displayCount === 1 ? "photo" : "photos"}
-      </p>
-    </div>
-  );
+function useColumnCount(density: GridDensity): number {
+  const [cols, setCols] = useState(MASONRY_CONFIG[density].desktop);
+  useEffect(() => {
+    function update() {
+      const w = window.innerWidth;
+      const cfg = MASONRY_CONFIG[density];
+      if (w < 640) setCols(cfg.mobile);
+      else if (w < 1024) setCols(cfg.tablet);
+      else setCols(cfg.desktop);
+    }
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [density]);
+  return cols;
 }
 
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
@@ -360,7 +306,7 @@ function Lightbox({
       {/* ── Mobile top bar ── */}
       <div
         className="flex shrink-0 items-center sm:hidden"
-        style={{ height: "calc(56px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+        style={{ height: "calc(56px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)", background: "var(--overlay-photo)", backdropFilter: "blur(8px)" }}
       >
         <div className="flex w-full items-center px-3">
           <button onClick={onClose} aria-label={t.lightbox.closeAriaLabel} className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10">
@@ -449,7 +395,7 @@ function Lightbox({
           onPointerUp={handleSwipeEnd}
           onPointerCancel={() => { swipeActive.current = false; setSwipeOffset({ x: 0, y: 0 }); }}
         >
-          <button onClick={prev} disabled={!hasPrev} aria-label={t.lightbox.prevAriaLabel} className="absolute left-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
+          <button onClick={prev} disabled={!hasPrev} onPointerDown={(e) => e.stopPropagation()} aria-label={t.lightbox.prevAriaLabel} className="absolute left-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
             <ChevronLeftIcon />
           </button>
 
@@ -476,7 +422,7 @@ function Lightbox({
             </div>
           )}
 
-          <button onClick={next} disabled={!hasNext} aria-label={t.lightbox.nextAriaLabel} className="absolute right-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
+          <button onClick={next} disabled={!hasNext} onPointerDown={(e) => e.stopPropagation()} aria-label={t.lightbox.nextAriaLabel} className="absolute right-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
             <ChevronRightIcon />
           </button>
         </div>
@@ -576,14 +522,7 @@ function Lightbox({
   );
 }
 
-// ─── Grid density classes ─────────────────────────────────────────────────────
-
-const GRID_CLASSES: Record<GridDensity, string> = {
-  comfortable: "grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2",
-  default:     "grid gap-1 grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-[14px]",
-  compact:     "grid gap-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
-  dense:       "grid gap-px grid-cols-3 sm:grid-cols-4 lg:grid-cols-6",
-};
+// ─── Grid density classes removed — masonry layout now used ──────────────────
 
 // ─── Group dot ────────────────────────────────────────────────────────────────
 
@@ -596,7 +535,7 @@ function GroupDot({ color, name }: { color: string; name: string }) {
         style={{ backgroundColor: color }}
       />
       {/* CSS tooltip — desktop only, no tooltip on mobile */}
-      <div className="pointer-events-none absolute bottom-full left-0 mb-1 hidden whitespace-nowrap rounded-lg bg-zinc-900/90 px-2 py-1 text-xs text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover/dot:opacity-100 dark:bg-zinc-700/90 sm:block">
+      <div className="pointer-events-none absolute bottom-full left-0 mb-1 hidden whitespace-nowrap rounded-lg px-2 py-1 text-xs opacity-0 shadow-sm transition-opacity duration-150 group-hover/dot:opacity-100 sm:block" style={{ background: 'var(--g-surface)', color: 'var(--g-text)' }}>
         {name}
       </div>
     </div>
@@ -658,18 +597,20 @@ function PhotoCard({
 
   return (
     <div
-      className={`group overflow-hidden rounded-[4px] bg-zinc-100 ring-2 transition-shadow dark:bg-zinc-800 ${
+      className={`group overflow-hidden rounded-xl bg-[var(--theme-surface)] transition-shadow ${
         isSelected
-          ? "ring-blue-500 shadow-lg shadow-blue-500/20"
-          : "ring-zinc-200 hover:shadow-lg dark:ring-zinc-700 dark:hover:shadow-zinc-900/50"
+          ? "ring-2 ring-blue-500 shadow-lg shadow-blue-500/20"
+          : "hover:shadow-lg"
       }`}
+      style={isSelected ? undefined : { outline: "2px solid var(--theme-border)" }}
     >
       <div
         role="button"
         tabIndex={0}
-        className={`relative block aspect-square w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 ${
+        className={`relative block w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 ${
           selectMode ? "cursor-pointer" : "cursor-zoom-in"
         }`}
+        style={{ aspectRatio: photo.width && photo.height ? `${photo.width}/${photo.height}` : "4/3" }}
         onClick={handleClick}
         onKeyDown={handleKey}
         aria-label={
@@ -793,6 +734,7 @@ export function Gallery({
     `grid-density-gallery-${slug}`,
     (serverDefaultDensity as GridDensity) ?? "default"
   );
+  const columns = useColumnCount(density);
 
   // Per-photo notes
   const [photoNotes, setPhotoNotes] = useState<Map<string, string>>(new Map());
@@ -924,9 +866,9 @@ export function Gallery({
 
   if (photos.length === 0) {
     return (
-      <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white py-20 text-center dark:border-zinc-700 dark:bg-zinc-800">
-        <p className="text-4xl">📷</p>
-        <p className="mt-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">{t.sharePage.noPhotos}</p>
+      <div className="rounded-2xl border-2 border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] py-20 text-center">
+        <div className="flex justify-center"><IconCamera size={48} className={ICON_COLOR.muted} aria-hidden="true" /></div>
+        <p className="mt-4 text-sm font-medium text-[var(--theme-text)]">{t.sharePage.noPhotos}</p>
       </div>
     );
   }
@@ -940,16 +882,17 @@ export function Gallery({
           </svg>
         </div>
         <div className="w-full max-w-sm">
-          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 className="text-xl font-semibold" style={{ color: 'var(--theme-text)' }}>
             {t.gallery.thankYouTitle}
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--theme-text-muted)' }}>
             {t.gallery.thankYouSubtitle}
           </p>
         </div>
         <button
           onClick={() => { clearSubmitted(slug); setSubmitted(false); setMode("view"); }}
-          className="w-full max-w-xs rounded-lg border border-zinc-300 px-5 py-3 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="w-full max-w-xs rounded-lg px-5 py-3 text-sm font-medium transition-colors"
+          style={{ border: '1px solid var(--theme-border)', color: 'var(--theme-text)' }}
         >
           {t.gallery.browseGallery}
         </button>
@@ -968,8 +911,6 @@ export function Gallery({
       ? groupFilteredPhotos.filter((p) => matchedPhotoIds.includes(p.id))
       : groupFilteredPhotos;
 
-  // Only show the filter bar when there are 2+ visible groups with photos
-  const showGroupFilter = groups.length >= 2;
   const activeGroup = activeGroupId ? groups.find((g) => g.id === activeGroupId) ?? null : null;
 
   return (
@@ -996,138 +937,150 @@ export function Gallery({
         </div>
       )}
 
-      {/* ── Group filter bar ── */}
-      {showGroupFilter && (
-        <GroupFilterBar
-          groups={groups}
-          activeGroupId={activeGroupId}
-          totalCount={photos.length}
-          onSelect={handleGroupSelect}
-          density={density}
-          onDensityChange={setDensity}
-        />
-      )}
-
-      {/* ── Mode toggle + Download buttons bar ── */}
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        {/* Left: Mode pills + density control (density only shown here when no group filter bar) */}
-        <div className="flex items-center gap-2 self-start">
-        {/* Mode pills — desktop: shows both View/Select; mobile: only View pill (Select is FAB) */}
-        <div className="inline-flex rounded-lg border border-zinc-200 bg-white p-1 dark:border-zinc-700 dark:bg-zinc-800">
+      {/* ── Unified toolbar ── */}
+      <div className="mb-3 flex items-center gap-2" style={{ minHeight: "44px" }}>
+        {/* Left: scrollable group pills */}
+        <div
+          className="flex flex-1 items-center gap-2 overflow-x-auto min-w-0"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
+        >
           <button
-            onClick={() => switchMode("view")}
-            className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-              mode === "view"
-                ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
-            }`}
+            onClick={() => handleGroupSelect(null)}
+            className="inline-flex shrink-0 items-center gap-1.5 h-9 rounded-full px-4 text-sm font-medium transition-all duration-200 whitespace-nowrap"
+            style={activeGroupId === null
+              ? { background: "var(--theme-text)", color: "var(--theme-bg)" }
+              : { background: "var(--theme-surface)", color: "var(--theme-text-muted)", border: "1px solid var(--theme-border)" }
+            }
           >
-            {t.gallery.modeView}
+            All
+            <span className="text-xs opacity-70 font-normal">{photos.length}</span>
           </button>
-          {!submitted && (
+          {groups.map((group) => {
+            const isActive = activeGroupId === group.id;
+            const color = group.color ?? "#6366f1";
+            return (
+              <button
+                key={group.id}
+                onClick={() => handleGroupSelect(group.id)}
+                className="inline-flex shrink-0 items-center gap-1.5 h-9 rounded-full px-4 text-sm font-medium transition-all duration-200 whitespace-nowrap"
+                style={isActive
+                  ? { background: color, color: "#fff" }
+                  : { background: "var(--theme-surface)", color: "var(--theme-text)", border: `1px solid ${color}40` }
+                }
+              >
+                <span className="h-2 w-2 rounded-full shrink-0" style={{ background: isActive ? "rgba(255,255,255,0.7)" : color }} />
+                {group.name}
+                <span className="text-xs opacity-60 font-normal">{group.photoCount}</span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Right: density + select/done */}
+        <div className="flex shrink-0 items-center gap-2">
+          <GridDensityControl value={density} onChange={setDensity} hideMobile={["comfortable"]} />
+          {!submitted && mode === "view" && (
             <button
               onClick={() => switchMode("select")}
-              className={`hidden rounded-md px-4 py-1.5 text-sm font-medium transition-colors sm:block ${
-                mode === "select"
-                  ? "bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900"
-                  : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
-              }`}
+              className="hidden sm:flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors"
+              style={{ background: "var(--theme-surface)", border: "1px solid var(--theme-border)", color: "var(--theme-text)" }}
             >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+              </svg>
               {t.gallery.modeSelect}
               {selectedIds.size > 0 && (
-                <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-bold text-white">
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-500 px-1 text-[10px] font-bold text-white">
                   {selectedIds.size}
                 </span>
               )}
             </button>
           )}
-        </div>{/* end mode pills */}
-
-          {/* Density control — only shown here when no group filter bar */}
-          {!showGroupFilter && (
-            <GridDensityControl
-              value={density}
-              onChange={setDensity}
-              hideMobile={["comfortable"]}
-            />
-          )}
-        </div>{/* end left: mode pills + density */}
-
-        {/* Right-side action buttons (view mode) */}
-        {mode === "view" && (
-          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-            {/* Find My Photos — desktop only; mobile uses FAB */}
-            {faceSearchEnabled && (
-              <button
-                onClick={() => setShowFaceSearch(true)}
-                className="hidden min-h-[48px] items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 sm:flex sm:min-h-0"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
-                </svg>
-                {t.faceSearch.buttonLabel}
-              </button>
-            )}
-
-            {/* Download Group (only when a group filter is active) */}
-            {activeGroup && (
-              <button
-                onClick={() => handleDownloadGroup(activeGroup.id)}
-                disabled={zippingGroup}
-                style={
-                  zippingGroup
-                    ? undefined
-                    : { borderColor: activeGroup.color ?? "#6366f1", color: activeGroup.color ?? "#6366f1" }
-                }
-                className="flex min-h-[48px] items-center justify-center gap-2 rounded-lg border-2 bg-white px-4 py-2 text-sm font-medium transition-colors hover:opacity-80 disabled:opacity-60 dark:bg-transparent sm:min-h-0"
-              >
-                {zippingGroup ? (
-                  <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
-                ) : (
-                  <>
-                    <DownloadIcon className="h-4 w-4" />
-                    Download {activeGroup.name}
-                    <span className="text-xs opacity-70">
-                      ({activeGroup.photoCount.toLocaleString()})
-                    </span>
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Download All */}
+          {mode === "select" && (
             <button
-              onClick={handleDownloadAll}
-              disabled={zipping}
-              className="flex min-h-[48px] items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 sm:min-h-0"
+              onClick={() => switchMode("view")}
+              className="hidden sm:flex h-9 items-center rounded-lg px-3 text-sm font-medium transition-colors"
+              style={{ background: "var(--theme-text)", color: "var(--theme-bg)" }}
             >
-              {zipping ? (
-                <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
-              ) : (
-                <>
-                  {!zipAllowed && (
-                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                  {zipAllowed && <DownloadIcon className="h-4 w-4" />}
-                  {t.sharePage.downloadAll}
-                </>
-              )}
+              {t.gallery.modeView}
             </button>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
 
-        {/* Clear selection (select mode) */}
+      {/* Photo count + clear selection */}
+      <div className="mb-4 flex items-center justify-between -mt-1">
+        <p className="text-xs" style={{ color: "var(--theme-text-muted)" }}>
+          {displayPhotos.length.toLocaleString()} {displayPhotos.length === 1 ? "photo" : "photos"}
+          {activeGroupId && activeGroup ? ` in ${activeGroup.name}` : ""}
+        </p>
         {mode === "select" && selectedIds.size > 0 && (
           <button
             onClick={() => { setSelectedIds(new Set()); saveIds(slug, new Set()); }}
-            className="text-sm text-zinc-500 underline-offset-2 hover:text-zinc-700 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
+            className="text-xs underline-offset-2 hover:underline"
+            style={{ color: "var(--theme-text-muted)" }}
           >
             {t.gallery.clearSelection}
           </button>
         )}
       </div>
+
+      {/* View mode: action buttons (face search + downloads) */}
+      {mode === "view" && (
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          {faceSearchEnabled && (
+            <button
+              onClick={() => setShowFaceSearch(true)}
+              className="hidden min-h-[48px] items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 sm:flex sm:min-h-0"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
+              </svg>
+              {t.faceSearch.buttonLabel}
+            </button>
+          )}
+          {activeGroup && (
+            <button
+              onClick={() => handleDownloadGroup(activeGroup.id)}
+              disabled={zippingGroup}
+              style={zippingGroup
+                ? { background: "var(--theme-surface)" }
+                : { borderColor: activeGroup.color ?? "#6366f1", color: activeGroup.color ?? "#6366f1", background: "var(--theme-surface)" }
+              }
+              className="flex min-h-[48px] items-center justify-center gap-2 rounded-lg border-2 px-4 py-2 text-sm font-medium transition-colors hover:opacity-80 disabled:opacity-60 sm:min-h-0"
+            >
+              {zippingGroup ? (
+                <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
+              ) : (
+                <>
+                  <DownloadIcon className="h-4 w-4" />
+                  Download {activeGroup.name}
+                  <span className="text-xs opacity-70">({activeGroup.photoCount.toLocaleString()})</span>
+                </>
+              )}
+            </button>
+          )}
+          <button
+            onClick={handleDownloadAll}
+            disabled={zipping}
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors hover:opacity-80 disabled:opacity-60 sm:min-h-0"
+            style={{ background: "var(--g-text)", color: "var(--g-bg)" }}
+          >
+            {zipping ? (
+              <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
+            ) : (
+              <>
+                {!zipAllowed && (
+                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
+                  </svg>
+                )}
+                {zipAllowed && <DownloadIcon className="h-4 w-4" />}
+                {t.sharePage.downloadAll}
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* ── Find My Photos FAB (mobile only, bottom-right) ── */}
       {faceSearchEnabled && mode === "view" && (
@@ -1152,8 +1105,8 @@ export function Gallery({
         <button
           onClick={() => switchMode("select")}
           aria-label={t.gallery.modeSelect}
-          style={{ bottom: "calc(16px + env(safe-area-inset-bottom))", left: "16px" }}
-          className="fixed z-30 flex h-14 items-center gap-2 rounded-full bg-zinc-900 px-5 text-sm font-semibold text-white shadow-lg transition-opacity hover:opacity-90 dark:bg-zinc-50 dark:text-zinc-900 sm:hidden"
+          style={{ bottom: "calc(16px + env(safe-area-inset-bottom))", left: "16px", background: 'var(--g-text)', color: 'var(--g-bg)' }}
+          className="fixed z-30 flex h-14 items-center gap-2 rounded-full px-5 text-sm font-semibold shadow-lg transition-opacity hover:opacity-90 sm:hidden"
         >
           <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
@@ -1171,11 +1124,11 @@ export function Gallery({
       {showZipPrompt && createPortal(
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowZipPrompt(false)} />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-8 shadow-2xl dark:bg-zinc-800">
-            <p className="text-2xl">🔒</p>
-            <h2 className="mt-3 text-base font-semibold text-zinc-900 dark:text-zinc-50">{t.dashboard.upgrade.zipTitle}</h2>
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{t.dashboard.upgrade.zipBody}</p>
-            <button onClick={() => setShowZipPrompt(false)} className="mt-6 w-full rounded-lg border border-zinc-200 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-700">
+          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-[var(--theme-surface)] p-8 shadow-2xl border border-[var(--theme-border)]">
+            <IconLock size={ICON_MD} className={ICON_COLOR.primary} aria-hidden="true" />
+            <h2 className="mt-3 text-base font-semibold text-[var(--theme-text)]">{t.dashboard.upgrade.zipTitle}</h2>
+            <p className="mt-2 text-sm text-[var(--theme-text-muted)]">{t.dashboard.upgrade.zipBody}</p>
+            <button onClick={() => setShowZipPrompt(false)} className="mt-6 w-full rounded-lg border border-[var(--theme-border)] py-2.5 text-sm font-medium text-[var(--theme-text-muted)] hover:bg-[var(--theme-bg)]">
               {t.common.close}
             </button>
           </div>
@@ -1185,11 +1138,11 @@ export function Gallery({
 
       {/* Photo grid */}
       {displayPhotos.length === 0 ? (
-        <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white py-16 text-center dark:border-zinc-700 dark:bg-zinc-800">
+        <div className="rounded-2xl border-2 border-dashed border-[var(--theme-border)] bg-[var(--theme-surface)] py-16 text-center">
           {matchedPhotoIds !== null ? (
             <>
-              <p className="text-3xl">🔍</p>
-              <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">No matching photos found</p>
+              <div className="flex justify-center"><IconSearch size={ICON_MD} className={ICON_COLOR.muted} aria-hidden="true" /></div>
+              <p className="mt-3 text-sm font-medium text-[var(--theme-text)]">No matching photos found</p>
               <button
                 onClick={() => setMatchedPhotoIds(null)}
                 className="mt-3 text-xs text-blue-600 underline-offset-2 hover:underline dark:text-blue-400"
@@ -1199,13 +1152,13 @@ export function Gallery({
             </>
           ) : (
             <>
-              <p className="text-3xl">📂</p>
-              <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <div className="flex justify-center"><IconGroups size={ICON_MD} className={ICON_COLOR.muted} aria-hidden="true" /></div>
+              <p className="mt-3 text-sm font-medium text-[var(--theme-text)]">
                 No photos in {activeGroup?.name ?? "this group"}
               </p>
               <button
                 onClick={() => handleGroupSelect(null)}
-                className="mt-3 text-xs text-zinc-500 underline-offset-2 hover:underline dark:text-zinc-400"
+                className="mt-3 text-xs text-[var(--theme-text-muted)] underline-offset-2 hover:underline"
               >
                 View all photos
               </button>
@@ -1213,10 +1166,12 @@ export function Gallery({
           )}
         </div>
       ) : (
-        <div className={GRID_CLASSES[density]}>
-          {displayPhotos.map((photo, i) => (
+        <MasonryGrid
+          items={displayPhotos}
+          columns={columns}
+          gap={MASONRY_CONFIG[density].gap}
+          renderItem={(photo, i) => (
             <PhotoCard
-              key={photo.id}
               photo={photo}
               slug={slug}
               selectMode={mode === "select"}
@@ -1231,8 +1186,8 @@ export function Gallery({
                 setNoteSheetDraft(photoNotes.get(photo.id) ?? "");
               }}
             />
-          ))}
-        </div>
+          )}
+        />
       )}
 
       {/* Lightbox (view mode only) — indexes into displayPhotos */}
@@ -1263,8 +1218,8 @@ export function Gallery({
       {/* Sticky selection bar (select mode) */}
       {mode === "select" && createPortal(
         <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-zinc-200 bg-white/95 shadow-2xl shadow-black/10 backdrop-blur-md dark:border-zinc-700 dark:bg-zinc-900/95"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+          className="fixed inset-x-0 bottom-0 z-40 border-t shadow-2xl shadow-black/10"
+          style={{ background: 'var(--theme-surface)', borderColor: 'var(--theme-border)', backdropFilter: 'blur(12px)', paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <div className="mx-auto max-w-3xl px-4">
             {/* ── Collapsed bar: count + submit button ── */}
@@ -1272,7 +1227,8 @@ export function Gallery({
               <div className="flex items-center gap-3 py-3">
                 <button
                   onClick={() => setBarExpanded(true)}
-                  className="flex-1 text-left text-sm font-semibold text-zinc-900 dark:text-zinc-50"
+                  className="flex-1 text-left text-sm font-semibold"
+                  style={{ color: 'var(--theme-text)' }}
                 >
                   {selectedIds.size === 0
                     ? t.gallery.noPhotosSelected
@@ -1289,7 +1245,8 @@ export function Gallery({
                 {/* Desktop: show expand button */}
                 <button
                   onClick={() => setBarExpanded(true)}
-                  className="hidden rounded-lg border border-zinc-300 px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800 sm:block"
+                  className="hidden rounded-lg px-3 py-2 text-xs font-medium transition-colors sm:block"
+                  style={{ border: '1px solid var(--theme-border)', color: 'var(--theme-text-muted)' }}
                 >
                   Add details
                 </button>
@@ -1308,14 +1265,14 @@ export function Gallery({
             {barExpanded && (
               <div className="py-4">
                 <div className="mb-3 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  <p className="text-sm font-semibold" style={{ color: 'var(--theme-text)' }}>
                     {selectedIds.size === 0
                       ? t.gallery.noPhotosSelected
                       : t.gallery.photosSelected(selectedIds.size)}
                   </p>
                   <button
                     onClick={() => setBarExpanded(false)}
-                    className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                    className="text-xs text-zinc-400 hover:text-zinc-600"
                   >
                     Collapse
                   </button>
@@ -1327,7 +1284,7 @@ export function Gallery({
 
                 <div className="flex flex-col gap-2 sm:grid sm:grid-cols-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--theme-text-muted)' }}>
                       {t.gallery.nameLabel} <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -1335,11 +1292,12 @@ export function Gallery({
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
                       placeholder={t.gallery.namePlaceholder}
-                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
+                      className="w-full rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      style={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-border)', color: 'var(--theme-text)' }}
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--theme-text-muted)' }}>
                       {t.gallery.emailLabel} <span className="text-zinc-400">({t.common.optional})</span>
                     </label>
                     <input
@@ -1347,11 +1305,12 @@ export function Gallery({
                       value={customerEmail}
                       onChange={(e) => setCustomerEmail(e.target.value)}
                       placeholder={t.gallery.emailPlaceholder}
-                      className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
+                      className="w-full rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      style={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-border)', color: 'var(--theme-text)' }}
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--theme-text-muted)' }}>
                       {t.gallery.noteLabel} <span className="text-zinc-400">({t.common.optional})</span>
                     </label>
                     <div className="relative">
@@ -1360,7 +1319,8 @@ export function Gallery({
                         onChange={(e) => setCustomerNote(e.target.value.slice(0, 300))}
                         placeholder={t.gallery.notePlaceholder}
                         rows={2}
-                        className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50 dark:placeholder-zinc-500"
+                        className="w-full rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        style={{ background: 'var(--theme-surface)', border: '1px solid var(--theme-border)', color: 'var(--theme-text)' }}
                       />
                       <span className="absolute bottom-1.5 right-2 text-[10px] text-zinc-400">
                         {customerNote.length}/300
@@ -1392,11 +1352,11 @@ export function Gallery({
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative z-10 w-full rounded-t-2xl bg-white px-4 pb-6 pt-5 shadow-2xl dark:bg-zinc-800 sm:max-w-sm sm:rounded-2xl"
+            className="relative z-10 w-full rounded-t-2xl bg-[var(--theme-surface)] px-4 pb-6 pt-5 shadow-2xl sm:max-w-sm sm:rounded-2xl"
             style={{ paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom))" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            <p className="mb-3 text-sm font-semibold text-[var(--theme-text)]">
               {t.gallery.addPhotoNote}
             </p>
             <textarea
@@ -1405,7 +1365,7 @@ export function Gallery({
               placeholder={t.gallery.notePlaceholder}
               rows={3}
               style={{ height: 100 }}
-              className="w-full resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:placeholder-zinc-500"
+              className="gallery-input w-full resize-none rounded-lg border border-[var(--theme-border)] bg-[var(--theme-surface)] px-3 py-2 text-base text-[var(--theme-text)] focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             <p className="mb-4 mt-1 text-right text-[10px] text-zinc-400">{noteSheetDraft.length}/200</p>
             <button

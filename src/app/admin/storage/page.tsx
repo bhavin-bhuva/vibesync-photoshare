@@ -120,12 +120,12 @@ export default async function StoragePage() {
 
       {/* ── Overall stats ── */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-surface-card p-5 shadow-sm">
           <p className="text-xs font-medium text-zinc-500">Total Used</p>
           <p className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">{fmtBytes(totalUsedBytes)}</p>
           <p className="mt-0.5 text-xs text-zinc-400">of {fmtBytes(totalLimitBytes)} provisioned</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-surface-card p-5 shadow-sm">
           <p className="text-xs font-medium text-zinc-500">Photographers</p>
           <p className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">{allUsers.length.toLocaleString()}</p>
           <p className="mt-0.5 text-xs text-zinc-400">total accounts</p>
@@ -146,7 +146,7 @@ export default async function StoragePage() {
       <div className="grid gap-4 lg:grid-cols-2">
 
         {/* Storage by plan chart */}
-        <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <section className="rounded-xl border border-border bg-surface-card p-5 shadow-sm">
           <h2 className="mb-4 text-sm font-semibold text-zinc-900">Storage by Plan Tier</h2>
           <StorageChart data={planBreakdown} />
           <div className="mt-4 grid grid-cols-3 gap-3">
@@ -168,7 +168,7 @@ export default async function StoragePage() {
         </section>
 
         {/* Top 10 table */}
-        <section className="rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <section className="rounded-xl border border-border bg-surface-card shadow-sm">
           <div className="border-b border-zinc-100 px-5 py-4">
             <h2 className="text-sm font-semibold text-zinc-900">Top 10 by Storage Used</h2>
           </div>

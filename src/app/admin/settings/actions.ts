@@ -138,7 +138,7 @@ export async function sendTestEmailAction(): Promise<{ error?: string }> {
             Html: {
               Data: `
                 <div style="font-family:sans-serif;max-width:480px;margin:40px auto;padding:32px;border:1px solid #e4e4e7;border-radius:12px">
-                  <h2 style="margin:0 0 8px;font-size:18px;color:#18181b">✓ Test Email</h2>
+                  <h2 style="margin:0 0 8px;font-size:18px;color:#18181b">Test Email</h2>
                   <p style="margin:0 0 16px;color:#71717a;font-size:14px">This is a test email from the PhotoHouse admin panel.</p>
                   <table style="width:100%;border-collapse:collapse;font-size:13px">
                     <tr><td style="padding:6px 0;color:#a1a1aa">To</td><td style="padding:6px 0;color:#18181b">${toEmail}</td></tr>

@@ -60,7 +60,7 @@ export function ManualOverridePanel({
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+    <section className="overflow-hidden rounded-xl border border-border bg-surface-card shadow-sm">
       <div className="border-b border-zinc-100 bg-zinc-50 px-5 py-4">
         <h2 className="text-sm font-semibold text-zinc-900">Manual Plan Override</h2>
         <p className="mt-0.5 text-xs text-zinc-400">
@@ -84,7 +84,7 @@ export function ManualOverridePanel({
               onChange={(e) => { setEmail(e.target.value); setFound(null); setSearchErr(""); setSuccess(false); }}
               onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
               placeholder="photographer@email.com"
-              className="w-full rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-border bg-surface-input py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
             />
           </div>
           <button

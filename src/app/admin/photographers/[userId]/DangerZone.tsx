@@ -25,7 +25,7 @@ function ModalShell({ title, onClose, children }: { title: string; onClose: () =
   return createPortal(
     <div className="fixed inset-0 z-60 flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-border bg-surface-elevated shadow-2xl shadow-black/10">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
           <h2 className="text-sm font-semibold text-zinc-900">{title}</h2>
           <button onClick={onClose} className="rounded-lg p-1 text-zinc-400 hover:bg-zinc-100">
@@ -316,8 +316,8 @@ export function DangerZone({ userId, userName, isSuspended, currentPlan, planOpt
 
   return (
     <>
-      <section className="overflow-hidden rounded-xl border border-red-200 bg-white shadow-sm">
-        <div className="border-b border-red-100 bg-red-50 px-5 py-4">
+      <section className="overflow-hidden rounded-xl border border-border bg-surface-card shadow-sm">
+        <div className="border-b border-status-error/20 bg-status-error-bg px-5 py-4">
           <h2 className="text-sm font-semibold text-red-800">Danger Zone</h2>
           <p className="mt-0.5 text-xs text-red-500">Actions here are irreversible or have immediate effect.</p>
         </div>

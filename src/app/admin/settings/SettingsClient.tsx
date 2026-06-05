@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { IconWarning, IconSuccess, IconError, ICON_SM, ICON_COLOR } from "@/components/ui/icons";
 import {
   savePlatformSettingsAction,
   savePlanLimitsAction,
@@ -186,8 +187,9 @@ export function PlatformSettingsSection({
             </span>
           </div>
           {maintenanceMode && (
-            <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
-              ⚠ Maintenance mode is active. Save to apply.
+            <p className="mt-2 flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
+              <IconWarning size={ICON_SM} className={ICON_COLOR.warning} aria-hidden="true" />
+              Maintenance mode is active. Save to apply.
             </p>
           )}
         </Field>
@@ -871,7 +873,9 @@ export function FaceSettingsSection({
           {health ? (
             <div className="space-y-3">
               <div className={`flex items-center gap-3 rounded-xl px-4 py-3 ${health.online ? "bg-emerald-50" : "bg-red-50"}`}>
-                <span className="text-lg">{health.online ? "✅" : "❌"}</span>
+                {health.online
+                  ? <IconSuccess size={ICON_SM} className={ICON_COLOR.success} aria-hidden="true" />
+                  : <IconError size={ICON_SM} className={ICON_COLOR.destructive} aria-hidden="true" />}
                 <div>
                   <p className={`text-sm font-semibold ${health.online ? "text-emerald-800" : "text-red-800"}`}>
                     {health.online ? "Online" : "Offline"}

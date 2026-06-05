@@ -12,7 +12,7 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const title = t.admin.pageTitles[pathname] ?? t.admin.pageTitles["/admin"];
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-zinc-200 bg-white px-4 sm:px-6">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-surface-card px-4 sm:px-6">
 
       {/* Hamburger — mobile only */}
       <button
@@ -40,7 +40,7 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={t.admin.topBar.searchPlaceholder}
-          className="w-full rounded-lg border border-zinc-300 bg-zinc-50 py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 transition-colors focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full rounded-lg border border-zinc-300 bg-surface-input py-2 pl-9 pr-3 text-sm text-zinc-900 placeholder-zinc-400 transition-colors focus:border-blue-500 focus:bg-surface-elevated focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
       </div>
     </header>

@@ -8,6 +8,11 @@ import { PinForm } from "./PinForm";
 import { Gallery } from "./Gallery";
 import { getServerT } from "@/lib/i18n/server";
 import type { Translations } from "@/lib/i18n";
+import { ShareWelcomeGate } from "./ShareWelcomeGate";
+import { IconLock, IconCalendar, ICON_COLOR } from "@/components/ui/icons";
+import { GalleryRoot } from "@/components/gallery/GalleryRoot";
+import { ThemeSwitcher } from "@/components/gallery/ThemeSwitcher";
+import { type ThemeKey, type CustomThemeInput } from "@/lib/gallery-theme";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -30,13 +35,13 @@ function formatBytes(bytes: number) {
 
 function ExpiredPage({ eventName, t }: { eventName: string; t: Translations }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 dark:bg-zinc-900">
+    <div className="flex min-h-screen items-center justify-center px-4" style={{ background: 'var(--g-bg, #09090b)' }}>
       <div className="max-w-sm text-center">
-        <p className="text-4xl">⏳</p>
-        <h1 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <div className="flex justify-center"><IconCalendar size={32} className={ICON_COLOR.muted} aria-hidden="true" /></div>
+        <h1 className="mt-4 text-lg font-semibold" style={{ color: 'var(--g-text, #f4f4f5)' }}>
           {t.sharePage.expiredTitle}
         </h1>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+        <p className="mt-2 text-sm" style={{ color: 'var(--g-text-muted, #a1a1aa)' }}>
           {t.sharePage.expiredMessage(eventName)}
         </p>
       </div>
@@ -54,7 +59,7 @@ export default async function SharePage({
   const { slug } = await params;
   const t = await getServerT();
 
-  const [link, linkExtraRows] = await Promise.all([
+  const [link, linkPerLinkRows] = await Promise.all([
     db.sharedLink.findUnique({
       where: { slug },
       include: {
@@ -73,8 +78,12 @@ export default async function SharePage({
         },
       },
     }),
-    // Raw query for fields not yet in the generated Prisma model
-    db.$queryRaw<{ defaultGridDensity: string; faceSearchEnabled: boolean; groupVisibilityOverrides: unknown }[]>`
+    // Only per-link fields — gallery customisation now lives on Event
+    db.$queryRaw<{
+      defaultGridDensity: string;
+      faceSearchEnabled: boolean;
+      groupVisibilityOverrides: unknown;
+    }[]>`
       SELECT "defaultGridDensity", "faceSearchEnabled", "groupVisibilityOverrides"
       FROM "SharedLink" WHERE slug = ${slug}
     `,
@@ -82,20 +91,42 @@ export default async function SharePage({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const linkAny = link as any;
-  const linkExtra = linkExtraRows[0] ?? { defaultGridDensity: "default", faceSearchEnabled: false, groupVisibilityOverrides: null };
+  const perLink = linkPerLinkRows[0] ?? {
+    defaultGridDensity: "default",
+    faceSearchEnabled: false,
+    groupVisibilityOverrides: null,
+  };
+
+  // Gallery customisation comes from the event (event-level, applies to all links)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const eventAny = link?.event as any;
+  const linkExtra = {
+    defaultGridDensity: perLink.defaultGridDensity,
+    faceSearchEnabled: perLink.faceSearchEnabled,
+    groupVisibilityOverrides: perLink.groupVisibilityOverrides,
+    theme: eventAny?.theme ?? null,
+    customThemeData: (eventAny?.customThemeData ?? null) as CustomThemeInput | null,
+    welcomeEnabled: eventAny?.welcomeEnabled ?? false,
+    welcomeMessage: eventAny?.welcomeMessage ?? null,
+    welcomeHeroPhotoId: eventAny?.welcomeHeroPhotoId ?? null,
+    introAnimation: eventAny?.introAnimation ?? "fade",
+    showPhotoCount: eventAny?.showPhotoCount ?? true,
+    showEventDate: eventAny?.showEventDate ?? true,
+    galleryTitle: eventAny?.galleryTitle ?? null,
+  };
 
   if (!link) notFound();
 
   // Suspended photographer — show generic unavailable page, no details
   if (link.event.user.isSuspended) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-4 dark:bg-zinc-900">
+      <div className="flex min-h-screen items-center justify-center px-4" style={{ background: 'var(--g-bg, #09090b)' }}>
         <div className="max-w-sm text-center">
-          <p className="text-4xl">🔒</p>
-          <h1 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <div className="flex justify-center"><IconLock size={32} className={ICON_COLOR.primary} aria-hidden="true" /></div>
+          <h1 className="mt-4 text-lg font-semibold" style={{ color: 'var(--g-text, #f4f4f5)' }}>
             This gallery is no longer available
           </h1>
-          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-2 text-sm" style={{ color: 'var(--g-text-muted, #a1a1aa)' }}>
             This gallery is no longer accessible. Please contact the photographer directly.
           </p>
         </div>
@@ -122,6 +153,36 @@ export default async function SharePage({
   // Logo URL — computed early so PinForm can show studio branding before auth
   const logoUrl = sp?.logoS3Key ? await getCloudfrontSignedUrl(sp.logoS3Key) : null;
 
+  // Theme — resolved before any early returns so all screens are themed
+  const brandColor = sp?.brandColor ?? null;
+  const themeKey = (linkExtra.theme ?? 'dark') as ThemeKey;
+  const customInput = linkExtra.customThemeData;
+  // Welcome screen hero photo — fetch before auth check so pre-auth screen is themed
+  let heroPhotoUrl: string | null = null;
+  if (linkExtra.welcomeEnabled && linkExtra.welcomeHeroPhotoId) {
+    const heroPhoto = await db.photo.findUnique({
+      where: { id: linkExtra.welcomeHeroPhotoId },
+      select: { s3Key: true, thumbS3Key: true },
+    });
+    if (heroPhoto) {
+      heroPhotoUrl = heroPhoto.thumbS3Key
+        ? (getCloudfrontSignedUrl(heroPhoto.thumbS3Key) ?? await getCloudfrontPreviewUrl(heroPhoto.s3Key, 1920))
+        : await getCloudfrontPreviewUrl(heroPhoto.s3Key, 1920);
+    }
+  }
+
+  const welcomeGateProps = {
+    slug,
+    studioName: sp?.studioName ?? "PhotoHouse",
+    studioLogoUrl: logoUrl ?? undefined,
+    welcomeMessage: linkExtra.welcomeMessage ?? undefined,
+    heroPhotoUrl: heroPhotoUrl ?? undefined,
+    brandColor: brandColor ?? "#4f46e5",
+    theme: linkExtra.theme ?? "minimal",
+    introAnimation: linkExtra.introAnimation ?? "fade",
+    filmstripPhotos: [] as string[],
+  };
+
   if (!hasAccess) {
     // NONE: redirect to the grant route handler which sets the cookie
     // and redirects back here, so the user sees the gallery directly.
@@ -132,17 +193,40 @@ export default async function SharePage({
     // PIN: dedicated OTP entry screen
     if (accessType === "PIN") {
       return (
-        <PinForm
+        <GalleryRoot
           slug={slug}
-          eventName={link.event.name}
-          studioName={sp?.studioName ?? null}
-          logoUrl={logoUrl}
-        />
+          photographerTheme={themeKey}
+          customThemeInput={customInput}
+          brandColor={brandColor}
+          allowCustomerTheme={false}
+        >
+          {linkExtra.welcomeEnabled && <ShareWelcomeGate {...welcomeGateProps} />}
+          <PinForm
+            slug={slug}
+            eventName={link.event.name}
+            studioName={sp?.studioName ?? null}
+            logoUrl={logoUrl}
+          />
+        </GalleryRoot>
       );
     }
 
     // PASSWORD: classic password form
-    return <PasswordForm slug={slug} eventName={link.event.name} />;
+    return (
+      <GalleryRoot
+        slug={slug}
+        photographerTheme={themeKey}
+        customThemeInput={customInput}
+        brandColor={brandColor}
+        allowCustomerTheme={false}
+      >
+        {linkExtra.welcomeEnabled && <ShareWelcomeGate {...welcomeGateProps} />}
+        <PasswordForm
+          slug={slug}
+          eventName={link.event.name}
+        />
+      </GalleryRoot>
+    );
   }
 
   // ── Authenticated gallery view ─────────────────────────────────────────────
@@ -210,10 +294,6 @@ export default async function SharePage({
     ),
     event.coverPhotoKey ? getCloudfrontSignedUrl(event.coverPhotoKey) : null,
   ]);
-  // logoUrl already computed above — reused here
-
-  const brandColor = sp?.brandColor ?? null;
-
   // Background precedence: cover photo > brand color > dark gradient fallback
   const heroBg = coverUrl
     ? undefined
@@ -221,8 +301,25 @@ export default async function SharePage({
     ? { backgroundColor: brandColor }
     : undefined;
 
+  // Build filmstripPhotos now that photos are signed and available
+  const filmstripPhotos = photos
+    .slice(0, 5)
+    .map((p) => p.thumbnailUrl)
+    .filter((u): u is string => u !== null);
+
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+    <GalleryRoot
+      slug={slug}
+      photographerTheme={themeKey}
+      customThemeInput={customInput}
+      brandColor={brandColor}
+      allowCustomerTheme={true}
+    >
+      {/* Welcome screen overlay — sessionStorage tracks dismissal per slug */}
+      {linkExtra.welcomeEnabled && (
+        <ShareWelcomeGate {...welcomeGateProps} filmstripPhotos={filmstripPhotos} />
+      )}
+
       {/* ── Hero header ── */}
       <header
         className="relative flex min-h-[320px] items-end overflow-hidden"
@@ -316,9 +413,14 @@ export default async function SharePage({
         />
       </main>
 
-      <footer className="border-t border-zinc-200 py-6 text-center dark:border-zinc-700">
-        <p className="text-xs text-zinc-400">{t.app.tagline}</p>
+      <footer
+        className="py-6 text-center"
+        style={{ borderTop: "1px solid var(--theme-border)", color: "var(--theme-text-muted)" }}
+      >
+        <p className="text-xs">{t.app.tagline}</p>
       </footer>
-    </div>
+
+      <ThemeSwitcher />
+    </GalleryRoot>
   );
 }

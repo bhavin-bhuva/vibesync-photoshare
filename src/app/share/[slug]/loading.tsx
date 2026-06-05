@@ -1,16 +1,16 @@
 // Skeleton for the public customer gallery
 
 function Bone({ className, style }: { className: string; style?: React.CSSProperties }) {
-  return <div style={style} className={`animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-700 ${className}`} />;
+  return <div style={style} className={`g-shimmer animate-pulse rounded-lg ${className}`} />;
 }
 
 const SKELETON_HEIGHTS = [220, 180, 260, 200, 240, 170, 230, 195, 250, 185, 215, 165];
 
 export default function GalleryLoading() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
+    <div className="min-h-screen" style={{ background: 'var(--g-bg, #09090b)' }}>
       {/* Header */}
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+      <header className="border-b" style={{ background: 'var(--g-surface, #18181b)', borderColor: 'var(--g-border, #27272a)' }}>
         <div className="mx-auto max-w-6xl px-6 py-5">
           <div className="flex items-center gap-3">
             <Bone className="h-9 w-9 shrink-0 rounded-xl" />

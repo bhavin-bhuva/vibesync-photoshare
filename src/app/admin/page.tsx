@@ -49,7 +49,7 @@ function StatCard({
 }) {
   const { bg, icon: iconColor } = COLOR_MAP[color];
   return (
-    <div className="flex flex-col items-center gap-2 rounded-xl border border-zinc-200 bg-white p-3 text-center shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-5 sm:text-left">
+    <div className="flex flex-col items-center gap-2 rounded-xl border border-border bg-surface-card p-3 text-center shadow-sm sm:flex-row sm:items-center sm:gap-4 sm:p-5 sm:text-left">
       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl sm:h-11 sm:w-11 ${bg} ${iconColor}`}>
         {icon}
       </div>
@@ -214,7 +214,7 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
         {/* Recent Signups */}
-        <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-xl border border-border bg-surface-card shadow-sm">
           <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
             <h2 className="text-sm font-semibold text-zinc-900">Recent Signups</h2>
             <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-500">
@@ -261,7 +261,7 @@ export default async function AdminDashboardPage() {
         </section>
 
         {/* Recent Activity */}
-        <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-xl border border-border bg-surface-card shadow-sm">
           <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
             <h2 className="text-sm font-semibold text-zinc-900">Recent Activity</h2>
             <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-500">

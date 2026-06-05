@@ -826,7 +826,7 @@ export function UploadModal({
                         </p>
                         <Link
                           href="/pricing"
-                          className="rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-zinc-900 hover:bg-zinc-100"
+                          className="rounded-lg border border-white/25 bg-white/15 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-white/25"
                         >
                           Upgrade plan
                         </Link>

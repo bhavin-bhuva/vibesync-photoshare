@@ -6,12 +6,14 @@ import type { PlanTier } from "@/generated/prisma/client";
 import { CreateEventModal } from "./CreateEventModal";
 import { AccessDeniedToast } from "./AccessDeniedToast";
 import { UserMenu } from "./UserMenu";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { StorageBanner } from "./StorageBanner";
 import { getCloudfrontSignedUrl } from "@/lib/cloudfront";
 import Link from "next/link";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import { checkStorageLimit, formatBytes } from "@/lib/storage";
 import { getEventLimits } from "@/lib/platform-settings";
+import { IconCamera, ICON_COLOR } from "@/components/ui/icons";
 
 // ─── Plan config ──────────────────────────────────────────────────────────────
 
@@ -137,11 +139,14 @@ export default async function DashboardPage({
           <span className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             {t.app.name}
           </span>
-          <UserMenu
-            name={user.name}
-            email={user.email ?? ""}
-            locale={locale}
-          />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UserMenu
+              name={user.name}
+              email={user.email ?? ""}
+              locale={locale}
+            />
+          </div>
         </div>
       </header>
 
@@ -307,7 +312,7 @@ export default async function DashboardPage({
 
           {events.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white py-16 text-center dark:border-zinc-700 dark:bg-zinc-800">
-              <p className="text-4xl">📷</p>
+              <div className="flex justify-center"><IconCamera size={48} className={ICON_COLOR.muted} aria-hidden="true" /></div>
               <p className="mt-4 text-base font-semibold text-zinc-700 dark:text-zinc-300">
                 {t.dashboard.events.empty}
               </p>
@@ -377,7 +382,8 @@ export default async function DashboardPage({
                       {/* New selections badge — tablet+ */}
                       {event.hasNewSelections && (
                         <span className="absolute left-3 top-3 hidden items-center gap-1 rounded-full bg-red-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm sm:inline-flex">
-                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                          {/* Intentional white pulse dot */}
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white dark:bg-white" />
                           {t.dashboard.newSelectionsBadge}
                         </span>
                       )}
