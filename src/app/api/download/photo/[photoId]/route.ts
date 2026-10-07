@@ -53,7 +53,7 @@ export async function GET(
         select: {
           sharedLinks: {
             where: { slug },
-            select: { expiresAt: true },
+            select: { expiresAt: true, downloadsEnabled: true },
           },
           user: {
             select: {
@@ -82,6 +82,10 @@ export async function GET(
   const link = photo.event.sharedLinks[0];
   if (link?.expiresAt && new Date() > link.expiresAt) {
     return NextResponse.json({ error: "Link expired" }, { status: 410 });
+  }
+
+  if (!link?.downloadsEnabled) {
+    return NextResponse.json({ error: "Downloads are disabled for this gallery" }, { status: 403 });
   }
 
   // ── Fetch photo from S3 ────────────────────────────────────────────────────

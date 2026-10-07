@@ -7,6 +7,7 @@ import { getCloudfrontSignedUrl } from "@/lib/cloudfront";
 import { getServerT } from "@/lib/i18n/server";
 import { PersonalInfoForm } from "./PersonalInfoForm";
 import { StudioBrandingForm, WatermarkSettings } from "./StudioBrandingForm";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default async function ProfilePage() {
   const [t, session] = await Promise.all([getServerT(), getServerSession(authOptions)]);
@@ -94,6 +95,23 @@ export default async function ProfilePage() {
               watermarkOpacity:  sp?.watermarkOpacity  ?? 55,
             }}
           />
+        </section>
+
+        {/* ── Appearance ── */}
+        <section id="appearance" className="overflow-hidden rounded-2xl bg-white p-6 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
+          <h2 className="mb-4 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+            Appearance
+          </h2>
+          <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+            Choose how PhotoHouse looks to you.
+          </p>
+          <div className="flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-900/50">
+            <div>
+              <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Theme</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">Switch between light and dark mode</p>
+            </div>
+            <ThemeToggle />
+          </div>
         </section>
 
       </main>

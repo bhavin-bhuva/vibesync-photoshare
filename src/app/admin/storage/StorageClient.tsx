@@ -81,7 +81,7 @@ function IncreaseLimitModal({
   return createPortal(
     <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/50 p-4">
       <div
-        className="w-full max-w-md rounded-2xl bg-white shadow-xl"
+        className="w-full max-w-md rounded-2xl border border-border bg-surface-elevated shadow-2xl shadow-black/10"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="border-b border-zinc-100 px-5 py-4">
@@ -265,7 +265,7 @@ export function StorageTable({ initialRows }: { initialRows: StorageRow[] }) {
 
   return (
     <>
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-border bg-surface-card shadow-sm">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50">

@@ -1,7 +1,7 @@
 // Skeleton for the event detail page
 
 function Bone({ className, style }: { className: string; style?: React.CSSProperties }) {
-  return <div style={style} className={`animate-pulse rounded-lg bg-zinc-200 dark:bg-zinc-700 ${className}`} />;
+  return <div style={style} className={`animate-pulse rounded-lg bg-surface-overlay ${className}`} />;
 }
 
 // Simulate the masonry column layout with varied heights

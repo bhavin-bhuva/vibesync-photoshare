@@ -132,7 +132,7 @@ export function SubscriptionsClient({
         <select
           value={planFilter}
           onChange={(e) => updateParams({ plan: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-lg border border-border bg-surface-input px-3 py-2 text-sm text-content-primary focus:border-brand focus:outline-none"
         >
           <option value="">All plans</option>
           <option value="FREE">Free</option>
@@ -143,7 +143,7 @@ export function SubscriptionsClient({
         <select
           value={statusFilter}
           onChange={(e) => updateParams({ status: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 focus:border-blue-500 focus:outline-none"
+          className="rounded-lg border border-border bg-surface-input px-3 py-2 text-sm text-content-primary focus:border-brand focus:outline-none"
         >
           <option value="">All statuses</option>
           <option value="active">Active</option>
@@ -154,16 +154,16 @@ export function SubscriptionsClient({
         </select>
 
         <div className="flex items-center gap-1.5">
-          <input type="date" value={dateFrom} onChange={(e) => updateParams({ from: e.target.value || null, page: null })} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none sm:text-sm" />
+          <input type="date" value={dateFrom} onChange={(e) => updateParams({ from: e.target.value || null, page: null })} className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base focus:border-brand focus:outline-none sm:text-sm" />
           <span className="text-xs text-zinc-400">to</span>
-          <input type="date" value={dateTo} onChange={(e) => updateParams({ to: e.target.value || null, page: null })} className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none sm:text-sm" />
+          <input type="date" value={dateTo} onChange={(e) => updateParams({ to: e.target.value || null, page: null })} className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base focus:border-brand focus:outline-none sm:text-sm" />
         </div>
 
         <span className="ml-auto text-xs text-zinc-400">{total.toLocaleString()} result{total !== 1 ? "s" : ""}</span>
       </div>
 
       {/* ── Table ── */}
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-border bg-surface-card shadow-sm">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50">

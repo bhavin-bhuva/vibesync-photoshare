@@ -115,17 +115,17 @@ export default async function ActivityPage({
 
       {/* ── Summary stats ── */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-surface-card p-5 shadow-sm">
           <p className="text-xs font-medium text-zinc-500">Total Actions</p>
           <p className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">{totalLogs.toLocaleString()}</p>
           <p className="mt-0.5 text-xs text-zinc-400">all time</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-surface-card p-5 shadow-sm">
           <p className="text-xs font-medium text-zinc-500">Today</p>
           <p className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">{todayLogs.toLocaleString()}</p>
           <p className="mt-0.5 text-xs text-zinc-400">actions logged</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-border bg-surface-card p-5 shadow-sm">
           <p className="text-xs font-medium text-zinc-500">Last 7 Days</p>
           <p className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">{weekLogs.toLocaleString()}</p>
           <p className="mt-0.5 text-xs text-zinc-400">actions logged</p>
@@ -134,7 +134,7 @@ export default async function ActivityPage({
 
       {/* ── Action breakdown ── */}
       {recentByAction.length > 0 && (
-        <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-xl border border-border bg-surface-card shadow-sm">
           <div className="border-b border-zinc-100 px-5 py-3">
             <h2 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Action Breakdown</h2>
           </div>

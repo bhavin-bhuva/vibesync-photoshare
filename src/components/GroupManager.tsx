@@ -490,6 +490,7 @@ function SortableGroupRow({
         {...attributes}
         {...listeners}
         aria-label="Drag to reorder"
+        suppressHydrationWarning
         className="hidden shrink-0 cursor-grab touch-none text-zinc-300 hover:text-zinc-500 active:cursor-grabbing dark:text-zinc-600 dark:hover:text-zinc-400 sm:block"
       >
         <DragHandleIcon />

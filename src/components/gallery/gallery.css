@@ -1,0 +1,172 @@
+/* ── Backward-compat aliases so legacy --theme-* var refs keep working ── */
+.gallery-root {
+  --theme-bg:           var(--g-bg);
+  --theme-surface:      var(--g-surface);
+  --theme-text:         var(--g-text);
+  --theme-text-muted:   var(--g-text-muted);
+  --theme-border:       var(--g-border);
+  --theme-accent:       var(--g-accent);
+  --theme-gap:          4px;
+  --theme-font-heading: system-ui, sans-serif;
+}
+
+/* ── Backgrounds ── */
+.g-bg           { background-color: var(--g-bg); }
+.g-surface      { background-color: var(--g-surface); }
+.g-surface-2    { background-color: var(--g-surface-2); }
+.g-accent-bg    { background-color: var(--g-accent); }
+
+/* ── Text ── */
+.g-text         { color: var(--g-text); }
+.g-text-2       { color: var(--g-text-2); }
+.g-text-muted   { color: var(--g-text-muted); }
+.g-accent-text  { color: var(--g-accent); }
+.g-on-accent    { color: var(--g-accent-text); }
+
+/* ── Borders ── */
+.g-border       { border: 1px solid var(--g-border); }
+.g-border-b     { border-bottom: 1px solid var(--g-border); }
+.g-border-t     { border-top: 1px solid var(--g-border); }
+.g-border-2     { border: 1px solid var(--g-border-2); }
+
+/* ── Interactive ── */
+.g-hover:hover  { background-color: var(--g-surface-2); }
+
+/* ── Card ── */
+.g-card {
+  background-color: var(--g-surface);
+  border: 1px solid var(--g-border);
+  border-radius: 12px;
+}
+.g-card-elevated {
+  background-color: var(--g-surface-2);
+  border: 1px solid var(--g-border);
+  border-radius: 12px;
+}
+
+/* ── Button base ── */
+.g-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 150ms, transform 150ms;
+  border: none;
+  outline: none;
+}
+.g-btn:active  { transform: scale(0.97); }
+.g-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Button primary (accent) ── */
+.g-btn-primary {
+  background-color: var(--g-accent);
+  color: var(--g-accent-text);
+}
+.g-btn-primary:hover { opacity: 0.88; }
+
+/* ── Button secondary ── */
+.g-btn-secondary {
+  background-color: var(--g-surface-2);
+  color: var(--g-text);
+  border: 1px solid var(--g-border);
+}
+.g-btn-secondary:hover { background-color: var(--g-surface); }
+
+/* ── Button ghost ── */
+.g-btn-ghost {
+  background-color: transparent;
+  color: var(--g-text-2);
+}
+.g-btn-ghost:hover {
+  background-color: var(--g-surface-2);
+  color: var(--g-text);
+}
+
+/* ── Input ── */
+.g-input {
+  background-color: var(--g-surface);
+  border: 1px solid var(--g-border);
+  border-radius: 10px;
+  color: var(--g-text);
+  width: 100%;
+  font-size: 16px;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.g-input:focus {
+  outline: none;
+  border-color: var(--g-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--g-accent) 20%, transparent);
+}
+
+/* ── Pill / badge ── */
+.g-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 12px;
+  background-color: var(--g-surface-2);
+  color: var(--g-text-2);
+  border: 1px solid var(--g-border);
+  cursor: pointer;
+  transition: all 150ms;
+}
+.g-pill:hover {
+  border-color: var(--g-accent);
+  color: var(--g-text);
+}
+.g-pill-active {
+  background-color: var(--g-accent);
+  color: var(--g-accent-text);
+  border-color: transparent;
+}
+
+/* ── Bottom sheet / modal ── */
+.g-sheet {
+  background-color: var(--g-surface);
+  border-top: 1px solid var(--g-border);
+  border-radius: 20px 20px 0 0;
+}
+.g-modal {
+  background-color: var(--g-surface);
+  border: 1px solid var(--g-border);
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.35);
+}
+
+/* ── Divider ── */
+.g-divider {
+  height: 1px;
+  background-color: var(--g-border);
+}
+
+/* ── Focus ring ── */
+.g-focus:focus-visible {
+  outline: 2px solid var(--g-accent);
+  outline-offset: 2px;
+}
+
+/* ── Overlay on photos ── */
+.g-photo-overlay {
+  background: var(--g-overlay);
+}
+
+/* ── Shimmer skeleton ── */
+.g-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--g-surface) 25%,
+    var(--g-surface-2) 50%,
+    var(--g-surface) 75%
+  );
+  background-size: 200% 100%;
+  animation: g-shimmer 1.5s infinite;
+}
+@keyframes g-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

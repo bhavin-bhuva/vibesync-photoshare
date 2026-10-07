@@ -374,7 +374,7 @@ export default async function BillingPage() {
             </p>
             <Link
               href="/pricing"
-              className="mt-4 flex w-full items-center justify-center rounded-lg bg-white px-5 py-3 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 sm:inline-flex sm:w-auto sm:py-2.5"
+              className="mt-4 flex w-full items-center justify-center rounded-lg border border-white/30 bg-white/15 px-5 py-3 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25 sm:inline-flex sm:w-auto sm:py-2.5"
             >
               View plans
             </Link>

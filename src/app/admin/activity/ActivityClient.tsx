@@ -139,7 +139,7 @@ function ExportCsvButton({ filters }: { filters: ActivityFilters }) {
       <button
         onClick={handleExport}
         disabled={exporting}
-        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-700 shadow-sm transition-colors hover:bg-zinc-50 disabled:opacity-50 sm:w-auto sm:justify-start"
+        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-card px-3.5 py-2 text-sm font-medium text-content-primary shadow-sm transition-colors hover:bg-surface-subtle disabled:opacity-50 sm:w-auto sm:justify-start"
       >
         {exporting ? (
           <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
@@ -246,7 +246,7 @@ export function ActivityClient({
           <select
             value={adminFilter}
             onChange={(e) => updateParams({ admin: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
+            className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base text-content-primary focus:border-brand focus:outline-none sm:text-sm"
           >
             <option value="">All admins</option>
             {admins.map((a) => (
@@ -259,7 +259,7 @@ export function ActivityClient({
         <select
           value={actionFilter}
           onChange={(e) => updateParams({ action: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
+          className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base text-content-primary focus:border-brand focus:outline-none sm:text-sm"
         >
           <option value="">All actions</option>
           {distinctActions.map((a) => (
@@ -271,7 +271,7 @@ export function ActivityClient({
         <select
           value={targetTypeFilter}
           onChange={(e) => updateParams({ type: e.target.value || null, page: null })}
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-700 focus:border-blue-500 focus:outline-none sm:text-sm"
+          className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base text-content-primary focus:border-brand focus:outline-none sm:text-sm"
         >
           <option value="">All targets</option>
           {distinctTargetTypes.map((t) => (
@@ -285,14 +285,14 @@ export function ActivityClient({
             type="date"
             value={dateFrom}
             onChange={(e) => updateParams({ from: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none sm:text-sm"
+            className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base focus:border-brand focus:outline-none sm:text-sm"
           />
           <span className="text-xs text-zinc-400">to</span>
           <input
             type="date"
             value={dateTo}
             onChange={(e) => updateParams({ to: e.target.value || null, page: null })}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-blue-500 focus:outline-none sm:text-sm"
+            className="rounded-lg border border-border bg-surface-input px-3 py-2 text-base focus:border-brand focus:outline-none sm:text-sm"
           />
         </div>
 
@@ -309,12 +309,12 @@ export function ActivityClient({
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search metadata…"
-              className="w-52 rounded-lg border border-zinc-300 bg-white py-2 pl-9 pr-3 text-base text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none sm:text-sm"
+              className="w-52 rounded-lg border border-border bg-surface-input py-2 pl-9 pr-3 text-base text-zinc-900 placeholder-zinc-400 focus:border-brand focus:outline-none sm:text-sm"
             />
           </div>
           <button
             type="submit"
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+            className="rounded-lg border border-border bg-surface-card px-3 py-2 text-xs font-medium text-content-secondary hover:bg-surface-subtle"
           >
             Search
           </button>
@@ -341,7 +341,7 @@ export function ActivityClient({
       {/* ── Mobile card list ── */}
       <div className="space-y-2 sm:hidden">
         {rows.length === 0 ? (
-          <p className="rounded-xl border border-zinc-200 bg-white px-4 py-10 text-center text-sm text-zinc-400">
+          <p className="rounded-xl border border-border bg-surface-card px-4 py-10 text-center text-sm text-zinc-400">
             No activity found matching your filters.
           </p>
         ) : rows.map((row) => {
@@ -350,7 +350,7 @@ export function ActivityClient({
           const hasMetadata = row.metadata !== null && row.metadata !== undefined;
           const link = targetLink(row.targetType, row.targetId);
           return (
-            <div key={row.id} className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+            <div key={row.id} className="overflow-hidden rounded-xl border border-border bg-surface-card">
               {/* Row: Time + Action */}
               <button
                 onClick={() => toggleExpand(row.id)}
@@ -412,7 +412,7 @@ export function ActivityClient({
       </div>
 
       {/* ── Desktop table — hidden on mobile ── */}
-      <div className="hidden overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm sm:block">
+      <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface-card shadow-sm sm:block">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50">
@@ -450,7 +450,7 @@ export function ActivityClient({
                         <button
                           onClick={() => toggleExpand(row.id)}
                           aria-label={isExpanded ? "Collapse" : "Expand"}
-                          className="flex h-9 w-9 items-center justify-center rounded text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
+                          className="flex h-9 w-9 items-center justify-center rounded border border-border bg-surface-elevated text-content-secondary hover:bg-surface-overlay hover:text-content-primary"
                         >
                           <svg className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`} viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />

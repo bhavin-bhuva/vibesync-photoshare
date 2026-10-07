@@ -66,7 +66,7 @@ export const ja: Translations = {
   // ─── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
     welcome: (name: string) => `こんにちは、${name}`,
-    welcomeShort: (name: string) => `ようこそ、${name} 👋`,
+    welcomeShort: (name: string) => `ようこそ、${name}`,
     subtitle: "ギャラリーの概要です。",
     stats: {
       events: "イベント",
@@ -81,6 +81,8 @@ export const ja: Translations = {
       sectionTitle: "あなたのイベント",
       empty: "イベントがありません",
       emptySubtitle: "最初のイベントを作成して、クライアントと写真を共有しましょう。",
+      showArchived: (n: number) => `アーカイブ済み (${n})`,
+      hideArchived: "アクティブなイベントに戻る",
     },
     upgrade: {
       eventLimitTitle: "イベント数の上限に達しました",
@@ -217,7 +219,7 @@ export const ja: Translations = {
     pinHideAriaLabel: "PINを非表示",
     faceSearchToggleLabel: "お客様がセルフィーで自分の写真を探せるようにする",
     faceSearchProcessingWarning: "顔認識はまだ処理中です。分析が完了したら有効にできます。",
-    faceSearchBadge: "🤳 顔検索オン",
+    faceSearchBadge: "顔検索オン",
     faceSearchStats: (n: number): string => `${n}人インデックス済み`,
   },
 

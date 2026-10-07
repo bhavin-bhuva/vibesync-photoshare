@@ -6,7 +6,6 @@ import Link from "next/link";
 import { getServerT } from "@/lib/i18n/server";
 import { PhotoGrid, type GroupFilterOption } from "./PhotoGrid";
 import { UploadModal, type GroupOption } from "./UploadModal";
-import { ShareModal, type SharedLinkRow } from "./ShareModal";
 import { CoverPhotoUpload } from "./CoverPhotoUpload";
 import { PeopleTab, type ClusterCardData, type ActiveJobData } from "./PeopleTab";
 import { CullingTab, type CullPhotoData, type BurstClusterData, type CullingJobData } from "./CullingTab";
@@ -45,14 +44,7 @@ export default async function EventPage({
     await Promise.all([
       db.event.findUnique({
         where: { id },
-        include: {
-          sharedLinks: {
-            orderBy: { createdAt: "desc" },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            select: { id: true, slug: true, expiresAt: true, createdAt: true, accessType: true, faceSearchEnabled: true } as any,
-          },
-          _count: { select: { photos: true } },
-        },
+        include: { _count: { select: { photos: true, sharedLinks: true } } },
       }),
       db.photoSelection.count({
         where: { status: "PENDING", sharedLink: { eventId: id } },
@@ -245,7 +237,6 @@ export default async function EventPage({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const faceIndexingEnabled = !!((event as any).faceIndexingEnabled as boolean | undefined);
-  const faceIndexingDone = !activeJob && clusters.length > 0;
   const totalFacesFound = clusters.reduce((s, c) => s + c.faceCount, 0);
   const activeJobData: ActiveJobData = activeJob
     ? { ...activeJob, status: activeJob.status as string }
@@ -284,6 +275,12 @@ export default async function EventPage({
                       <span className="text-sm text-zinc-500 dark:text-zinc-400">{groups.length} {groups.length === 1 ? "group" : "groups"}</span>
                     </>
                   )}
+                  {event._count.sharedLinks > 0 && (
+                    <>
+                      <span className="text-zinc-300 dark:text-zinc-600">·</span>
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">{event._count.sharedLinks} {event._count.sharedLinks === 1 ? "link" : "links"}</span>
+                    </>
+                  )}
                   {totalSizeBytes > 0 && (
                     <>
                       <span className="text-zinc-300 dark:text-zinc-600">·</span>
@@ -294,29 +291,21 @@ export default async function EventPage({
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <Link
-                href={`/dashboard/events/${id}/selections`}
-                className="relative flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-              >
-                <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
-                </svg>
-                {t.eventPage.selectionsButton}
-                {pendingSelectionsCount > 0 && (
-                  <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                    {pendingSelectionsCount}
-                  </span>
-                )}
-              </Link>
-              <UploadModal eventId={id} groups={groups as GroupOption[]} />
-              <ShareModal
+              <UploadModal
                 eventId={id}
-                initialLinks={event.sharedLinks as unknown as SharedLinkRow[]}
-                faceIndexingEnabled={faceIndexingEnabled}
-                faceIndexingDone={faceIndexingDone}
-                peopleIndexed={clusters.length}
-                groups={groups.map((g) => ({ id: g.id, name: g.name, color: g.color ?? null }))}
+                groups={groups as GroupOption[]}
+                triggerClassName="flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
               />
+              <Link
+                href={`/dashboard/events/${id}/settings`}
+                title="Event Settings"
+                aria-label="Event Settings"
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-300 bg-white text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.992 6.992 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
+                </svg>
+              </Link>
             </div>
           </div>
           {event.description && (
@@ -364,17 +353,18 @@ export default async function EventPage({
             <UploadModal
               eventId={id}
               groups={groups as GroupOption[]}
-              triggerClassName="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-zinc-300 bg-white py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+              triggerClassName="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
             />
-            <ShareModal
-              eventId={id}
-              initialLinks={event.sharedLinks as unknown as SharedLinkRow[]}
-              faceIndexingEnabled={faceIndexingEnabled}
-              faceIndexingDone={faceIndexingDone}
-              peopleIndexed={clusters.length}
-              groups={groups.map((g) => ({ id: g.id, name: g.name, color: g.color ?? null }))}
-              triggerClassName="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-zinc-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-            />
+            <Link
+              href={`/dashboard/events/${id}/settings`}
+              aria-label="Event Settings"
+              title="Event Settings"
+              className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl border border-zinc-300 bg-white text-zinc-500 transition-colors hover:bg-zinc-50 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.84 1.804A1 1 0 0 1 8.82 1h2.36a1 1 0 0 1 .98.804l.331 1.652a6.993 6.993 0 0 1 1.929 1.115l1.598-.54a1 1 0 0 1 1.186.447l1.18 2.044a1 1 0 0 1-.205 1.251l-1.267 1.113a7.047 7.047 0 0 1 0 2.228l1.267 1.113a1 1 0 0 1 .206 1.25l-1.18 2.045a1 1 0 0 1-1.187.447l-1.598-.54a6.993 6.993 0 0 1-1.929 1.115l-.33 1.652a1 1 0 0 1-.98.804H8.82a1 1 0 0 1-.98-.804l-.331-1.652a6.993 6.993 0 0 1-1.929-1.115l-1.598.54a1 1 0 0 1-1.186-.447l-1.18-2.044a1 1 0 0 1 .205-1.251l1.267-1.114a7.05 7.05 0 0 1 0-2.227L1.821 7.773a1 1 0 0 1-.206-1.25l1.18-2.045a1 1 0 0 1 1.187-.447l1.598.54A6.992 6.992 0 0 1 7.51 3.456l.33-1.652ZM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" clipRule="evenodd" />
+              </svg>
+            </Link>
             <EventMoreMenu eventId={id} pendingCount={pendingSelectionsCount} />
           </div>
         </div>

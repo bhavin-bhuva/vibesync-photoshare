@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 function getInitials(name: string | null, email: string): string {
   if (name) {
@@ -92,6 +93,7 @@ export function MobileNav({ name, email }: { name: string | null; email: string 
         </Link>
 
         <div className="flex items-center gap-1">
+          <ThemeToggle />
           {/* Avatar (32px, non-interactive — for recognition only) */}
           <div
             aria-hidden="true"

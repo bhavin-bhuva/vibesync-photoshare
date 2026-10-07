@@ -284,7 +284,7 @@ function EditModal({
 
   const labelCls = "block text-sm font-medium text-zinc-700 mb-1";
   const inputCls =
-    "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-base text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm";
+    "w-full rounded-lg border border-border bg-surface-input px-3 py-2 text-base text-zinc-900 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand sm:text-sm";
 
   const modal = (
     <div
@@ -298,7 +298,7 @@ function EditModal({
         onClick={onClose}
       />
       <div className="fixed inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
-        <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-w-lg sm:max-h-[90vh] sm:rounded-2xl">
+        <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl border border-border bg-surface-elevated shadow-2xl shadow-black/10 sm:max-w-lg sm:max-h-[90vh] sm:rounded-2xl">
           <div className="mx-auto mt-3 mb-1 h-1 w-10 rounded-full bg-zinc-300 sm:hidden" />
         {/* Header */}
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
@@ -561,7 +561,7 @@ function SyncModal({
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+      <div className="relative z-10 w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl border border-border bg-surface-elevated shadow-2xl shadow-black/10">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
           <h2 id="sync-modal-title" className="text-lg font-semibold text-zinc-900">
             Stripe Sync Results
@@ -799,7 +799,7 @@ function CreatePlanModal({
 
   const labelCls = "block text-sm font-medium text-zinc-700 mb-1";
   const inputCls =
-    "w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-base text-zinc-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm";
+    "w-full rounded-lg border border-border bg-surface-input px-3 py-2 text-base text-zinc-900 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand sm:text-sm";
 
   const modal = (
     <div
@@ -810,7 +810,7 @@ function CreatePlanModal({
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="fixed inset-x-0 bottom-0 sm:inset-0 sm:flex sm:items-center sm:justify-center sm:p-4">
-        <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-w-lg sm:max-h-[90vh] sm:rounded-2xl">
+        <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-2xl border border-border bg-surface-elevated shadow-2xl shadow-black/10 sm:max-w-lg sm:max-h-[90vh] sm:rounded-2xl">
           <div className="mx-auto mt-3 mb-1 h-1 w-10 rounded-full bg-zinc-300 sm:hidden" />
 
         {/* Header */}
@@ -1066,7 +1066,7 @@ function PlanCard({
 
   return (
     <div
-      className={`relative rounded-2xl border bg-white p-6 shadow-sm transition-shadow hover:shadow-md ${
+      className={`relative rounded-2xl border bg-surface-card p-6 shadow-sm transition-shadow hover:shadow-md ${
         plan.isPopular ? "border-blue-300 ring-1 ring-blue-200" : "border-zinc-200"
       } ${!plan.isActive ? "opacity-60" : ""}`}
     >
@@ -1289,7 +1289,7 @@ export function PlansClient({ plans: initialPlans }: { plans: PlanRow[] }) {
       </section>
 
       {/* ── Section 2: Sync ── */}
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-border bg-surface-card p-6 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-base font-semibold text-zinc-900">Sync Plans from Stripe Dashboard</h2>

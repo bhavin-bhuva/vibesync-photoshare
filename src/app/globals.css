@@ -1,19 +1,118 @@
 @import "tailwindcss";
 
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ── APP DEFAULT (dark) ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  --overlay-photo:     rgba(0,0,0,0.60);
+  --overlay-modal:     rgba(0,0,0,0.60);
+
+  --surface-page:      #0A0A0A;
+  --surface-card:      #141414;
+  --surface-elevated:  #1C1C1C;
+  --surface-overlay:   #242424;
+  --surface-input:     #1C1C1C;
+  --surface-subtle:    rgba(255,255,255,0.04);
+
+  --content-primary:   #FAFAFA;
+  --content-secondary: #A1A1AA;
+  --content-muted:     #71717A;
+  --content-disabled:  #3F3F46;
+  --content-inverse:   #0A0A0A;
+  --content-onbrand:   #FFFFFF;
+
+  --border-default:    rgba(255,255,255,0.10);
+  --border-subtle:     rgba(255,255,255,0.06);
+  --border-strong:     rgba(255,255,255,0.20);
+  --border-brand:      rgba(99,102,241,0.40);
+
+  --status-success-bg: rgba(34,197,94,0.10);
+  --status-warning-bg: rgba(245,158,11,0.10);
+  --status-error-bg:   rgba(239,68,68,0.10);
+  --status-info-bg:    rgba(59,130,246,0.10);
+}
+
+/* ── LIGHT MODE (used by admin + future toggle) ── */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-page:      #F8F8F6;
+  --surface-card:      #FFFFFF;
+  --surface-elevated:  #FFFFFF;
+  --surface-overlay:   #F4F4F5;
+  --surface-input:     #FFFFFF;
+  --surface-subtle:    rgba(0,0,0,0.03);
+
+  --content-primary:   #0A0A0A;
+  --content-secondary: #52525B;
+  --content-muted:     #A1A1AA;
+  --content-disabled:  #D4D4D8;
+  --content-inverse:   #FAFAFA;
+  --content-onbrand:   #FFFFFF;
+
+  --border-default:    rgba(0,0,0,0.10);
+  --border-subtle:     rgba(0,0,0,0.06);
+  --border-strong:     rgba(0,0,0,0.20);
+  --border-brand:      rgba(99,102,241,0.40);
+
+  --status-success-bg: rgba(34,197,94,0.08);
+  --status-warning-bg: rgba(245,158,11,0.08);
+  --status-error-bg:   rgba(239,68,68,0.08);
+  --status-info-bg:    rgba(59,130,246,0.08);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* ── legacy compat (bg-background / text-foreground still work) ── */
+  --color-background: var(--surface-page);
+  --color-foreground: var(--content-primary);
+
+  /* ── fonts / animation / z-index ── */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --animate-slide-in-left: slide-in-left 200ms ease-out;
   --z-60: 60;
   --z-70: 70;
   --z-80: 80;
+
+  /* ── brand (static) ── */
+  --color-brand:         #6366F1;
+  --color-brand-light:   #818CF8;
+  --color-brand-dark:    #4F46E5;
+  --color-brand-subtle:  rgba(99,102,241,0.10);
+
+  /* ── surface (theme-aware) ── */
+  --color-surface-page:     var(--surface-page);
+  --color-surface-card:     var(--surface-card);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-overlay:  var(--surface-overlay);
+  --color-surface-input:    var(--surface-input);
+  --color-surface-subtle:   var(--surface-subtle);
+
+  /* ── content (theme-aware) ── */
+  --color-content-primary:   var(--content-primary);
+  --color-content-secondary: var(--content-secondary);
+  --color-content-muted:     var(--content-muted);
+  --color-content-disabled:  var(--content-disabled);
+  --color-content-inverse:   var(--content-inverse);
+  --color-content-onbrand:   var(--content-onbrand);
+
+  /* ── border (theme-aware) ── */
+  --color-border:        var(--border-default);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-border-brand:  var(--border-brand);
+
+  /* ── status (static foreground, theme-aware background) ── */
+  --color-status-success:    #22C55E;
+  --color-status-success-bg: var(--status-success-bg);
+  --color-status-warning:    #F59E0B;
+  --color-status-warning-bg: var(--status-warning-bg);
+  --color-status-error:      #EF4444;
+  --color-status-error-bg:   var(--status-error-bg);
+  --color-status-info:       #3B82F6;
+  --color-status-info-bg:    var(--status-info-bg);
 }
 
 @keyframes slide-in-left {
@@ -21,15 +120,62 @@
   to   { transform: translateX(0); }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background-color: var(--surface-page);
+  color: var(--content-primary);
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── Theme transitions — applied only when user explicitly toggles ── */
+*,
+*::before,
+*::after {
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 100ms ease,
+    box-shadow 200ms ease !important;
+}
+
+/* Photos, video, canvas: never transition — colour must be instant/accurate */
+img, video, canvas, svg {
+  transition: none !important;
+}
+
+/* Disable all transitions during page load (no-transitions class set by applyTheme) */
+.no-transitions *,
+.no-transitions *::before,
+.no-transitions *::after {
+  transition: none !important;
+}
+
+/* ── Scrollbars ── */
+:root {
+  scrollbar-color: #3F3F46 transparent;
+  scrollbar-width: thin;
+}
+
+[data-theme="light"] {
+  scrollbar-color: #D4D4D8 transparent;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  border-radius: 100px;
+  background: var(--border-strong);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--content-muted);
+}
+
+/* ── Selection highlight ── */
+::selection {
+  background: rgba(99,102,241,0.25);
+  color: var(--content-primary);
+}
+
+/* ── Gallery theme-aware inputs ── */
+.gallery-input::placeholder {
+  color: var(--theme-text-muted);
 }

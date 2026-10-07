@@ -135,7 +135,7 @@ export default async function AdminEventsPage({
       </div>
 
       {/* ── Table ── */}
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-border bg-surface-card shadow-sm">
         <table className="min-w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-100 bg-zinc-50">

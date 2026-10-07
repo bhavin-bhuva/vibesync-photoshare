@@ -158,6 +158,30 @@ model Event {
   photoCullScores      PhotoCullScore[]
   burstClusters        BurstCluster[]
   cullingJobs          CullingJob[]
+
+  // Gallery customisation (event-level — applies to all shared links)
+  theme                    String               @default("minimal")
+  customThemeData          Json?                // CustomThemeInput when theme = 'custom'
+  welcomeEnabled           Boolean              @default(false)
+  welcomeMessage           String?
+  welcomeHeroPhotoId       String?
+  welcomeHeroPhoto         Photo?               @relation("EventWelcomeHero", fields: [welcomeHeroPhotoId], references: [id], onDelete: SetNull)
+  introAnimation           String               @default("fade")
+  showPhotoCount           Boolean              @default(true)
+  showEventDate            Boolean              @default(true)
+  galleryTitle             String?
+  gallerySubtitle          String?
+
+  // Event-level watermark override
+  watermarkOverride        Boolean              @default(false)
+  watermarkEnabled         Boolean              @default(true)
+  watermarkSource          String               @default("logo") // "logo" | "name" | "none"
+  watermarkPosition        String               @default("BOTTOM_RIGHT")
+  watermarkOpacity         Int                  @default(55)
+
+  // Danger zone
+  isArchived               Boolean              @default(false)
+  archivedAt               DateTime?
 }
 
 model Photo {
@@ -181,9 +205,11 @@ model Photo {
   event           Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
   groupId         String?
   group           PhotoGroup?     @relation(fields: [groupId], references: [id], onDelete: SetNull)
-  selectedPhotos  SelectedPhoto[]
-  faceRecords     FaceRecord[]
-  cullScore       PhotoCullScore?
+  selectedPhotos         SelectedPhoto[]
+  faceRecords            FaceRecord[]
+  cullScore              PhotoCullScore?
+  welcomeHeroSharedLinks SharedLink[]    @relation("WelcomeHero")
+  welcomeHeroEvents      Event[]         @relation("EventWelcomeHero")
 
   @@index([groupId])
   @@index([eventId, groupId])
@@ -221,8 +247,49 @@ model SharedLink {
   event                    Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
   photoSelections          PhotoSelection[]
   faceSearchEnabled        Boolean              @default(false)
+  downloadsEnabled         Boolean              @default(true)
+  zipDownloadEnabled       Boolean              @default(true)
+  selectionEnabled         Boolean              @default(true)
   groupVisibilityOverrides Json?                // map of groupId → boolean; null means use PhotoGroup.isVisible
   defaultGridDensity       String               @default("default")
+
+  // Gallery theme
+  theme                    String               @default("minimal")
+  // Values: minimal | dark | cinematic | warm | custom
+
+  // Welcome screen
+  welcomeEnabled           Boolean              @default(false)
+  welcomeMessage           String?
+  welcomeHeroPhotoId       String?
+  welcomeHeroPhoto         Photo?               @relation("WelcomeHero", fields: [welcomeHeroPhotoId], references: [id], onDelete: SetNull)
+
+  // Intro animation
+  introAnimation           String               @default("fade")
+  // Values: none | fade | reveal | typewriter | filmstrip
+
+  // QR Card
+  qrCardS3Key              String?
+  showPinOnCard            Boolean              @default(true)
+  customCardMessage        String?
+
+  // Gallery display
+  showPhotoCount           Boolean              @default(true)
+  showEventDate            Boolean              @default(true)
+  galleryTitle             String?
+  gallerySubtitle          String?
+
+  previewTokens            PreviewToken[]
+}
+
+model PreviewToken {
+  id           String     @id @default(cuid())
+  token        String     @unique
+  sharedLinkId String
+  sharedLink   SharedLink @relation(fields: [sharedLinkId], references: [id], onDelete: Cascade)
+  expiresAt    DateTime
+  createdAt    DateTime   @default(now())
+
+  @@index([token])
 }
 
 model PhotoSelection {

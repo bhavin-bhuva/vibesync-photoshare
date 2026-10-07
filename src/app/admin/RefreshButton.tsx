@@ -18,7 +18,7 @@ export function RefreshButton() {
     <button
       onClick={handleRefresh}
       aria-label="Refresh dashboard"
-      className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm transition-colors hover:bg-zinc-50 hover:text-zinc-900"
+      className="flex items-center gap-1.5 rounded-lg border border-border bg-surface-card px-3 py-1.5 text-xs font-medium text-zinc-600 shadow-sm transition-colors hover:bg-surface-subtle hover:text-content-primary"
     >
       <svg
         className={`h-3.5 w-3.5 ${spinning ? "animate-spin" : ""}`}

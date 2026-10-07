@@ -6,12 +6,14 @@ import type { PlanTier } from "@/generated/prisma/client";
 import { CreateEventModal } from "./CreateEventModal";
 import { AccessDeniedToast } from "./AccessDeniedToast";
 import { UserMenu } from "./UserMenu";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { StorageBanner } from "./StorageBanner";
 import { getCloudfrontSignedUrl } from "@/lib/cloudfront";
 import Link from "next/link";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import { checkStorageLimit, formatBytes } from "@/lib/storage";
 import { getEventLimits } from "@/lib/platform-settings";
+import { IconCamera, ICON_COLOR } from "@/components/ui/icons";
 
 // ─── Plan config ──────────────────────────────────────────────────────────────
 
@@ -44,9 +46,10 @@ function placeholderGradient(name: string) {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; archived?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, archived } = await searchParams;
+  const showArchived = archived === "1";
   const [t, locale, session] = await Promise.all([
     getServerT(),
     getServerLocale(),
@@ -92,8 +95,11 @@ export default async function DashboardPage({
   const { used: storageUsed, limit: storageLimit, percentUsed: storagePercent } =
     await checkStorageLimit(session.user.id, 0);
 
-  const events = user.events;
-  const atEventLimit = eventLimit !== null && events.length >= eventLimit;
+  // Archived events still count toward the plan's event limit, but are hidden from the list
+  const atEventLimit = eventLimit !== null && user.events.length >= eventLimit;
+  const events = user.events.filter((e) => !e.isArchived);
+  const archivedEvents = user.events.filter((e) => e.isArchived);
+  const listedEvents = showArchived ? archivedEvents : events;
 
   // Count active shared links across all events
   const activeLinksCount = events.reduce((sum, e) => {
@@ -106,7 +112,7 @@ export default async function DashboardPage({
 
   const coverUrls = new Map(
     await Promise.all(
-      events.map(async (e) => [e.id, e.coverPhotoKey ? await getCloudfrontSignedUrl(e.coverPhotoKey) : null] as const)
+      listedEvents.map(async (e) => [e.id, e.coverPhotoKey ? await getCloudfrontSignedUrl(e.coverPhotoKey) : null] as const)
     )
   );
 
@@ -137,11 +143,14 @@ export default async function DashboardPage({
           <span className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
             {t.app.name}
           </span>
-          <UserMenu
-            name={user.name}
-            email={user.email ?? ""}
-            locale={locale}
-          />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <UserMenu
+              name={user.name}
+              email={user.email ?? ""}
+              locale={locale}
+            />
+          </div>
         </div>
       </header>
 
@@ -299,15 +308,25 @@ export default async function DashboardPage({
             <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
               {t.dashboard.events.sectionTitle}
             </h2>
+            {(showArchived || archivedEvents.length > 0) && (
+              <Link
+                href={showArchived ? "/dashboard" : "/dashboard?archived=1"}
+                className="ml-auto mr-3 text-sm text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+              >
+                {showArchived
+                  ? t.dashboard.events.hideArchived
+                  : t.dashboard.events.showArchived(archivedEvents.length)}
+              </Link>
+            )}
             {/* Desktop trigger — hidden on mobile (FAB used instead) */}
             <div className="hidden sm:block">
               <CreateEventModal atEventLimit={atEventLimit} />
             </div>
           </div>
 
-          {events.length === 0 ? (
+          {listedEvents.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-zinc-200 bg-white py-16 text-center dark:border-zinc-700 dark:bg-zinc-800">
-              <p className="text-4xl">📷</p>
+              <div className="flex justify-center"><IconCamera size={48} className={ICON_COLOR.muted} aria-hidden="true" /></div>
               <p className="mt-4 text-base font-semibold text-zinc-700 dark:text-zinc-300">
                 {t.dashboard.events.empty}
               </p>
@@ -320,7 +339,7 @@ export default async function DashboardPage({
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-              {events.map((event) => {
+              {listedEvents.map((event) => {
                 const coverUrl = coverUrls.get(event.id) ?? null;
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const grps = (event as any).photoGroups as Array<{ id: string; name: string; color: string | null }>;
@@ -377,7 +396,8 @@ export default async function DashboardPage({
                       {/* New selections badge — tablet+ */}
                       {event.hasNewSelections && (
                         <span className="absolute left-3 top-3 hidden items-center gap-1 rounded-full bg-red-500 px-2.5 py-1 text-xs font-semibold text-white shadow-sm sm:inline-flex">
-                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                          {/* Intentional white pulse dot */}
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white dark:bg-white" />
                           {t.dashboard.newSelectionsBadge}
                         </span>
                       )}

@@ -1,5 +1,7 @@
 "use client";
 
+import { IconFile, IconPackage, IconCalendar, IconCamera, IconLens, ICON_SM, ICON_COLOR } from "@/components/ui/icons";
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ExifData {
@@ -97,11 +99,11 @@ export function LightboxInfoPanel({
       {/* ── File info ── */}
       <div className="space-y-1.5">
         <div className="flex items-start gap-2">
-          <span className="mt-px shrink-0 text-[13px]" aria-hidden="true">📄</span>
+          <IconFile size={ICON_SM} className={`${ICON_COLOR.muted} mt-px shrink-0`} aria-hidden="true" />
           <p className="break-all text-[13px] font-medium text-white leading-snug">{filename}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="shrink-0 text-[13px]" aria-hidden="true">📦</span>
+          <IconPackage size={ICON_SM} className={`${ICON_COLOR.muted} shrink-0`} aria-hidden="true" />
           <p className="text-[13px] text-white/70">
             {formatBytes(size)}
             {width && height ? (
@@ -113,7 +115,7 @@ export function LightboxInfoPanel({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="shrink-0 text-[13px]" aria-hidden="true">📅</span>
+          <IconCalendar size={ICON_SM} className={`${ICON_COLOR.muted} shrink-0`} aria-hidden="true" />
           <p className="text-[13px] text-white/70">{formatDateTime(createdAt)}</p>
         </div>
       </div>
@@ -141,7 +143,7 @@ export function LightboxInfoPanel({
           </p>
           {hasCamera && (
             <div className="flex items-center gap-2">
-              <span className="shrink-0 text-[13px]" aria-hidden="true">📷</span>
+              <IconCamera size={ICON_SM} className={`${ICON_COLOR.muted} shrink-0`} aria-hidden="true" />
               <p className="text-[13px] text-white/80">
                 {[exifData!.cameraMake, exifData!.cameraModel].filter(Boolean).join(" ")}
               </p>
@@ -149,7 +151,7 @@ export function LightboxInfoPanel({
           )}
           {hasTechRow && (
             <div className="mt-1 flex items-center gap-2">
-              <span className="shrink-0 text-[13px]" aria-hidden="true">🔭</span>
+              <IconLens size={ICON_SM} className={`${ICON_COLOR.muted} shrink-0`} aria-hidden="true" />
               <p className="text-[13px] text-white/70">{techParts.join("  ")}</p>
             </div>
           )}

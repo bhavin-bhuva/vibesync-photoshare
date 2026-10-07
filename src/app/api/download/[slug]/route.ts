@@ -65,6 +65,10 @@ export async function GET(
     return NextResponse.json({ error: "Link expired" }, { status: 410 });
   }
 
+  if (!link.downloadsEnabled || !link.zipDownloadEnabled) {
+    return NextResponse.json({ error: "ZIP download is disabled for this gallery" }, { status: 403 });
+  }
+
   const plan = link.event.user.subscription?.planTier ?? "FREE";
   if (plan === "FREE") {
     return NextResponse.json({ error: "ZIP download requires a Pro or Studio plan" }, { status: 403 });

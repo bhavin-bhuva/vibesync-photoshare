@@ -154,7 +154,7 @@ export default async function PhotographerDetailPage({
       </Link>
 
       {/* ── Profile card ── */}
-      <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-xl border border-border bg-surface-card shadow-sm">
         <div className="flex items-start gap-5 p-6">
           {/* Avatar */}
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-violet-600 text-xl font-bold text-white shadow-md">
@@ -166,7 +166,7 @@ export default async function PhotographerDetailPage({
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-semibold text-zinc-900">{user.name ?? <span className="italic text-zinc-400">No name</span>}</h1>
               {/* Role badge */}
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-slate-600">
+              <span className="rounded-full border border-border bg-surface-elevated px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-content-secondary">
                 Photographer
               </span>
               {/* Plan badge */}
@@ -211,7 +211,7 @@ export default async function PhotographerDetailPage({
       <div className="grid grid-cols-5 gap-4">
 
         {/* Storage — special card with progress bar */}
-        <div className="col-span-2 flex flex-col justify-between rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="col-span-2 flex flex-col justify-between rounded-xl border border-border bg-surface-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-zinc-500">Storage Used</p>
             <span className="text-xs font-semibold text-zinc-700">{pct}%</span>
@@ -233,7 +233,7 @@ export default async function PhotographerDetailPage({
           { label: "Share Links",value: totalLinks },
           { label: "Selections", value: totalSelections },
         ].map(({ label, value }) => (
-          <div key={label} className="flex flex-col justify-center rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <div key={label} className="flex flex-col justify-center rounded-xl border border-border bg-surface-card p-4 shadow-sm">
             <p className="text-xs font-medium text-zinc-500">{label}</p>
             <p className="mt-1 text-2xl font-bold tracking-tight text-zinc-900">{value.toLocaleString()}</p>
           </div>
@@ -244,7 +244,7 @@ export default async function PhotographerDetailPage({
       <EventsSection events={eventRows} />
 
       {/* ── Shared Links ── */}
-      <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <section className="overflow-hidden rounded-xl border border-border bg-surface-card shadow-sm">
         <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
           <h2 className="text-sm font-semibold text-zinc-900">Shared Links</h2>
           <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-500">{linkRows.length}</span>

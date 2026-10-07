@@ -64,7 +64,7 @@ export const en = {
   // ─── Dashboard ─────────────────────────────────────────────────────────────
   dashboard: {
     welcome: (name: string) => `Hello, ${name}`,
-    welcomeShort: (name: string) => `Welcome, ${name} \ud83d\udc4b`,
+    welcomeShort: (name: string) => `Welcome, ${name}`,
     subtitle: "Here\u2019s an overview of your galleries.",
     stats: {
       events: "Events",
@@ -79,6 +79,8 @@ export const en = {
       sectionTitle: "Your Events",
       empty: "No events yet",
       emptySubtitle: "Create your first event to start sharing photos with clients.",
+      showArchived: (n: number) => `Archived (${n})`,
+      hideArchived: "Back to active events",
     },
     upgrade: {
       eventLimitTitle: "You've reached your event limit",
@@ -220,7 +222,7 @@ export const en = {
     pinHideAriaLabel: "Hide PIN",
     faceSearchToggleLabel: "Allow customers to find their photos by selfie",
     faceSearchProcessingWarning: "Face detection is still processing. You can enable this once analysis is complete.",
-    faceSearchBadge: "🤳 Face Search On",
+    faceSearchBadge: "Face Search On",
     faceSearchStats: (n: number): string => `${n} ${n === 1 ? "person" : "people"} indexed`,
   },
 

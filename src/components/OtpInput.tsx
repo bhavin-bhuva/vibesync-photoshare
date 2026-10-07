@@ -31,6 +31,7 @@ export function OtpInput({
     Array.from({ length }, (_, i) => value[i] ?? "")
   );
   const [shaking, setShaking] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Sync when the parent changes `value` (e.g., "Generate PIN" button)
@@ -115,14 +116,13 @@ export function OtpInput({
               onChange={(e) => handleChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
               onPaste={i === 0 ? handlePaste : undefined}
-              className={[
-                "h-16 w-16 rounded-xl border text-center text-2xl font-bold",
-                "transition-colors focus:outline-none focus:ring-2",
-                "disabled:cursor-not-allowed disabled:opacity-40",
-                isError
-                  ? "border-red-400 bg-red-50 text-red-700 focus:border-red-400 focus:ring-red-100 dark:border-red-600 dark:bg-red-900/20 dark:text-red-400 dark:focus:ring-red-900"
-                  : "border-zinc-300 bg-white text-zinc-900 focus:border-zinc-500 focus:ring-zinc-200 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-50 dark:focus:border-zinc-400 dark:focus:ring-zinc-600",
-              ].join(" ")}
+              onFocus={() => setFocusedIndex(i)}
+              onBlur={() => setFocusedIndex(null)}
+              className="h-16 w-16 rounded-xl text-center text-2xl font-bold transition-colors focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+              style={isError
+                ? { background: 'rgba(239, 68, 68, 0.08)', border: '2px solid #EF4444', color: '#dc2626' }
+                : { background: 'var(--theme-surface)', border: `2px solid ${focusedIndex === i ? 'var(--theme-accent)' : 'var(--theme-border)'}`, color: 'var(--theme-text)' }
+              }
             />
           ))}
         </div>

@@ -243,6 +243,18 @@ export async function setCoverPhotoAction(
 
 // ─── Shared links ─────────────────────────────────────────────────────────────
 
+export interface GalleryOpts {
+  theme?: string;
+  welcomeEnabled?: boolean;
+  welcomeMessage?: string;
+  welcomeHeroPhotoId?: string | null;
+  introAnimation?: string;
+  galleryTitle?: string;
+  gallerySubtitle?: string;
+  showPhotoCount?: boolean;
+  showEventDate?: boolean;
+}
+
 export async function createSharedLinkAction(
   eventId: string,
   accessType: "PASSWORD" | "PIN" | "NONE",
@@ -250,8 +262,10 @@ export async function createSharedLinkAction(
   expiresAt: string | null,
   faceSearchEnabled = false,
   groupVisibilityOverrides: Record<string, boolean> | null = null,
-  defaultGridDensity = "default"
-): Promise<{ slug?: string; error?: string }> {
+  defaultGridDensity = "default",
+  galleryOpts: GalleryOpts = {},
+  permissions: { downloadsEnabled?: boolean; zipDownloadEnabled?: boolean; selectionEnabled?: boolean; showPinOnCard?: boolean; customCardMessage?: string } = {}
+): Promise<{ slug?: string; id?: string; error?: string }> {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Unauthorized." };
 
@@ -279,9 +293,24 @@ export async function createSharedLinkAction(
     expiresAt: expiresAt ? new Date(expiresAt) : null,
     faceSearchEnabled,
     defaultGridDensity,
+    downloadsEnabled: permissions.downloadsEnabled ?? true,
+    zipDownloadEnabled: permissions.zipDownloadEnabled ?? true,
+    selectionEnabled: permissions.selectionEnabled ?? true,
+    ...(permissions.showPinOnCard !== undefined && { showPinOnCard: permissions.showPinOnCard }),
+    ...(permissions.customCardMessage !== undefined && { customCardMessage: permissions.customCardMessage }),
     ...(groupVisibilityOverrides && Object.keys(groupVisibilityOverrides).length > 0
       ? { groupVisibilityOverrides }
       : {}),
+    // Gallery customisation
+    ...(galleryOpts.theme            !== undefined && { theme: galleryOpts.theme }),
+    ...(galleryOpts.welcomeEnabled   !== undefined && { welcomeEnabled: galleryOpts.welcomeEnabled }),
+    ...(galleryOpts.welcomeMessage   !== undefined && { welcomeMessage: galleryOpts.welcomeMessage }),
+    ...(galleryOpts.welcomeHeroPhotoId !== undefined && { welcomeHeroPhotoId: galleryOpts.welcomeHeroPhotoId }),
+    ...(galleryOpts.introAnimation   !== undefined && { introAnimation: galleryOpts.introAnimation }),
+    ...(galleryOpts.galleryTitle     !== undefined && { galleryTitle: galleryOpts.galleryTitle }),
+    ...(galleryOpts.gallerySubtitle  !== undefined && { gallerySubtitle: galleryOpts.gallerySubtitle }),
+    ...(galleryOpts.showPhotoCount   !== undefined && { showPhotoCount: galleryOpts.showPhotoCount }),
+    ...(galleryOpts.showEventDate    !== undefined && { showEventDate: galleryOpts.showEventDate }),
   };
 
   if (accessType === "PASSWORD" && credential) {
@@ -291,10 +320,10 @@ export async function createSharedLinkAction(
     data.pinPlain = credential;
   }
 
-  await db.sharedLink.create({ data });
+  const created = await db.sharedLink.create({ data, select: { id: true } });
 
   revalidatePath(`/dashboard/events/${eventId}`);
-  return { slug };
+  return { slug, id: created.id };
 }
 
 export async function getSharedLinkPin(

@@ -12,7 +12,7 @@ if (typeof process !== "undefined") {
     .then((count) => {
       if (count === 0) {
         console.warn(
-          "⚠️  No active Stripe plans found in database. Run db:seed or configure plans in /admin/plans"
+          "[WARN] No active Stripe plans found in database. Run db:seed or configure plans in /admin/plans"
         );
       }
     })

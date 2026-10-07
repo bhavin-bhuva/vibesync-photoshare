@@ -8,6 +8,7 @@ import { deletePhotoAction, getPhotoLightboxUrl, bulkDeletePhotosAction } from "
 import { assignPhotosToGroup, assignAllUngroupedToGroup } from "./groups/actions";
 import { useT } from "@/lib/i18n";
 import { type GridDensity, GridDensityControl, useGridDensity } from "@/components/GridDensityControl";
+import { MasonryGrid } from "@/components/gallery/MasonryGrid";
 import { useInfoPanelState } from "@/hooks/useInfoPanelState";
 import { LightboxInfoPanel } from "@/components/LightboxInfoPanel";
 
@@ -249,7 +250,7 @@ function Lightbox({
       {/* ── Mobile top bar ── */}
       <div
         className="flex shrink-0 items-center sm:hidden"
-        style={{ height: "calc(56px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)", background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)" }}
+        style={{ height: "calc(56px + env(safe-area-inset-top))", paddingTop: "env(safe-area-inset-top)", background: "var(--overlay-photo)", backdropFilter: "blur(8px)" }}
       >
         <div className="flex w-full items-center px-3">
           <button onClick={onClose} aria-label={t.lightbox.closeAriaLabel} className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10">
@@ -323,7 +324,7 @@ function Lightbox({
           onPointerUp={handleSwipeEnd}
           onPointerCancel={() => { swipeActive.current = false; setSwipeOffset({ x: 0, y: 0 }); }}
         >
-          <button onClick={prev} disabled={!hasPrev} aria-label={t.lightbox.prevAriaLabel} className="absolute left-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
+          <button onClick={prev} disabled={!hasPrev} onPointerDown={(e) => e.stopPropagation()} aria-label={t.lightbox.prevAriaLabel} className="absolute left-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
             <ChevronLeftIcon />
           </button>
 
@@ -352,7 +353,7 @@ function Lightbox({
             </div>
           )}
 
-          <button onClick={next} disabled={!hasNext} aria-label={t.lightbox.nextAriaLabel} className="absolute right-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
+          <button onClick={next} disabled={!hasNext} onPointerDown={(e) => e.stopPropagation()} aria-label={t.lightbox.nextAriaLabel} className="absolute right-5 z-10 hidden rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-all hover:bg-white/20 disabled:pointer-events-none disabled:opacity-20 sm:block">
             <ChevronRightIcon />
           </button>
         </div>
@@ -505,135 +506,6 @@ function FilterEmptyState({ groupName }: { groupName: string }) {
   );
 }
 
-// ─── Group filter bar ─────────────────────────────────────────────────────────
-
-function GroupFilterBar({
-  groups,
-  ungroupedCount,
-  totalPhotoCount,
-  activeFilter,
-  onFilterChange,
-  density,
-  onDensityChange,
-}: {
-  groups: GroupFilterOption[];
-  ungroupedCount: number;
-  totalPhotoCount: number;
-  activeFilter: string;
-  onFilterChange: (filter: string) => void;
-  density: GridDensity;
-  onDensityChange: (d: GridDensity) => void;
-}) {
-  const pillBase =
-    "inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400";
-  const inactiveCls =
-    "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700";
-  const activeNeutralCls =
-    "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900";
-
-  // Compute the accurate DB-driven count for the active filter
-  const activeFilterCount = (() => {
-    if (activeFilter === "all") return totalPhotoCount;
-    if (activeFilter === "ungrouped") return ungroupedCount;
-    return groups.find((g) => g.id === activeFilter)?.photoCount ?? 0;
-  })();
-
-  const badgeCls = (isActive: boolean) =>
-    `rounded-full px-1.5 py-0.5 text-xs tabular-nums ${
-      isActive
-        ? "bg-white/20 text-white dark:bg-black/20 dark:text-inherit"
-        : "bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400"
-    }`;
-
-  return (
-    <div className="mb-5">
-      {/* Pills + density control row */}
-      <div className="flex items-center gap-2">
-        {/* Horizontally scrollable pill row */}
-        <div
-          className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1"
-          style={{ scrollbarWidth: "none" }}
-        >
-        {/* All Photos */}
-        <button
-          onClick={() => onFilterChange("all")}
-          className={`${pillBase} ${activeFilter === "all" ? activeNeutralCls : inactiveCls}`}
-        >
-          All Photos
-          <span className={badgeCls(activeFilter === "all")}>
-            {totalPhotoCount.toLocaleString()}
-          </span>
-        </button>
-
-        {/* Group pills */}
-        {groups.map((group) => {
-          const isActive = activeFilter === group.id;
-          const color = group.color ?? "#6366f1";
-          return (
-            <button
-              key={group.id}
-              onClick={() => onFilterChange(group.id)}
-              style={isActive ? { backgroundColor: color, borderColor: color } : undefined}
-              className={`${pillBase} ${isActive ? "text-white" : inactiveCls} ${!group.isVisible ? "opacity-60" : ""}`}
-            >
-              {/* Color dot */}
-              <span
-                className="h-2 w-2 shrink-0 rounded-full border border-black/10"
-                style={{ backgroundColor: isActive ? "rgba(255,255,255,0.5)" : color }}
-              />
-              {/* Name — strikethrough when hidden */}
-              <span className={!group.isVisible ? "line-through decoration-current" : ""}>
-                {group.name}
-              </span>
-              {/* Eye-slash icon for hidden groups */}
-              {!group.isVisible && (
-                <svg className="h-3 w-3 shrink-0 opacity-60" viewBox="0 0 20 20" fill="currentColor" aria-label="Hidden group">
-                  <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.091a4 4 0 0 0-5.557-5.556Z" clipRule="evenodd" />
-                  <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.185A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" />
-                </svg>
-              )}
-              <span className={badgeCls(isActive)}>
-                {group.photoCount.toLocaleString()}
-              </span>
-            </button>
-          );
-        })}
-
-        {/* Ungrouped pill */}
-        <button
-          onClick={() => onFilterChange("ungrouped")}
-          className={`${pillBase} ${activeFilter === "ungrouped" ? activeNeutralCls : inactiveCls}`}
-        >
-          Ungrouped
-          <span className={badgeCls(activeFilter === "ungrouped")}>
-            {ungroupedCount.toLocaleString()}
-          </span>
-        </button>
-        </div>{/* end scrollable pills */}
-
-        {/* Density control — fixed right, never scrolls */}
-        <div className="shrink-0 pb-1">
-          <GridDensityControl
-            value={density}
-            onChange={onDensityChange}
-            hideMobile={["comfortable"]}
-          />
-        </div>
-      </div>{/* end pills + density row */}
-
-      {/* "Showing X of Y" — only when a filter is active */}
-      {activeFilter !== "all" && (
-        <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-          Showing{" "}
-          <span className="font-medium text-zinc-700 dark:text-zinc-300">
-            {activeFilterCount.toLocaleString()}
-          </span>{" "}
-          of {totalPhotoCount.toLocaleString()} photos
-        </p>
-      )}
-    </div>
-  );
-}
 
 // ─── Assign-all-ungrouped banner ──────────────────────────────────────────────
 
@@ -805,7 +677,7 @@ function PhotoCard({
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-[4px] bg-zinc-100 ring-1 transition-all dark:bg-zinc-800 ${
+      className={`group relative overflow-hidden rounded-xl bg-zinc-100 ring-1 transition-all dark:bg-zinc-800 ${
         deleting ? "opacity-40" : ""
       } ${
         isSelected
@@ -813,13 +685,14 @@ function PhotoCard({
           : "ring-zinc-200 dark:ring-zinc-700"
       }`}
     >
-      {/* ── Image area (square) ── */}
+      {/* ── Image area ── */}
       <div
         role="button"
         tabIndex={0}
-        className={`relative block aspect-square w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 ${
+        className={`relative block w-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 ${
           selectionMode ? "cursor-pointer" : "cursor-zoom-in"
         }`}
+        style={{ aspectRatio: photo.width && photo.height ? `${photo.width}/${photo.height}` : "4/3" }}
         onClick={handleAreaClick}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
@@ -1087,12 +960,29 @@ function BulkActionBar({
 
 const BATCH_SIZE = 24;
 
-const GRID_CLASSES: Record<GridDensity, string> = {
-  comfortable: "grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2",
-  default:     "grid gap-1 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3",
-  compact:     "grid gap-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
-  dense:       "grid gap-px grid-cols-3 sm:grid-cols-4 lg:grid-cols-6",
+const MASONRY_CONFIG: Record<GridDensity, { desktop: number; tablet: number; mobile: number; gap: number }> = {
+  comfortable: { desktop: 2, tablet: 2, mobile: 1, gap: 16 },
+  default:     { desktop: 3, tablet: 2, mobile: 2, gap: 12 },
+  compact:     { desktop: 4, tablet: 3, mobile: 2, gap: 8  },
+  dense:       { desktop: 5, tablet: 4, mobile: 3, gap: 4  },
 };
+
+function useColumnCount(density: GridDensity): number {
+  const [cols, setCols] = useState(MASONRY_CONFIG[density].desktop);
+  useEffect(() => {
+    function update() {
+      const w = window.innerWidth;
+      const cfg = MASONRY_CONFIG[density];
+      if (w < 640) setCols(cfg.mobile);
+      else if (w < 1024) setCols(cfg.tablet);
+      else setCols(cfg.desktop);
+    }
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [density]);
+  return cols;
+}
 
 export function PhotoGrid({
   photos: initial,
@@ -1124,6 +1014,7 @@ export function PhotoGrid({
 
   // ── Density state ────────────────────────────────────────────────────────────
   const [density, setDensity] = useGridDensity("grid-density-dashboard", "default");
+  const columns = useColumnCount(density);
 
   // ── Filter state ─────────────────────────────────────────────────────────────
   const [activeGroupFilter, setActiveGroupFilter] = useState(initialGroupFilter);
@@ -1413,8 +1304,6 @@ export function PhotoGrid({
 
   if (allPhotos.length === 0) return <EmptyState />;
 
-  // Determine whether the filter bar should be shown at all
-  const showFilterBar = groups.length > 0;
   // Show the "assign all ungrouped" banner only on the ungrouped filter
   const showAssignAllBanner =
     activeGroupFilter === "ungrouped" &&
@@ -1431,17 +1320,111 @@ export function PhotoGrid({
 
   return (
     <>
-      {/* ── Group filter bar ── */}
-      {showFilterBar && (
-        <GroupFilterBar
-          groups={groups}
-          ungroupedCount={ungroupedCount}
-          totalPhotoCount={effectiveTotalPhotoCount}
-          activeFilter={activeGroupFilter}
-          onFilterChange={handleFilterChange}
-          density={density}
-          onDensityChange={setDensity}
-        />
+      {/* ── Unified toolbar ── */}
+      <div className="mb-3 flex items-center gap-2" style={{ minHeight: "44px" }}>
+        {/* Left: scrollable group pills */}
+        <div
+          className="flex flex-1 items-center gap-2 overflow-x-auto min-w-0"
+          style={{ scrollbarWidth: "none" } as React.CSSProperties}
+        >
+          <button
+            onClick={() => handleFilterChange("all")}
+            className="inline-flex shrink-0 items-center gap-1.5 h-9 rounded-full border px-4 text-sm font-medium transition-all duration-200 whitespace-nowrap"
+            style={activeGroupFilter === "all"
+              ? { backgroundColor: "#18181b", borderColor: "#18181b", color: "#fff" }
+              : { borderColor: "#e4e4e7", backgroundColor: "#fff", color: "#52525b" }
+            }
+          >
+            All Photos
+            <span className={`rounded-full px-1.5 py-0.5 text-xs tabular-nums ${activeGroupFilter === "all" ? "bg-white/20 text-white" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400"}`}>
+              {effectiveTotalPhotoCount.toLocaleString()}
+            </span>
+          </button>
+          {groups.map((group) => {
+            const isActive = activeGroupFilter === group.id;
+            const color = group.color ?? "#6366f1";
+            return (
+              <button
+                key={group.id}
+                onClick={() => handleFilterChange(group.id)}
+                style={isActive ? { backgroundColor: color, borderColor: color } : undefined}
+                className={`inline-flex shrink-0 items-center gap-1.5 h-9 rounded-full border px-4 text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+                  isActive ? "text-white" : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
+                } ${!group.isVisible ? "opacity-60" : ""}`}
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full border border-black/10" style={{ backgroundColor: isActive ? "rgba(255,255,255,0.5)" : color }} />
+                <span className={!group.isVisible ? "line-through decoration-current" : ""}>{group.name}</span>
+                {!group.isVisible && (
+                  <svg className="h-3 w-3 shrink-0 opacity-60" viewBox="0 0 20 20" fill="currentColor" aria-label="Hidden group">
+                    <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.091a4 4 0 0 0-5.557-5.556Z" clipRule="evenodd" />
+                    <path d="M10.748 13.93l2.523 2.523a9.987 9.987 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.185A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" />
+                  </svg>
+                )}
+                <span className={`rounded-full px-1.5 py-0.5 text-xs tabular-nums ${isActive ? "bg-white/20 text-white dark:bg-black/20" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400"}`}>
+                  {group.photoCount.toLocaleString()}
+                </span>
+              </button>
+            );
+          })}
+          <button
+            onClick={() => handleFilterChange("ungrouped")}
+            className={`inline-flex shrink-0 items-center gap-1.5 h-9 rounded-full border px-4 text-sm font-medium transition-all duration-200 whitespace-nowrap ${
+              activeGroupFilter === "ungrouped"
+                ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
+            }`}
+          >
+            Ungrouped
+            <span className={`rounded-full px-1.5 py-0.5 text-xs tabular-nums ${activeGroupFilter === "ungrouped" ? "bg-white/20 text-white dark:bg-black/20" : "bg-zinc-100 text-zinc-500 dark:bg-zinc-700 dark:text-zinc-400"}`}>
+              {ungroupedCount.toLocaleString()}
+            </span>
+          </button>
+        </div>
+        {/* Right: density + select/exit */}
+        <div className="flex shrink-0 items-center gap-2">
+          <GridDensityControl value={density} onChange={setDensity} hideMobile={["comfortable"]} />
+          {!selectionMode ? (
+            <button
+              onClick={enterSelectionMode}
+              className="hidden sm:flex h-9 items-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clipRule="evenodd" />
+              </svg>
+              Select
+            </button>
+          ) : (
+            <button
+              onClick={exitSelectionMode}
+              className="hidden sm:flex h-9 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+            >
+              <XIcon className="h-4 w-4" />
+              Exit
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Selection mode secondary controls */}
+      {selectionMode && (
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            {selectedCount} selected
+          </span>
+          <button
+            onClick={selectAll}
+            className="rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600"
+          >
+            Select All
+          </button>
+          <button
+            onClick={deselectAll}
+            disabled={selectedCount === 0}
+            className="rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600"
+          >
+            Deselect All
+          </button>
+        </div>
       )}
 
       {/* ── Assign all ungrouped banner ── */}
@@ -1459,63 +1442,15 @@ export function PhotoGrid({
         <FilterEmptyState groupName={activeGroupName} />
       ) : (
         <>
-          {/* ── Selection controls bar ── */}
-          <div className="mb-4 flex items-center justify-between gap-3">
-            {selectionMode ? (
-              <>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    {selectedCount} selected
-                  </span>
-                  <button
-                    onClick={selectAll}
-                    className="rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600"
-                  >
-                    Select All
-                  </button>
-                  <button
-                    onClick={deselectAll}
-                    disabled={selectedCount === 0}
-                    className="rounded-md border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-600"
-                  >
-                    Deselect All
-                  </button>
-                </div>
-                <button
-                  onClick={exitSelectionMode}
-                  className="flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                >
-                  <XIcon className="h-4 w-4" />
-                  Exit
-                </button>
-              </>
-            ) : (
-              <div className="flex items-center gap-2 ml-auto">
-                {/* Density control — only shown here when filter bar is absent (no groups) */}
-                {!showFilterBar && (
-                  <GridDensityControl
-                    value={density}
-                    onChange={setDensity}
-                    hideMobile={["comfortable"]}
-                  />
-                )}
-                <button
-                  onClick={enterSelectionMode}
-                  className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
-                >
-                  Select
-                </button>
-              </div>
-            )}
-          </div>
-
           {/* ── Photo grid ── */}
-          <div className={GRID_CLASSES[density]}>
-            {renderedPhotos.map((photo, i) => {
+          <MasonryGrid
+            items={renderedPhotos}
+            columns={columns}
+            gap={MASONRY_CONFIG[density].gap}
+            renderItem={(photo, i) => {
               const group = photo.groupId ? groupMap.get(photo.groupId) : undefined;
               return (
                 <PhotoCard
-                  key={photo.id}
                   photo={photo}
                   selectionMode={selectionMode}
                   isSelected={selectedIds.has(photo.id)}
@@ -1531,8 +1466,8 @@ export function PhotoGrid({
                   }}
                 />
               );
-            })}
-          </div>
+            }}
+          />
 
           {/* ── Progressive-load footer ── */}
           {hasMore ? (
