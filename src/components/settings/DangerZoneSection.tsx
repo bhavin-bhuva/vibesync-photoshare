@@ -146,6 +146,15 @@ export function DangerZoneSection({
     });
   }
 
+  function handleUnarchive() {
+    startArchiveTransition(async () => {
+      const result = await archiveEvent(eventId, false);
+      if (result.error) { setError(result.error); return; }
+      setArchived(false);
+      router.refresh();
+    });
+  }
+
   function handleRevoke() {
     startRevokeTransition(async () => {
       const result = await revokeAllLinksAction(eventId);
@@ -174,11 +183,13 @@ export function DangerZoneSection({
     >
       {/* Archive */}
       <DangerRow
-        title="Archive Event"
-        description="Hide this event from your dashboard. Photos and links remain accessible."
-        buttonLabel={archived ? "Archived" : "Archive Event"}
-        disabled={archived || archiving}
-        onClick={() => setShowArchiveDialog(true)}
+        title={archived ? "Event Archived" : "Archive Event"}
+        description={archived
+          ? "This event is hidden from your dashboard. Photos and links remain accessible."
+          : "Hide this event from your dashboard. Photos and links remain accessible."}
+        buttonLabel={archived ? "Unarchive Event" : "Archive Event"}
+        disabled={archiving}
+        onClick={archived ? handleUnarchive : () => setShowArchiveDialog(true)}
       />
 
       <hr style={{ borderColor: "rgba(239,68,68,0.1)" }} />

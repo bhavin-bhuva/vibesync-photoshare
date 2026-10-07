@@ -406,6 +406,9 @@ export default async function SharePage({
           sharedLinkId={link.id}
           zipAllowed={zipAllowed}
           faceSearchEnabled={faceSearchEnabled}
+          downloadsEnabled={link.downloadsEnabled}
+          zipDownloadEnabled={link.zipDownloadEnabled}
+          selectionEnabled={link.selectionEnabled}
           groups={visibleGroups}
           eventName={event.name}
           brandColor={brandColor}

@@ -10,7 +10,7 @@ export function ThemeSwitcher() {
   if (!allowCustomerTheme || !onThemeChange) return null
 
   const themes: Exclude<ThemeKey, 'custom'>[] =
-    ['minimal', 'dark', 'cinematic', 'ocean', 'forest']
+    ['minimal', 'dark', 'cinematic', 'warm', 'ocean', 'forest']
 
   return (
     <div className="fixed bottom-6 right-6 z-40">

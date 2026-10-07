@@ -81,6 +81,8 @@ export const gu: Translations = {
       sectionTitle: "તમારા ઇવેન્ટ્સ",
       empty: "હજુ સુધી કોઈ ઇવેન્ટ નથી",
       emptySubtitle: "ક્લાયન્ટ્સ સાથે ફોટો શેર કરવા માટે પ્રથમ ઇવેન્ટ બનાવો.",
+      showArchived: (n: number) => `આર્કાઇવ કરેલ (${n})`,
+      hideArchived: "સક્રિય ઇવેન્ટ્સ પર પાછા જાઓ",
     },
     upgrade: {
       eventLimitTitle: "તમે ઇવેન્ટ મર્યાદા સુધી પહોંચ્યા",

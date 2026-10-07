@@ -81,6 +81,8 @@ export const ja: Translations = {
       sectionTitle: "あなたのイベント",
       empty: "イベントがありません",
       emptySubtitle: "最初のイベントを作成して、クライアントと写真を共有しましょう。",
+      showArchived: (n: number) => `アーカイブ済み (${n})`,
+      hideArchived: "アクティブなイベントに戻る",
     },
     upgrade: {
       eventLimitTitle: "イベント数の上限に達しました",

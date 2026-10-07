@@ -1,5 +1,5 @@
 export type ThemeKey =
-  'minimal' | 'dark' | 'cinematic' | 'ocean' | 'forest' | 'custom'
+  'minimal' | 'dark' | 'cinematic' | 'warm' | 'ocean' | 'forest' | 'custom'
 
 export interface GalleryThemeTokens {
   bg:          string  // page background
@@ -65,6 +65,19 @@ export const PREDEFINED_THEMES: Record<
     border:      'rgba(201,168,76,0.18)',
     border2:     'rgba(201,168,76,0.08)',
     overlay:     'rgba(0,0,0,0.70)',
+  },
+  warm: {
+    bg:          '#FDF8F0',
+    surface:     '#F8EFE2',
+    surface2:    '#F1E4D1',
+    text:        '#2C1810',
+    text2:       '#78350F',
+    textMuted:   '#A8876A',
+    accent:      '#C2410C',
+    accentText:  '#FFFFFF',
+    border:      'rgba(120,53,15,0.14)',
+    border2:     'rgba(120,53,15,0.07)',
+    overlay:     'rgba(0,0,0,0.55)',
   },
   ocean: {
     bg:          '#0A1628',
@@ -155,7 +168,8 @@ export function resolveGalleryTheme(
   } else if (themeKey === 'custom') {
     tokens = PREDEFINED_THEMES.minimal
   } else {
-    tokens = PREDEFINED_THEMES[themeKey]
+    // themeKey comes from a DB string — fall back if it isn't a known theme
+    tokens = PREDEFINED_THEMES[themeKey] ?? PREDEFINED_THEMES.minimal
   }
 
   // Cinematic keeps gold accent — don't override
@@ -218,6 +232,7 @@ export const THEME_LABELS: Record<ThemeKey, string> = {
   minimal:   'Minimal',
   dark:      'Dark',
   cinematic: 'Cinematic',
+  warm:      'Warm',
   ocean:     'Ocean',
   forest:    'Forest',
   custom:    'Custom',
@@ -227,6 +242,7 @@ export const THEME_PREVIEW_COLORS: Record<ThemeKey, { bg: string; accent: string
   minimal:   { bg: '#FFFFFF', accent: '#6366F1' },
   dark:      { bg: '#0A0A0A', accent: '#6366F1' },
   cinematic: { bg: '#0F0E0C', accent: '#C9A84C' },
+  warm:      { bg: '#FDF8F0', accent: '#C2410C' },
   ocean:     { bg: '#0A1628', accent: '#38BDF8' },
   forest:    { bg: '#0D1F0F', accent: '#4ADE80' },
   custom:    { bg: '#6366F1', accent: '#FFFFFF' },

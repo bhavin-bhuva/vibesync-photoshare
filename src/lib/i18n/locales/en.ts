@@ -79,6 +79,8 @@ export const en = {
       sectionTitle: "Your Events",
       empty: "No events yet",
       emptySubtitle: "Create your first event to start sharing photos with clients.",
+      showArchived: (n: number) => `Archived (${n})`,
+      hideArchived: "Back to active events",
     },
     upgrade: {
       eventLimitTitle: "You've reached your event limit",

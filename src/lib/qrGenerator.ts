@@ -6,6 +6,9 @@
 import sharp from "sharp";
 import qrcodeGenerator from "qrcode-generator";
 
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const MAX_QR_SIZE = 4096;
+
 function buildQrSvg(url: string, color: string, size: number): string {
   const qr = qrcodeGenerator(0, "H");
   qr.addData(url);
@@ -42,8 +45,9 @@ export async function generateQRCode(
     margin?: number
   }
 ): Promise<Buffer> {
-  const size = options?.size ?? 300;
-  const color = options?.color ?? "#000000";
+  // color is interpolated into SVG markup — only accept hex values
+  const color = options?.color && HEX_COLOR_RE.test(options.color) ? options.color : "#000000";
+  const size = Math.min(MAX_QR_SIZE, Math.max(1, Math.round(options?.size ?? 300)));
   const svg = buildQrSvg(url, color, size);
   return sharp(Buffer.from(svg)).png().toBuffer();
 }

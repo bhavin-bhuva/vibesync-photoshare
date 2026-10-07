@@ -79,6 +79,7 @@ export async function submitPhotoSelectionAction(
     select: {
       expiresAt: true,
       eventId: true,
+      selectionEnabled: true,
       event: {
         select: {
           name: true,
@@ -95,6 +96,7 @@ export async function submitPhotoSelectionAction(
   });
   if (!link) return { error: "Link not found." };
   if (link.expiresAt && new Date() > link.expiresAt) return { error: "This link has expired." };
+  if (!link.selectionEnabled) return { error: "Photo selection is disabled for this gallery." };
 
   // 3. Verify every photoId belongs to this event
   const photoIds = photos.map((p) => p.photoId);

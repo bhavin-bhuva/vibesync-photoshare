@@ -209,11 +209,12 @@ function useColumnCount(density: GridDensity): number {
 // ─── Lightbox ─────────────────────────────────────────────────────────────────
 
 function Lightbox({
-  photos, index, slug, onClose, onGo, brandColor, group,
+  photos, index, slug, onClose, onGo, brandColor, group, canDownload,
 }: {
   photos: GalleryPhoto[];
   index: number;
   slug: string;
+  canDownload: boolean;
   onClose: () => void;
   onGo: (i: number) => void;
   brandColor?: string | null;
@@ -325,14 +326,16 @@ function Lightbox({
           >
             <InfoIcon />
           </button>
-          <button
-            onClick={() => handleDownload()}
-            disabled={downloading}
-            aria-label={t.common.download}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10 disabled:opacity-50"
-          >
-            {downloading ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : <DownloadIcon className="h-4 w-4" />}
-          </button>
+          {canDownload && (
+            <button
+              onClick={() => handleDownload()}
+              disabled={downloading}
+              aria-label={t.common.download}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 hover:bg-white/10 disabled:opacity-50"
+            >
+              {downloading ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : <DownloadIcon className="h-4 w-4" />}
+            </button>
+          )}
         </div>
       </div>
 
@@ -370,14 +373,16 @@ function Lightbox({
           >
             <InfoIcon />
           </button>
-          <button
-            onClick={() => handleDownload()}
-            disabled={downloading}
-            aria-label={t.common.download}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
-          >
-            {downloading ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : <DownloadIcon className="h-4 w-4" />}
-          </button>
+          {canDownload && (
+            <button
+              onClick={() => handleDownload()}
+              disabled={downloading}
+              aria-label={t.common.download}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-white/50 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-50"
+            >
+              {downloading ? <SpinnerIcon className="h-4 w-4 animate-spin" /> : <DownloadIcon className="h-4 w-4" />}
+            </button>
+          )}
           <button onClick={onClose} aria-label={t.lightbox.closeAriaLabel} className="flex h-9 w-9 items-center justify-center rounded-lg text-white/60 transition-colors hover:bg-white/10 hover:text-white">
             <XIcon />
           </button>
@@ -458,7 +463,7 @@ function Lightbox({
                 shutterSpeed: photo.exifShutterSpeed,
                 iso: photo.exifIso,
               }}
-              onDownload={() => handleDownload()}
+              onDownload={canDownload ? () => handleDownload() : undefined}
               downloading={downloading}
             />
           </div>
@@ -496,7 +501,7 @@ function Lightbox({
                 shutterSpeed: photo.exifShutterSpeed,
                 iso: photo.exifIso,
               }}
-              onDownload={() => handleDownload()}
+              onDownload={canDownload ? () => handleDownload() : undefined}
               downloading={downloading}
             />
           </div>
@@ -557,12 +562,13 @@ function NewBadge({ createdAt }: { createdAt: Date }) {
 // ─── Photo card ───────────────────────────────────────────────────────────────
 
 function PhotoCard({
-  photo, slug, selectMode, isSelected, hasNote, onToggle, onOpen, onOpenNote,
+  photo, slug, selectMode, canDownload, isSelected, hasNote, onToggle, onOpen, onOpenNote,
   groupColor, groupName,
 }: {
   photo: GalleryPhoto;
   slug: string;
   selectMode: boolean;
+  canDownload: boolean;
   isSelected: boolean;
   hasNote: boolean;
   groupColor: string | null;
@@ -671,7 +677,7 @@ function PhotoCard({
         <NewBadge createdAt={photo.createdAt} />
 
         {/* View mode: hover download overlay */}
-        {!selectMode && (
+        {!selectMode && canDownload && (
           <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/50 via-transparent to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
             <button
               onClick={handleDownload}
@@ -700,6 +706,9 @@ function PhotoCard({
 
 export function Gallery({
   photos, slug, sharedLinkId, zipAllowed, faceSearchEnabled,
+  downloadsEnabled = true,
+  zipDownloadEnabled = true,
+  selectionEnabled = true,
   groups = [],
   eventName = "",
   brandColor = null,
@@ -710,12 +719,16 @@ export function Gallery({
   sharedLinkId: string;
   zipAllowed: boolean;
   faceSearchEnabled: boolean;
+  downloadsEnabled?: boolean;
+  zipDownloadEnabled?: boolean;
+  selectionEnabled?: boolean;
   groups?: GalleryGroup[];
   eventName?: string;
   brandColor?: string | null;
   serverDefaultDensity?: string;
 }) {
   const t = useT();
+  const showZip = downloadsEnabled && zipDownloadEnabled;
   const [mode, setMode] = useState<GalleryMode>("view");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -978,7 +991,7 @@ export function Gallery({
         {/* Right: density + select/done */}
         <div className="flex shrink-0 items-center gap-2">
           <GridDensityControl value={density} onChange={setDensity} hideMobile={["comfortable"]} />
-          {!submitted && mode === "view" && (
+          {selectionEnabled && !submitted && mode === "view" && (
             <button
               onClick={() => switchMode("select")}
               className="hidden sm:flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors"
@@ -1038,7 +1051,7 @@ export function Gallery({
               {t.faceSearch.buttonLabel}
             </button>
           )}
-          {activeGroup && (
+          {showZip && activeGroup && (
             <button
               onClick={() => handleDownloadGroup(activeGroup.id)}
               disabled={zippingGroup}
@@ -1059,26 +1072,28 @@ export function Gallery({
               )}
             </button>
           )}
-          <button
-            onClick={handleDownloadAll}
-            disabled={zipping}
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors hover:opacity-80 disabled:opacity-60 sm:min-h-0"
-            style={{ background: "var(--g-text)", color: "var(--g-bg)" }}
-          >
-            {zipping ? (
-              <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
-            ) : (
-              <>
-                {!zipAllowed && (
-                  <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
-                  </svg>
-                )}
-                {zipAllowed && <DownloadIcon className="h-4 w-4" />}
-                {t.sharePage.downloadAll}
-              </>
-            )}
-          </button>
+          {showZip && (
+            <button
+              onClick={handleDownloadAll}
+              disabled={zipping}
+              className="flex min-h-[48px] items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors hover:opacity-80 disabled:opacity-60 sm:min-h-0"
+              style={{ background: "var(--g-text)", color: "var(--g-bg)" }}
+            >
+              {zipping ? (
+                <><SpinnerIcon className="h-4 w-4 animate-spin" />{t.sharePage.downloadAllPreparing}</>
+              ) : (
+                <>
+                  {!zipAllowed && (
+                    <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  {zipAllowed && <DownloadIcon className="h-4 w-4" />}
+                  {t.sharePage.downloadAll}
+                </>
+              )}
+            </button>
+          )}
         </div>
       )}
 
@@ -1101,7 +1116,7 @@ export function Gallery({
       )}
 
       {/* ── Select Photos FAB (mobile only, bottom-left) ── */}
-      {!submitted && mode === "view" && (
+      {selectionEnabled && !submitted && mode === "view" && (
         <button
           onClick={() => switchMode("select")}
           aria-label={t.gallery.modeSelect}
@@ -1175,6 +1190,7 @@ export function Gallery({
               photo={photo}
               slug={slug}
               selectMode={mode === "select"}
+              canDownload={downloadsEnabled}
               isSelected={selectedIds.has(photo.id)}
               hasNote={photoNotes.has(photo.id) && (photoNotes.get(photo.id) ?? "").length > 0}
               groupColor={photo.groupId ? (groupMap.get(photo.groupId)?.color ?? null) : null}
@@ -1198,6 +1214,7 @@ export function Gallery({
           slug={slug}
           onClose={() => setLightboxIndex(null)}
           onGo={setLightboxIndex}
+          canDownload={downloadsEnabled}
           brandColor={brandColor}
           group={displayPhotos[lightboxIndex]?.groupId
             ? (groupMap.get(displayPhotos[lightboxIndex]!.groupId!) ?? null)

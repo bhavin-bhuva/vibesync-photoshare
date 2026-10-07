@@ -286,6 +286,7 @@ export async function saveEventWatermark(
 
 export async function archiveEvent(
   eventId: string,
+  archived = true,
 ): Promise<{ error?: string }> {
   const session = await getServerSession(authOptions);
   if (!session) return { error: "Unauthorized." };
@@ -299,7 +300,7 @@ export async function archiveEvent(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   await (db.event.update as any)({
     where: { id: eventId },
-    data: { isArchived: true, archivedAt: new Date() },
+    data: { isArchived: archived, archivedAt: archived ? new Date() : null },
   });
 
   revalidatePath("/dashboard");
