@@ -42,6 +42,6 @@ next-env.d.ts
 
 /src/generated/prisma
 
-# claude
-.claude/
+# claude (personal settings only — agents, skills and workflow are shared)
+.claude/settings.local.json
 
